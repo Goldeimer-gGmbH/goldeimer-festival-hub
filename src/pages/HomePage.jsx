@@ -6,7 +6,7 @@ import { useAuth } from '../components/AuthContext'
 const ROLLE_LABEL = {
   lead: 'Lead',
   operator: 'Operator',
-  supporti_plus: 'Supporti Plus',
+  supporti_plus: 'Supporti+',
   supporti: 'Supporti',
   catering: 'Catering'
 }
@@ -16,23 +16,15 @@ export default function HomePage() {
   const [assignments, setAssignments] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadAssignments()
-  }, [])
+  useEffect(() => { loadAssignments() }, [])
 
   async function loadAssignments() {
     const { data, error } = await supabase
       .from('assignments')
-      .select(`
-        id,
-        role,
-        status,
-        festival:festivals(id, name, details)
-      `)
+      .select(`id, role, status, festival:festivals(id, name, details)`)
       .eq('profile_id', profile.id)
       .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
       .order('created_at', { ascending: true })
-
     if (!error && data) setAssignments(data)
     setLoading(false)
   }
@@ -42,26 +34,32 @@ export default function HomePage() {
   return (
     <div>
       <div className="header">
-        <span className="header-logo">🚽 Goldeimer</span>
+        <span className="header-logo">🚽 GOLDEIMER</span>
         <Link to="/profil" style={{ textDecoration: 'none', fontSize: 22 }}>👤</Link>
       </div>
 
-      <div className="page">
-        {/* Begrüßung */}
-        <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 22, fontWeight: 700 }}>Hey {vorname}! 👋</h2>
-          <p style={{ color: 'var(--grau-dunkel)', marginTop: 4, fontSize: 14 }}>
-            Deine Festivals dieser Saison
-          </p>
+      {/* Greeting Banner */}
+      <div style={{
+        background: 'var(--schwarz)',
+        padding: '20px 16px 18px',
+        borderBottom: '3px solid var(--schwarz)',
+      }}>
+        <div className="display" style={{ fontSize: 40, color: 'var(--gelb)', lineHeight: 1 }}>
+          HEY {vorname.toUpperCase()}! 👋
         </div>
+        <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: 6, fontSize: 13, fontWeight: 500 }}>
+          Deine Festivals dieser Saison
+        </p>
+      </div>
 
+      <div className="page" style={{ paddingTop: 20 }}>
         {loading && <div className="loading">Lädt...</div>}
 
         {!loading && assignments.length === 0 && (
           <div className="card" style={{ textAlign: 'center', padding: 32 }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🎪</div>
             <p className="card-sub">
-              Noch keine Festivals zugewiesen. Melde dich bei Goldeimer wenn du denkst, dass hier etwas fehlt.
+              Noch keine Festivals zugewiesen. Melde dich bei Goldeimer.
             </p>
           </div>
         )}
@@ -75,40 +73,47 @@ export default function HomePage() {
             <Link
               key={a.id}
               to={`/festival/${a.festival.id}`}
-              style={{ textDecoration: 'none' }}
+              className="festival-card"
             >
-              <div className="card" style={{ cursor: 'pointer', borderLeft: '4px solid var(--gelb)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <div className="card-title">{a.festival.name}</div>
-                    <div className="card-sub">
-                      {town && <span>📍 {town}</span>}
-                      {startDate && <span style={{ marginLeft: town ? 12 : 0 }}>📅 {formatDate(startDate)}</span>}
-                    </div>
-                  </div>
-                  <span className={`badge badge-${a.role}`}>
-                    {ROLLE_LABEL[a.role] || a.role}
-                  </span>
-                </div>
-                <div style={{ marginTop: 12, fontSize: 13, color: 'var(--grau-dunkel)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  Zum Festival-Hub →
-                </div>
+              {/* Role Badge */}
+              <div className="festival-card-badge">
+                <span className={`badge badge-${a.role}`}>
+                  {ROLLE_LABEL[a.role] || a.role}
+                </span>
+              </div>
+
+              {/* Name */}
+              <div className="festival-card-name">{a.festival.name}</div>
+
+              {/* Meta */}
+              <div className="festival-card-meta">
+                {town && <span>📍 {town}</span>}
+                {startDate && <span>📅 {formatDate(startDate)}</span>}
+                <span style={{ marginLeft: 'auto', color: 'var(--gelb)', fontWeight: 700, fontSize: 11 }}>
+                  Details →
+                </span>
               </div>
             </Link>
           )
         })}
 
-        {/* Globale Infos */}
+        {/* Allgemein */}
         <div className="section-title">Allgemein</div>
         <Link to="/infos" style={{ textDecoration: 'none' }}>
-          <div className="card" style={{ cursor: 'pointer' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 28 }}>📖</span>
-              <div>
-                <div className="card-title">Anleitungen & Infos</div>
-                <div className="card-sub">Trockentoiletten, Abläufe, FAQ</div>
-              </div>
+          <div className="card" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{
+              width: 48, height: 48, background: 'var(--gelb)',
+              borderRadius: 6, border: '2px solid var(--schwarz)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 24, flexShrink: 0,
+            }}>
+              📖
             </div>
+            <div>
+              <div className="card-title">Anleitungen & Infos</div>
+              <div className="card-sub">Trockentoiletten, Abläufe, FAQ</div>
+            </div>
+            <span style={{ marginLeft: 'auto', fontSize: 18, color: 'var(--grau-text)' }}>→</span>
           </div>
         </Link>
       </div>
@@ -122,7 +127,5 @@ function formatDate(dateStr) {
     const d = new Date(dateStr)
     if (isNaN(d)) return dateStr
     return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  } catch {
-    return dateStr
-  }
+  } catch { return dateStr }
 }
