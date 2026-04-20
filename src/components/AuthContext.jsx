@@ -9,37 +9,39 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Aktuelle Session holen
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) loadProfile(session.user.id)
-      else setLoading(false)
-    })
+    // Timeout-Fallback: nach 8 Sekunden auf jeden Fall aufhören zu laden
+    const timeout = setTimeout(() => setLoading(false), 8000)
 
-    // Auf Login/Logout-Änderungen hören
+    // Auf Login/Logout-Änderungen hören (feuert auch beim Start mit INITIAL_SESSION)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setUser(session?.user ?? null)
-        if (session?.user) await loadProfile(session.user.id)
-        else {
+        if (session?.user) {
+          await loadProfile(session.user.id)
+        } else {
           setProfile(null)
           setLoading(false)
         }
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      clearTimeout(timeout)
+      subscription.unsubscribe()
+    }
   }, [])
 
   async function loadProfile(userId) {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('auth_id', userId)
-      .single()
-
-    if (!error && data) setProfile(data)
-    setLoading(false)
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('auth_id', userId)
+        .single()
+      if (!error && data) setProfile(data)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function signOut() {

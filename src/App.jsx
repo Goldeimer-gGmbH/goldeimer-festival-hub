@@ -13,16 +13,23 @@ function AppRoutes() {
     return (
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        height: '100vh', flexDirection: 'column', gap: 16
+        height: '100vh', flexDirection: 'column', gap: 20,
+        background: 'var(--gelb)',
       }}>
         <div style={{
-          width: 60, height: 60, background: '#ffe500',
-          borderRadius: 14, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontSize: 32
+          width: 72, height: 72, background: 'var(--schwarz)',
+          borderRadius: 12, border: '3px solid var(--schwarz)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36
         }}>
           🚽
         </div>
-        <p style={{ color: '#888', fontSize: 14 }}>Lädt...</p>
+        <div style={{
+          fontFamily: "'Bebas Neue', sans-serif",
+          fontSize: 13, letterSpacing: '0.15em', color: 'var(--schwarz)',
+          opacity: 0.6,
+        }}>
+          LÄDT...
+        </div>
       </div>
     )
   }
