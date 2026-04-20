@@ -9,17 +9,18 @@
 :root {
   --gelb:       #FFE500;
   --gelb-dim:   #E5CE00;
-  --schwarz:    #1A1A1A;
+  --schwarz:    #1d1d1b;
   --weiss:      #FFFFFF;
-  --papier:     #F7F4EE;
-  --grau:       #F0EDE7;
+  --papier:     #fff4e0;
+  --grau:       #f0ebe0;
   --grau-text:  #6B6560;
-  --border:     #1A1A1A;
-  --gruen:      #1A5C2A;
-  --rot:        #D92B00;
-  --radius:     6px;
-  --shadow:     4px 4px 0 #1A1A1A;
-  --shadow-sm:  2px 2px 0 #1A1A1A;
+  --border:     #1d1d1b;
+  --gruen:      #2ea14f;
+  --rot:        #e9330c;
+  --radius:     8px;
+  --radius-btn: 20px;
+  --shadow:     4px 4px 0 #1d1d1b;
+  --shadow-sm:  2px 2px 0 #1d1d1b;
 
   font-family: 'Outfit', system-ui, sans-serif;
 }
@@ -196,7 +197,7 @@ body {
   justify-content: center;
   gap: 8px;
   padding: 14px 20px;
-  border-radius: var(--radius);
+  border-radius: var(--radius-btn);
   font-size: 15px;
   font-weight: 700;
   font-family: 'Outfit', sans-serif;
