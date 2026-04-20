@@ -53,7 +53,20 @@ export default function HomePage() {
       </div>
 
       <div className="page" style={{ paddingTop: 20 }}>
-        {loading && <div className="loading">Lädt...</div>}
+        {loading && (
+          <>
+            {[1, 2].map(i => (
+              <div key={i} style={{
+                background: 'var(--schwarz)', borderRadius: 'var(--radius)',
+                padding: '18px 16px', border: '2px solid var(--schwarz)',
+                boxShadow: 'var(--shadow)', marginBottom: 14, opacity: 0.15 + i * 0.1,
+              }}>
+                <div style={{ height: 28, width: '60%', background: 'var(--gelb)', borderRadius: 4, marginBottom: 10 }} />
+                <div style={{ height: 12, width: '40%', background: 'rgba(255,255,255,0.3)', borderRadius: 4 }} />
+              </div>
+            ))}
+          </>
+        )}
 
         {!loading && assignments.length === 0 && (
           <div className="card" style={{ textAlign: 'center', padding: 32 }}>
