@@ -11,16 +11,12 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
-      options: {
-        shouldCreateUser: false // Nur bestehende Crew-Mitglieder können sich einloggen
-      }
+      options: { shouldCreateUser: false }
     })
-
     if (error) {
-      setError('Diese E-Mail-Adresse ist nicht registriert. Bitte wende dich an Goldeimer.')
+      setError('Diese E-Mail ist nicht registriert. Wende dich an Goldeimer.')
     } else {
       setSent(true)
     }
@@ -29,58 +25,117 @@ export default function LoginPage() {
 
   if (sent) {
     return (
-      <div className="page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 24 }}>📬</div>
-        <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 12 }}>Check deine E-Mails!</h2>
-        <p style={{ color: 'var(--grau-dunkel)', fontSize: 15, lineHeight: 1.6, maxWidth: 300 }}>
-          Wir haben dir einen Login-Link an <strong>{email}</strong> geschickt. Klick auf den Link um dich einzuloggen.
-        </p>
-        <p style={{ marginTop: 24, fontSize: 13, color: 'var(--grau-dunkel)' }}>
-          Kein Link angekommen?{' '}
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <div style={{
+          background: 'var(--gelb)',
+          borderBottom: '3px solid var(--schwarz)',
+          padding: '60px 24px 48px',
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 64, lineHeight: 1 }}>📬</div>
+          <div className="display" style={{ fontSize: 52, marginTop: 16, color: 'var(--schwarz)' }}>
+            CHECK DEINE MAILS!
+          </div>
+        </div>
+        <div style={{ padding: '32px 24px', flex: 1, background: 'var(--papier)' }}>
+          <p style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--grau-text)' }}>
+            Login-Link an <strong style={{ color: 'var(--schwarz)' }}>{email}</strong> geschickt.
+            Kein Passwort nötig – einfach auf den Link klicken.
+          </p>
           <button
             onClick={() => setSent(false)}
-            style={{ background: 'none', border: 'none', color: 'var(--schwarz)', textDecoration: 'underline', cursor: 'pointer', fontSize: 13 }}
+            className="btn btn-secondary"
+            style={{ marginTop: 28 }}
           >
             Nochmal versuchen
           </button>
-        </p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="page" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '100vh' }}>
-      {/* Logo */}
-      <div style={{ textAlign: 'center', marginBottom: 40 }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+
+      {/* Hero */}
+      <div style={{
+        background: 'var(--gelb)',
+        borderBottom: '3px solid var(--schwarz)',
+        padding: '52px 24px 40px',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {/* Decorative diagonal stripe */}
         <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 80,
-          height: 80,
-          background: 'var(--gelb)',
-          borderRadius: 20,
-          fontSize: 40,
-          marginBottom: 16
-        }}>
-          🚽
+          position: 'absolute',
+          bottom: -20,
+          right: -20,
+          width: 140,
+          height: 140,
+          background: 'var(--schwarz)',
+          opacity: 0.06,
+          transform: 'rotate(20deg)',
+          borderRadius: 8,
+        }} />
+
+        <div style={{ position: 'relative' }}>
+          <div style={{
+            display: 'inline-flex',
+            width: 72,
+            height: 72,
+            background: 'var(--schwarz)',
+            borderRadius: 10,
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 36,
+            marginBottom: 18,
+            border: '2px solid var(--schwarz)',
+          }}>
+            🚽
+          </div>
+          <div className="display" style={{ fontSize: 58, color: 'var(--schwarz)', marginBottom: 6 }}>
+            GOLDEIMER
+          </div>
+          <div className="display" style={{ fontSize: 34, color: 'var(--schwarz)', opacity: 0.6 }}>
+            FESTIVAL HUB
+          </div>
+          <div style={{
+            marginTop: 14,
+            display: 'inline-block',
+            background: 'var(--schwarz)',
+            color: 'var(--gelb)',
+            padding: '4px 10px',
+            borderRadius: 4,
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+          }}>
+            🎪 Saison 2025
+          </div>
         </div>
-        <h1 style={{ fontSize: 26, fontWeight: 900 }}>Goldeimer Hub</h1>
-        <p style={{ color: 'var(--grau-dunkel)', marginTop: 6, fontSize: 15 }}>
-          Dein Festival-Begleiter
-        </p>
       </div>
 
-      {/* Login Form */}
-      <div className="card">
-        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Einloggen</h2>
-        <p style={{ fontSize: 14, color: 'var(--grau-dunkel)', marginBottom: 20, lineHeight: 1.5 }}>
-          Gib deine E-Mail-Adresse ein. Wir schicken dir einen Link zum Einloggen – kein Passwort nötig.
+      {/* Form */}
+      <div style={{ padding: '32px 20px', flex: 1, background: 'var(--papier)' }}>
+        <div className="display" style={{ fontSize: 32, marginBottom: 6 }}>EINLOGGEN</div>
+        <p style={{ fontSize: 14, color: 'var(--grau-text)', marginBottom: 28, lineHeight: 1.6 }}>
+          Gib deine E-Mail ein – wir schicken dir einen Magic Link. Kein Passwort nötig.
         </p>
 
-        <form onSubmit={handleSubmit}>
-          <div className="input-group">
-            <label>E-Mail-Adresse</label>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: 10,
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              marginBottom: 7,
+              color: 'var(--grau-text)',
+            }}>
+              E-Mail-Adresse
+            </label>
             <input
               type="email"
               value={email}
@@ -88,24 +143,49 @@ export default function LoginPage() {
               placeholder="deine@email.de"
               required
               autoFocus
+              style={{
+                width: '100%',
+                padding: '13px 14px',
+                border: '2px solid var(--schwarz)',
+                borderRadius: 'var(--radius)',
+                fontSize: 16,
+                fontFamily: 'Outfit, sans-serif',
+                background: 'var(--weiss)',
+                color: 'var(--schwarz)',
+                outline: 'none',
+              }}
             />
           </div>
 
           {error && (
-            <p style={{ color: 'var(--rot)', fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>
-              {error}
-            </p>
+            <div style={{
+              background: '#FFF0ED',
+              border: '2px solid var(--rot)',
+              borderRadius: 'var(--radius)',
+              padding: '11px 14px',
+              fontSize: 13,
+              color: 'var(--rot)',
+              fontWeight: 600,
+              lineHeight: 1.5,
+            }}>
+              ⚠ {error}
+            </div>
           )}
 
-          <button className="btn btn-primary" type="submit" disabled={loading || !email}>
-            {loading ? 'Wird gesendet...' : 'Login-Link anfordern'}
+          <button
+            type="submit"
+            disabled={loading || !email}
+            className="btn btn-black"
+            style={{ marginTop: 4 }}
+          >
+            {loading ? 'Wird gesendet...' : 'Login-Link anfordern →'}
           </button>
         </form>
-      </div>
 
-      <p style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: 'var(--grau-dunkel)' }}>
-        Nur für angemeldete Goldeimer-Crew
-      </p>
+        <p style={{ textAlign: 'center', marginTop: 28, fontSize: 11, color: 'var(--grau-text)', letterSpacing: '0.05em' }}>
+          NUR FÜR ANGEMELDETE GOLDEIMER-CREW
+        </p>
+      </div>
     </div>
   )
 }

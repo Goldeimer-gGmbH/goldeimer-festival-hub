@@ -3,6 +3,11 @@ import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
 
+const ROLLE_LABEL = {
+  lead: 'Lead', operator: 'Operator',
+  supporti_plus: 'Supporti+', supporti: 'Supporti', catering: 'Catering'
+}
+
 export default function FestivalPage() {
   const { id } = useParams()
   const { profile } = useAuth()
@@ -10,14 +15,10 @@ export default function FestivalPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('info')
 
-  useEffect(() => {
-    loadFestivalInfo()
-  }, [id])
+  useEffect(() => { loadFestivalInfo() }, [id])
 
   async function loadFestivalInfo() {
-    const { data, error } = await supabase.rpc('get_my_festival_info', {
-      p_festival_id: id
-    })
+    const { data, error } = await supabase.rpc('get_my_festival_info', { p_festival_id: id })
     if (!error && data) setData(data)
     setLoading(false)
   }
@@ -25,103 +26,112 @@ export default function FestivalPage() {
   if (loading) return <div className="loading">Lädt Festival-Infos...</div>
   if (!data || data.error) return (
     <div className="page">
-      <p style={{ color: 'var(--rot)' }}>Fehler beim Laden. Bist du für dieses Festival zugewiesen?</p>
+      <p style={{ color: 'var(--rot)' }}>Fehler: Bist du für dieses Festival zugewiesen?</p>
       <Link to="/">← Zurück</Link>
     </div>
   )
 
   const details = data.festival?.details || {}
   const role = data.assignment_role
-  const isLead = ['lead', 'operator'].includes(role)
+
+  const tabs = [
+    { key: 'info',      label: 'INFO',      icon: '📋' },
+    { key: 'kontakte',  label: 'KONTAKTE',  icon: '📞' },
+    { key: 'checkliste',label: 'CHECKS',    icon: '✅' },
+    { key: 'feedback',  label: 'FEEDBACK',  icon: '💬' },
+  ]
 
   return (
     <div>
       {/* Header */}
       <div className="header">
-        <Link to="/" style={{ textDecoration: 'none', fontSize: 20, color: 'var(--schwarz)' }}>←</Link>
-        <h1 style={{ fontSize: 16 }}>{data.festival?.name}</h1>
-        <span style={{ width: 20 }} />
+        <Link to="/" style={{ textDecoration: 'none', fontSize: 20, color: 'var(--schwarz)', fontWeight: 700 }}>←</Link>
+        <span className="header-logo" style={{ fontSize: 17 }}>{data.festival?.name?.toUpperCase()}</span>
+        <span className={`badge badge-${role}`} style={{ fontSize: 9 }}>
+          {ROLLE_LABEL[role] || role}
+        </span>
       </div>
 
-      {/* Festival-Bar */}
+      {/* Festival Bar */}
       <div className="festival-bar">
         <span>🎪</span>
         <span>{details.festival_town || ''}</span>
         {details.start_official && (
-          <span style={{ marginLeft: 'auto', opacity: 0.8 }}>
+          <span style={{ marginLeft: 'auto', color: 'rgba(255,229,0,0.6)', fontSize: 12 }}>
             {formatDate(details.start_official)}
           </span>
         )}
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', background: 'var(--weiss)', borderBottom: '1px solid #eee' }}>
-        {['info', 'kontakte', 'checkliste', 'feedback'].map(tab => (
+      <div style={{
+        display: 'flex',
+        background: 'var(--weiss)',
+        borderBottom: '3px solid var(--schwarz)',
+      }}>
+        {tabs.map(tab => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
             style={{
               flex: 1,
-              padding: '12px 4px',
+              padding: '11px 2px',
               border: 'none',
-              background: 'none',
-              fontSize: 13,
-              fontWeight: activeTab === tab ? 700 : 400,
-              color: activeTab === tab ? 'var(--schwarz)' : 'var(--grau-dunkel)',
-              borderBottom: activeTab === tab ? '2px solid var(--gelb)' : '2px solid transparent',
+              borderRight: '1px solid var(--grau)',
+              background: activeTab === tab.key ? 'var(--gelb)' : 'var(--weiss)',
+              fontSize: 9,
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 800,
+              letterSpacing: '0.06em',
+              color: 'var(--schwarz)',
               cursor: 'pointer',
-              textTransform: 'capitalize'
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 3,
+              transition: 'background 0.15s',
             }}
           >
-            {tab === 'info' ? '📋 Info' :
-             tab === 'kontakte' ? '📞 Kontakte' :
-             tab === 'checkliste' ? '✅ Checks' : '💬 Feedback'}
+            <span style={{ fontSize: 16 }}>{tab.icon}</span>
+            {tab.label}
           </button>
         ))}
       </div>
 
-      <div className="page" style={{ paddingTop: 16 }}>
+      <div className="page" style={{ paddingTop: 18 }}>
 
-        {/* INFO TAB */}
+        {/* ── INFO ── */}
         {activeTab === 'info' && (
           <div>
-            {/* Meine Zeiten */}
             <div className="section-title">Deine Zeiten</div>
             <div className="card">
               <ul className="info-list">
                 <li>
                   <span className="info-icon">📅</span>
                   <div>
-                    <strong>Anreise</strong>
-                    <div style={{ fontSize: 13, color: 'var(--grau-dunkel)', marginTop: 2 }}>
-                      {getAnreise(details, role) || 'Wird noch bekannt gegeben'}
-                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grau-text)', marginBottom: 3 }}>Anreise</div>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>{getAnreise(details, role) || 'Wird noch bekannt gegeben'}</div>
                   </div>
                 </li>
                 <li>
                   <span className="info-icon">🏠</span>
                   <div>
-                    <strong>Abreise</strong>
-                    <div style={{ fontSize: 13, color: 'var(--grau-dunkel)', marginTop: 2 }}>
-                      {getAbreise(details, role) || 'Wird noch bekannt gegeben'}
-                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grau-text)', marginBottom: 3 }}>Abreise</div>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>{getAbreise(details, role) || 'Wird noch bekannt gegeben'}</div>
                   </div>
                 </li>
                 {details.festival_town && (
                   <li>
                     <span className="info-icon">📍</span>
                     <div>
-                      <strong>Ort</strong>
-                      <div style={{ fontSize: 13, color: 'var(--grau-dunkel)', marginTop: 2 }}>
-                        {details.festival_town}
-                      </div>
+                      <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grau-text)', marginBottom: 3 }}>Ort</div>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>{details.festival_town}</div>
                     </div>
                   </li>
                 )}
               </ul>
             </div>
 
-            {/* Inhalte */}
             {data.content && data.content.length > 0 && (
               <>
                 <div className="section-title">Infos & Dokumente</div>
@@ -129,18 +139,13 @@ export default function FestivalPage() {
                   <div key={c.id} className="card">
                     <div className="card-title">{c.title}</div>
                     {c.body && (
-                      <div style={{ fontSize: 14, lineHeight: 1.6, marginTop: 8, color: '#333', whiteSpace: 'pre-wrap' }}>
+                      <div style={{ fontSize: 14, lineHeight: 1.65, marginTop: 8, color: 'var(--schwarz)', whiteSpace: 'pre-wrap' }}>
                         {c.body}
                       </div>
                     )}
                     {c.file_url && (
-                      <a
-                        href={c.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-secondary"
-                        style={{ marginTop: 12, textDecoration: 'none' }}
-                      >
+                      <a href={c.file_url} target="_blank" rel="noopener noreferrer"
+                        className="btn btn-secondary" style={{ marginTop: 12, textDecoration: 'none' }}>
                         📄 Dokument öffnen
                       </a>
                     )}
@@ -151,54 +156,55 @@ export default function FestivalPage() {
           </div>
         )}
 
-        {/* KONTAKTE TAB */}
+        {/* ── KONTAKTE ── */}
         {activeTab === 'kontakte' && (
           <div>
-            {/* Notfallnummern aus Festival-Details */}
             {(details.emergency_number || details.notfall) && (
               <>
                 <div className="section-title">Notfall</div>
-                <div className="card" style={{ borderLeft: '4px solid var(--rot)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span style={{ fontSize: 28 }}>🚨</span>
-                    <div>
-                      <div className="card-title">Notfallnummer</div>
-                      <a
-                        href={`tel:${details.emergency_number || details.notfall}`}
-                        style={{ fontSize: 20, fontWeight: 700, color: 'var(--rot)', textDecoration: 'none' }}
-                      >
-                        {details.emergency_number || details.notfall}
-                      </a>
-                    </div>
+                <div style={{
+                  background: 'var(--rot)',
+                  border: '2px solid var(--rot)',
+                  borderRadius: 'var(--radius)',
+                  padding: '16px',
+                  boxShadow: '4px 4px 0 rgba(0,0,0,0.3)',
+                  marginBottom: 14,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                }}>
+                  <span style={{ fontSize: 32 }}>🚨</span>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>Notfallnummer</div>
+                    <a href={`tel:${details.emergency_number || details.notfall}`}
+                      style={{ fontSize: 24, fontWeight: 900, color: 'var(--weiss)', textDecoration: 'none', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.05em' }}>
+                      {details.emergency_number || details.notfall}
+                    </a>
                   </div>
                 </div>
               </>
             )}
 
-            {/* Lead-Kontakte (für alle sichtbar) */}
             {data.leads && data.leads.length > 0 && (
               <>
                 <div className="section-title">Deine Leads</div>
                 {data.leads.map((lead, i) => (
-                  <div key={i} className="card">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{
-                        width: 44, height: 44, borderRadius: '50%',
-                        background: 'var(--gelb)', display: 'flex',
-                        alignItems: 'center', justifyContent: 'center',
-                        fontWeight: 700, fontSize: 18, flexShrink: 0
-                      }}>
-                        {(lead.full_name || lead.email || '?')[0].toUpperCase()}
-                      </div>
-                      <div>
-                        <div className="card-title">{lead.full_name || lead.email}</div>
-                        <a
-                          href={`mailto:${lead.email}`}
-                          style={{ fontSize: 13, color: 'var(--grau-dunkel)', textDecoration: 'none' }}
-                        >
-                          {lead.email}
-                        </a>
-                      </div>
+                  <div key={i} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{
+                      width: 46, height: 46, borderRadius: '50%',
+                      background: 'var(--gelb)', border: '2px solid var(--schwarz)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontFamily: 'Bebas Neue, sans-serif', fontSize: 22, flexShrink: 0,
+                      color: 'var(--schwarz)',
+                    }}>
+                      {(lead.full_name || lead.email || '?')[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="card-title">{lead.full_name || lead.email}</div>
+                      <a href={`mailto:${lead.email}`}
+                        style={{ fontSize: 13, color: 'var(--grau-text)', textDecoration: 'none' }}>
+                        {lead.email}
+                      </a>
                     </div>
                   </div>
                 ))}
@@ -214,12 +220,12 @@ export default function FestivalPage() {
           </div>
         )}
 
-        {/* CHECKLISTE TAB */}
+        {/* ── CHECKLISTE ── */}
         {activeTab === 'checkliste' && (
           <ChecklistTab festivalId={id} profileId={profile.id} checklists={data.checklists} />
         )}
 
-        {/* FEEDBACK TAB */}
+        {/* ── FEEDBACK ── */}
         {activeTab === 'feedback' && (
           <FeedbackTab festivalId={id} profileId={profile.id} />
         )}
@@ -228,28 +234,20 @@ export default function FestivalPage() {
   )
 }
 
-// --- Checkliste Komponente ---
 function ChecklistTab({ festivalId, profileId, checklists }) {
   const [items, setItems] = useState({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (checklists && checklists.length > 0) {
-      loadItems()
-    } else {
-      setLoading(false)
-    }
+    if (checklists && checklists.length > 0) loadItems()
+    else setLoading(false)
   }, [checklists])
 
   async function loadItems() {
-    const checklistIds = checklists.map(c => c.id)
+    const ids = checklists.map(c => c.id)
     const { data, error } = await supabase
-      .from('checklist_items')
-      .select('*')
-      .in('checklist_id', checklistIds)
-      .eq('profile_id', profileId)
-      .order('sort_order')
-
+      .from('checklist_items').select('*')
+      .in('checklist_id', ids).eq('profile_id', profileId).order('sort_order')
     if (!error && data) {
       const grouped = {}
       data.forEach(item => {
@@ -263,14 +261,9 @@ function ChecklistTab({ festivalId, profileId, checklists }) {
 
   async function toggleItem(item) {
     const newVal = !item.is_checked
-    const { error } = await supabase
-      .from('checklist_items')
-      .update({
-        is_checked: newVal,
-        checked_at: newVal ? new Date().toISOString() : null
-      })
+    const { error } = await supabase.from('checklist_items')
+      .update({ is_checked: newVal, checked_at: newVal ? new Date().toISOString() : null })
       .eq('id', item.id)
-
     if (!error) {
       setItems(prev => {
         const updated = { ...prev }
@@ -298,38 +291,46 @@ function ChecklistTab({ festivalId, profileId, checklists }) {
       {checklists.map(cl => {
         const clItems = items[cl.id] || []
         const doneCount = clItems.filter(i => i.is_checked).length
+        const pct = clItems.length ? Math.round((doneCount / clItems.length) * 100) : 0
 
         return (
           <div key={cl.id} className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <div className="card-title">{cl.title}</div>
-              <span style={{ fontSize: 13, color: 'var(--grau-dunkel)' }}>
+              <span style={{
+                background: doneCount === clItems.length && clItems.length > 0 ? 'var(--gruen)' : 'var(--gelb)',
+                color: doneCount === clItems.length && clItems.length > 0 ? 'var(--weiss)' : 'var(--schwarz)',
+                border: '1.5px solid var(--schwarz)',
+                borderRadius: 4,
+                padding: '2px 8px',
+                fontSize: 11,
+                fontWeight: 800,
+              }}>
                 {doneCount}/{clItems.length}
               </span>
             </div>
 
+            {/* Progress bar */}
+            {clItems.length > 0 && (
+              <div style={{ height: 4, background: 'var(--grau)', borderRadius: 2, marginBottom: 12, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: 'var(--gruen)', borderRadius: 2, transition: 'width 0.3s' }} />
+              </div>
+            )}
+
             {cl.description && (
-              <p style={{ fontSize: 13, color: 'var(--grau-dunkel)', marginBottom: 12 }}>{cl.description}</p>
+              <p style={{ fontSize: 13, color: 'var(--grau-text)', marginBottom: 10 }}>{cl.description}</p>
             )}
 
             {clItems.length === 0 ? (
-              <p style={{ fontSize: 13, color: 'var(--grau-dunkel)' }}>Keine Punkte vorhanden.</p>
-            ) : (
-              clItems.map(item => (
-                <div
-                  key={item.id}
-                  className="check-item"
-                  onClick={() => toggleItem(item)}
-                >
-                  <div className={`check-box ${item.is_checked ? 'checked' : ''}`}>
-                    {item.is_checked && '✓'}
-                  </div>
-                  <span className={`check-label ${item.is_checked ? 'checked' : ''}`}>
-                    {item.label}
-                  </span>
+              <p style={{ fontSize: 13, color: 'var(--grau-text)' }}>Keine Punkte vorhanden.</p>
+            ) : clItems.map(item => (
+              <div key={item.id} className="check-item" onClick={() => toggleItem(item)}>
+                <div className={`check-box ${item.is_checked ? 'checked' : ''}`}>
+                  {item.is_checked && '✓'}
                 </div>
-              ))
-            )}
+                <span className={`check-label ${item.is_checked ? 'checked' : ''}`}>{item.label}</span>
+              </div>
+            ))}
           </div>
         )
       })}
@@ -337,7 +338,6 @@ function ChecklistTab({ festivalId, profileId, checklists }) {
   )
 }
 
-// --- Feedback Komponente ---
 function FeedbackTab({ festivalId, profileId }) {
   const [text, setText] = useState('')
   const [type, setType] = useState('feedback')
@@ -348,18 +348,11 @@ function FeedbackTab({ festivalId, profileId }) {
     e.preventDefault()
     if (!text.trim()) return
     setLoading(true)
-
     const { error } = await supabase.from('logs').insert({
-      festival_id: festivalId,
-      profile_id: profileId,
-      log_type: type,
-      data: { text: text.trim() }
+      festival_id: festivalId, profile_id: profileId,
+      log_type: type, data: { text: text.trim() }
     })
-
-    if (!error) {
-      setSent(true)
-      setText('')
-    }
+    if (!error) { setSent(true); setText('') }
     setLoading(false)
   }
 
@@ -367,8 +360,8 @@ function FeedbackTab({ festivalId, profileId }) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: 32 }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>🙌</div>
-        <p style={{ fontWeight: 600, marginBottom: 8 }}>Danke für dein Feedback!</p>
-        <p className="card-sub">Es wurde gespeichert und wird von uns gelesen.</p>
+        <div className="display" style={{ fontSize: 28, marginBottom: 8 }}>DANKE!</div>
+        <p className="card-sub">Dein Feedback wurde gespeichert und wird gelesen.</p>
         <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => setSent(false)}>
           Weiteres Feedback senden
         </button>
@@ -379,10 +372,9 @@ function FeedbackTab({ festivalId, profileId }) {
   return (
     <div>
       <div className="card">
-        <p style={{ fontSize: 14, color: 'var(--grau-dunkel)', marginBottom: 16, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 14, color: 'var(--grau-text)', marginBottom: 16, lineHeight: 1.6 }}>
           Etwas lief nicht gut? Hast du einen Verbesserungsvorschlag? Sag es uns!
         </p>
-
         <form onSubmit={handleSubmit}>
           <div className="input-group">
             <label>Art der Meldung</label>
@@ -393,19 +385,13 @@ function FeedbackTab({ festivalId, profileId }) {
               <option value="lob">Lob 🌟</option>
             </select>
           </div>
-
           <div className="input-group">
             <label>Deine Nachricht</label>
-            <textarea
-              value={text}
-              onChange={e => setText(e.target.value)}
-              placeholder="Was ist passiert? Was hat gut / nicht gut funktioniert?"
-              required
-            />
+            <textarea value={text} onChange={e => setText(e.target.value)}
+              placeholder="Was ist passiert? Was hat gut / nicht gut funktioniert?" required />
           </div>
-
           <button className="btn btn-primary" type="submit" disabled={loading || !text.trim()}>
-            {loading ? 'Wird gesendet...' : 'Feedback senden'}
+            {loading ? 'Wird gesendet...' : 'Feedback senden →'}
           </button>
         </form>
       </div>
@@ -413,7 +399,6 @@ function FeedbackTab({ festivalId, profileId }) {
   )
 }
 
-// --- Hilfsfunktionen ---
 function getAnreise(details, role) {
   if (role === 'supporti_plus') return details.start_setup
   if (role === 'supporti') return details.start_supp
@@ -436,7 +421,5 @@ function formatDate(dateStr) {
     const d = new Date(dateStr)
     if (isNaN(d)) return dateStr
     return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  } catch {
-    return dateStr
-  }
+  } catch { return dateStr }
 }
