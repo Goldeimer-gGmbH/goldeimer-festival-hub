@@ -9,23 +9,32 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Timeout-Fallback: nach 8 Sekunden auf jeden Fall aufhören zu laden
-    const timeout = setTimeout(() => setLoading(false), 8000)
+    let cancelled = false
 
-    // Auf Login/Logout-Änderungen hören (feuert auch beim Start mit INITIAL_SESSION)
+    // Timeout-Fallback: nach 10s auf jeden Fall aufhören
+    const timeout = setTimeout(() => { if (!cancelled) setLoading(false) }, 10000)
+
+    // Session sofort beim Start holen
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return
+      setUser(session?.user ?? null)
+      if (session?.user) loadProfile(session.user.id)
+      else setLoading(false)
+    })
+
+    // Nur auf echte Änderungen reagieren (nicht INITIAL_SESSION – das macht getSession oben)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (cancelled) return
+        if (event === 'INITIAL_SESSION') return
         setUser(session?.user ?? null)
-        if (session?.user) {
-          await loadProfile(session.user.id)
-        } else {
-          setProfile(null)
-          setLoading(false)
-        }
+        if (session?.user) await loadProfile(session.user.id)
+        else { setProfile(null); setLoading(false) }
       }
     )
 
     return () => {
+      cancelled = true
       clearTimeout(timeout)
       subscription.unsubscribe()
     }
