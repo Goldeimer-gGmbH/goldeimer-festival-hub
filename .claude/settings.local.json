@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/biank/goldeimer-festival-hub/**)",
+      "Bash(npm run *)",
+      "Bash(npx vite *)",
+      "Bash(curl -s http://localhost:5173)",
+      "mcp__Claude_Preview__preview_start",
+      "WebSearch",
+      "Read(//c/Users/biank/**)",
+      "Bash(npx skills *)",
+      "Bash(curl -s http://localhost:5174)",
+      "Bash(gh pr create --title 'Design-Overhaul: Goldeimer CI + Festival Credential Aesthetic' --body ' *)",
+      "Bash(winpty gh *)",
+      "Bash(cmd //c \"gh --version\")",
+      "Bash(mkdir -p /c/Users/biank/goldeimer-festival-hub/public)",
+      "Bash(node -e ' *)",
+      "Bash(npm install *)",
+      "Bash(gh pr create --title 'Sync design tokens with Shopify theme' --body ' *)",
+      "Bash(grep \"\\\\.liquid$\")",
+      "WebFetch(domain:goldeimer.de)"
+    ]
+  }
+}

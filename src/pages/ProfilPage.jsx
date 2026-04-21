@@ -31,7 +31,7 @@ export default function ProfilPage() {
             background: 'var(--gelb)',
             border: '3px solid var(--gelb)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'Bebas Neue, sans-serif',
+            fontFamily: 'pain-de-mie, sans-serif',
             fontSize: 36, color: 'var(--schwarz)',
             flexShrink: 0,
           }}>

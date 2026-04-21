@@ -80,7 +80,7 @@ export default function FestivalPage() {
               borderRight: '1px solid var(--grau)',
               background: activeTab === tab.key ? 'var(--gelb)' : 'var(--weiss)',
               fontSize: 9,
-              fontFamily: 'Outfit, sans-serif',
+              fontFamily: 'hoss-round-narrow, sans-serif',
               fontWeight: 800,
               letterSpacing: '0.06em',
               color: 'var(--schwarz)',
@@ -177,7 +177,7 @@ export default function FestivalPage() {
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>Notfallnummer</div>
                     <a href={`tel:${details.emergency_number || details.notfall}`}
-                      style={{ fontSize: 24, fontWeight: 900, color: 'var(--weiss)', textDecoration: 'none', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.05em' }}>
+                      style={{ fontSize: 24, fontWeight: 900, color: 'var(--weiss)', textDecoration: 'none', fontFamily: 'pain-de-mie, sans-serif', letterSpacing: '0.05em' }}>
                       {details.emergency_number || details.notfall}
                     </a>
                   </div>
@@ -194,7 +194,7 @@ export default function FestivalPage() {
                       width: 46, height: 46, borderRadius: '50%',
                       background: 'var(--gelb)', border: '2px solid var(--schwarz)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontFamily: 'Bebas Neue, sans-serif', fontSize: 22, flexShrink: 0,
+                      fontFamily: 'pain-de-mie, sans-serif', fontSize: 22, flexShrink: 0,
                       color: 'var(--schwarz)',
                     }}>
                       {(lead.full_name || lead.email || '?')[0].toUpperCase()}
