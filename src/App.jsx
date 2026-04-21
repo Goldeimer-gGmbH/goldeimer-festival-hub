@@ -16,15 +16,9 @@ function AppRoutes() {
         height: '100vh', flexDirection: 'column', gap: 20,
         background: 'var(--gelb)',
       }}>
+        <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 48, objectFit: 'contain' }} />
         <div style={{
-          width: 72, height: 72, background: 'var(--schwarz)',
-          borderRadius: 12, border: '3px solid var(--schwarz)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36
-        }}>
-          🚽
-        </div>
-        <div style={{
-          fontFamily: "'Bebas Neue', sans-serif",
+          fontFamily: 'var(--font-heading)',
           fontSize: 13, letterSpacing: '0.15em', color: 'var(--schwarz)',
           opacity: 0.6,
         }}>

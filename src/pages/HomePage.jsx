@@ -31,7 +31,7 @@ export default function HomePage() {
   return (
     <div>
       <div className="header">
-        <span className="header-logo">🚽 Goldeimer</span>
+        <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
         <Link to="/profil" style={{ textDecoration: 'none', fontSize: 22 }}>👤</Link>
       </div>
 

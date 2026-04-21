@@ -25,8 +25,8 @@ export default function InfosPage() {
   return (
     <div>
       <div className="header">
-        <Link to="/" style={{ textDecoration: 'none', fontSize: 20, color: 'var(--schwarz)' }}>←</Link>
-        <h1>Anleitungen & Infos</h1>
+        <Link to="/" style={{ textDecoration: 'none', fontSize: 20, color: 'var(--schwarz)', fontWeight: 700 }}>←</Link>
+        <span className="header-logo" style={{ fontSize: '0.9rem' }}>Anleitungen & Infos</span>
         <span style={{ width: 20 }} />
       </div>
 
@@ -102,11 +102,11 @@ function ContentCard({ item }) {
         <div style={{
           marginTop: 12,
           paddingTop: 12,
-          borderTop: '1px solid #f0f0f0',
+          borderTop: '1px solid var(--border)',
           fontSize: 14,
           lineHeight: 1.7,
           whiteSpace: 'pre-wrap',
-          color: '#333'
+          color: 'var(--schwarz)'
         }}>
           {item.body}
         </div>

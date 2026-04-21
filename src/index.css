@@ -22,7 +22,7 @@
   --dialog-bg:      #f7f5f1;   /* dialog_background */
   --footer-bg:      #1d1d1b;   /* footer_background */
   --gruen:          #2ea14f;   /* success_color */
-  --rot:            #e9330c;   /* error */
+  --rot:            #e9330c;   /* CTA-Farbe (Zur Anmeldung, primäre Actions) */
 
   /* Subtile Farben */
   --grau-text:      rgba(29,29,27,0.5);
@@ -179,7 +179,7 @@ h1, h2, h3, h4, h5, h6 {
   gap: var(--sp-2);
   padding: 0 var(--sp-6);
   height: var(--input-height);
-  border-radius: var(--rounded-button);
+  border-radius: var(--rounded-full);
   font-family: var(--font-heading);
   font-weight: var(--heading-weight);
   font-size: var(--text-base);
@@ -189,8 +189,8 @@ h1, h2, h3, h4, h5, h6 {
   text-decoration: none;
   transition: opacity 0.2s ease;
   width: 100%;
-  background: var(--gelb);
-  color: var(--schwarz);
+  background: var(--rot);
+  color: var(--weiss);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -232,8 +232,11 @@ h1, h2, h3, h4, h5, h6 {
   font-size: var(--text-lg);
 }
 
+/* Gelb-Button (für "Spenden"-Style) */
+.button--yellow { background: var(--gelb); color: var(--schwarz); }
+
 /* Kompatibilität altes API */
-.btn-primary  { background: var(--gelb); color: var(--schwarz); }
+.btn-primary  { background: var(--rot); color: var(--weiss); }
 .btn-black    { background: var(--schwarz); color: var(--gelb); font-family: var(--font-statement); font-size: 1.125rem; letter-spacing: var(--statement-ls); }
 .btn-danger   { background: var(--rot); color: var(--weiss); }
 
