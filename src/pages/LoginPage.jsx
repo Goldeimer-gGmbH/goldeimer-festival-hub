@@ -149,7 +149,7 @@ export default function LoginPage() {
                 border: '2px solid var(--schwarz)',
                 borderRadius: 'var(--radius)',
                 fontSize: 16,
-                fontFamily: 'Outfit, sans-serif',
+                fontFamily: 'hoss-round-narrow, sans-serif',
                 background: 'var(--weiss)',
                 color: 'var(--schwarz)',
                 outline: 'none',
