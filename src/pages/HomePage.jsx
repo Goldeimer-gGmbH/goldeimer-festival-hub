@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
+import { cacheGet, cacheSet } from '../lib/cache'
 
 const ROLLE_LABEL = {
   lead: 'Lead', operator: 'Operator',
@@ -16,13 +17,25 @@ export default function HomePage() {
   useEffect(() => { loadAssignments() }, [])
 
   async function loadAssignments() {
+    const cacheKey = `assignments_${profile.id}`
+
+    // Gecachte Daten sofort anzeigen → keine Ladespinner beim Navigieren
+    const cached = cacheGet(cacheKey)
+    if (cached) {
+      setAssignments(cached)
+      setLoading(false)
+    }
+
     const { data, error } = await supabase
       .from('assignments')
       .select(`id, role, status, festival:festivals(id, name, details)`)
       .eq('profile_id', profile.id)
       .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
       .order('created_at', { ascending: true })
-    if (!error && data) setAssignments(data)
+    if (!error && data) {
+      setAssignments(data)
+      cacheSet(cacheKey, data)   // 10 Min TTL (Standard)
+    }
     setLoading(false)
   }
 

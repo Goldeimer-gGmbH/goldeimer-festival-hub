@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
+import { cacheGet, cacheSet } from '../lib/cache'
 
 const ROLLE_LABEL = {
   lead: 'Lead', operator: 'Operator',
@@ -18,9 +19,21 @@ export default function FestivalPage() {
   useEffect(() => { loadFestivalInfo() }, [id])
 
   async function loadFestivalInfo() {
+    const cacheKey = `festival_${id}`
+
+    // Gecachte Daten sofort zeigen → Festival-Seite öffnet ohne Wartezeit
+    const cached = cacheGet(cacheKey)
+    if (cached) {
+      setData(cached)
+      setLoading(false)
+    }
+
     const { data, error } = await supabase.rpc('get_my_festival_info', { p_festival_id: id })
-    if (!error && data) setData(data)
-    setLoading(false)
+    if (!error && data) {
+      setData(data)
+      cacheSet(cacheKey, data)   // 10 Min TTL
+    }
+    if (!cached) setLoading(false)
   }
 
   if (loading) return <div className="loading">Lädt Festival-Infos...</div>

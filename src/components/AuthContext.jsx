@@ -1,7 +1,10 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { cacheGet, cacheSet, cacheClearAll } from '../lib/cache'
 
 const AuthContext = createContext(null)
+
+const PROFILE_TTL = 30 * 60 * 1000  // 30 Minuten
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -41,19 +44,30 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function loadProfile(userId) {
+    // Gecachtes Profil sofort anzeigen → kein Ladescreen beim App-Start
+    const cached = cacheGet(`profile_${userId}`)
+    if (cached) {
+      setProfile(cached)
+      setLoading(false)
+    }
+
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('auth_id', userId)
         .single()
-      if (!error && data) setProfile(data)
+      if (!error && data) {
+        setProfile(data)
+        cacheSet(`profile_${userId}`, data, PROFILE_TTL)
+      }
     } finally {
       setLoading(false)
     }
   }
 
   async function signOut() {
+    cacheClearAll()   // Cache beim Logout komplett leeren
     await supabase.auth.signOut()
   }
 
