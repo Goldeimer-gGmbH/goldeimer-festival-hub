@@ -28,25 +28,21 @@ export default function LoginPage() {
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <div style={{
           background: 'var(--gelb)',
-          borderBottom: '3px solid var(--schwarz)',
           padding: '60px 24px 48px',
           textAlign: 'center',
+          borderBottom: '1px solid rgba(29,29,27,0.15)',
         }}>
           <div style={{ fontSize: 64, lineHeight: 1 }}>📬</div>
-          <div className="display" style={{ fontSize: 52, marginTop: 16, color: 'var(--schwarz)' }}>
-            CHECK DEINE MAILS!
+          <div className="statement" style={{ fontSize: 'var(--text-h0)', marginTop: 16, color: 'var(--schwarz)' }}>
+            Check deine Mails!
           </div>
         </div>
-        <div style={{ padding: '32px 24px', flex: 1, background: 'var(--papier)' }}>
-          <p style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--grau-text)' }}>
+        <div style={{ padding: 'var(--sp-8) var(--sp-6)', flex: 1 }}>
+          <p style={{ fontSize: 'var(--text-base)', lineHeight: 1.6, color: 'var(--grau-text)' }}>
             Login-Link an <strong style={{ color: 'var(--schwarz)' }}>{email}</strong> geschickt.
             Kein Passwort nötig – einfach auf den Link klicken.
           </p>
-          <button
-            onClick={() => setSent(false)}
-            className="btn btn-secondary"
-            style={{ marginTop: 28 }}
-          >
+          <button onClick={() => setSent(false)} className="button button--secondary" style={{ marginTop: 28 }}>
             Nochmal versuchen
           </button>
         </div>
@@ -60,56 +56,43 @@ export default function LoginPage() {
       {/* Hero */}
       <div style={{
         background: 'var(--gelb)',
-        borderBottom: '3px solid var(--schwarz)',
         padding: '52px 24px 40px',
         position: 'relative',
         overflow: 'hidden',
+        borderBottom: '1px solid rgba(29,29,27,0.15)',
       }}>
-        {/* Decorative diagonal stripe */}
         <div style={{
-          position: 'absolute',
-          bottom: -20,
-          right: -20,
-          width: 140,
-          height: 140,
-          background: 'var(--schwarz)',
-          opacity: 0.06,
-          transform: 'rotate(20deg)',
-          borderRadius: 8,
+          position: 'absolute', bottom: -20, right: -20,
+          width: 140, height: 140,
+          background: 'var(--schwarz)', opacity: 0.05,
+          transform: 'rotate(20deg)', borderRadius: 'var(--rounded-lg)',
         }} />
 
         <div style={{ position: 'relative' }}>
           <div style={{
-            display: 'inline-flex',
-            width: 72,
-            height: 72,
-            background: 'var(--schwarz)',
-            borderRadius: 10,
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 36,
-            marginBottom: 18,
-            border: '2px solid var(--schwarz)',
+            display: 'inline-flex', width: 72, height: 72,
+            background: 'var(--schwarz)', borderRadius: 'var(--rounded)',
+            alignItems: 'center', justifyContent: 'center', fontSize: 36, marginBottom: 18,
           }}>
             🚽
           </div>
-          <div className="display" style={{ fontSize: 58, color: 'var(--schwarz)', marginBottom: 6 }}>
-            GOLDEIMER
-          </div>
-          <div className="display" style={{ fontSize: 34, color: 'var(--schwarz)', opacity: 0.6 }}>
-            FESTIVAL HUB
+          <div className="statement" style={{ fontSize: 'var(--text-h0)', color: 'var(--schwarz)', lineHeight: 1, marginBottom: 4 }}>
+            Goldeimer
           </div>
           <div style={{
-            marginTop: 14,
+            fontFamily: 'var(--font-heading)', fontWeight: 700,
+            fontSize: 'var(--text-h3)', color: 'var(--schwarz)',
+            letterSpacing: 'var(--heading-ls)', opacity: 0.65, marginBottom: 16,
+          }}>
+            Festival Hub
+          </div>
+          <div style={{
             display: 'inline-block',
-            background: 'var(--schwarz)',
-            color: 'var(--gelb)',
-            padding: '4px 10px',
-            borderRadius: 4,
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
+            background: 'var(--schwarz)', color: 'var(--gelb)',
+            padding: '4px 12px', borderRadius: 'var(--rounded-full)',
+            fontSize: 'var(--text-xs)', fontWeight: 700,
+            letterSpacing: '0.08em', textTransform: 'uppercase',
+            fontFamily: 'var(--font-heading)',
           }}>
             🎪 Saison 2025
           </div>
@@ -117,25 +100,15 @@ export default function LoginPage() {
       </div>
 
       {/* Form */}
-      <div style={{ padding: '32px 20px', flex: 1, background: 'var(--papier)' }}>
-        <div className="display" style={{ fontSize: 32, marginBottom: 6 }}>EINLOGGEN</div>
-        <p style={{ fontSize: 14, color: 'var(--grau-text)', marginBottom: 28, lineHeight: 1.6 }}>
+      <div style={{ padding: 'var(--sp-8) var(--sp-5)', flex: 1 }}>
+        <h1 style={{ fontSize: 'var(--text-h2)', marginBottom: 'var(--sp-2)' }}>Einloggen</h1>
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--grau-text)', marginBottom: 'var(--sp-6)', lineHeight: 1.6 }}>
           Gib deine E-Mail ein – wir schicken dir einen Magic Link. Kein Passwort nötig.
         </p>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div>
-            <label style={{
-              display: 'block',
-              fontSize: 10,
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              marginBottom: 7,
-              color: 'var(--grau-text)',
-            }}>
-              E-Mail-Adresse
-            </label>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
+          <div className="input-group" style={{ marginBottom: 0 }}>
+            <label>E-Mail-Adresse</label>
             <input
               type="email"
               value={email}
@@ -143,47 +116,27 @@ export default function LoginPage() {
               placeholder="deine@email.de"
               required
               autoFocus
-              style={{
-                width: '100%',
-                padding: '13px 14px',
-                border: '2px solid var(--schwarz)',
-                borderRadius: 'var(--radius)',
-                fontSize: 16,
-                fontFamily: 'hoss-round-narrow, sans-serif',
-                background: 'var(--weiss)',
-                color: 'var(--schwarz)',
-                outline: 'none',
-              }}
             />
           </div>
 
           {error && (
             <div style={{
-              background: '#FFF0ED',
-              border: '2px solid var(--rot)',
-              borderRadius: 'var(--radius)',
-              padding: '11px 14px',
-              fontSize: 13,
-              color: 'var(--rot)',
-              fontWeight: 600,
-              lineHeight: 1.5,
+              background: '#FFF0ED', border: '1px solid var(--rot)',
+              borderRadius: 'var(--rounded-input)',
+              padding: 'var(--sp-3) var(--sp-4)',
+              fontSize: 'var(--text-sm)', color: 'var(--rot)', lineHeight: 1.5,
             }}>
               ⚠ {error}
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading || !email}
-            className="btn btn-black"
-            style={{ marginTop: 4 }}
-          >
+          <button type="submit" disabled={loading || !email} className="button" style={{ marginTop: 'var(--sp-2)' }}>
             {loading ? 'Wird gesendet...' : 'Login-Link anfordern →'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: 28, fontSize: 11, color: 'var(--grau-text)', letterSpacing: '0.05em' }}>
-          NUR FÜR ANGEMELDETE GOLDEIMER-CREW
+        <p style={{ textAlign: 'center', marginTop: 'var(--sp-6)', fontSize: 'var(--text-xs)', color: 'var(--grau-text)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          Nur für angemeldete Goldeimer-Crew
         </p>
       </div>
     </div>
