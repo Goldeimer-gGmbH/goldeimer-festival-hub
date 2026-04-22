@@ -6,33 +6,50 @@ const AuthContext = createContext(null)
 
 const PROFILE_TTL = 30 * 60 * 1000  // 30 Minuten
 
+// Gecachtes Profil synchron lesen — noch bevor Auth bestätigt ist.
+// Ermöglicht sofortiges Rendern ohne Ladescreen bei Wiederkehrenden.
+function getStoredProfile() {
+  try {
+    const stored = localStorage.getItem('gfh_last_profile')
+    return stored ? JSON.parse(stored) : null
+  } catch { return null }
+}
+
 export function AuthProvider({ children }) {
+  const storedProfile = getStoredProfile()
+
   const [user, setUser] = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState(storedProfile)
+  // Kein Ladescreen wenn wir schon ein gecachtes Profil haben
+  const [loading, setLoading] = useState(!storedProfile)
 
   useEffect(() => {
     let cancelled = false
-
-    // Timeout-Fallback: nach 10s auf jeden Fall aufhören
     const timeout = setTimeout(() => { if (!cancelled) setLoading(false) }, 10000)
 
-    // Session sofort beim Start holen
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (cancelled) return
       setUser(session?.user ?? null)
       if (session?.user) loadProfile(session.user.id)
-      else setLoading(false)
+      else {
+        // Kein aktiver User → Cache leeren und Login zeigen
+        localStorage.removeItem('gfh_last_profile')
+        setProfile(null)
+        setLoading(false)
+      }
     })
 
-    // Nur auf echte Änderungen reagieren (nicht INITIAL_SESSION – das macht getSession oben)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (cancelled) return
         if (event === 'INITIAL_SESSION') return
         setUser(session?.user ?? null)
         if (session?.user) await loadProfile(session.user.id)
-        else { setProfile(null); setLoading(false) }
+        else {
+          localStorage.removeItem('gfh_last_profile')
+          setProfile(null)
+          setLoading(false)
+        }
       }
     )
 
@@ -44,7 +61,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function loadProfile(userId) {
-    // Gecachtes Profil sofort anzeigen → kein Ladescreen beim App-Start
+    // Profil aus Cache → sofort anzeigen, kein Spinner
     const cached = cacheGet(`profile_${userId}`)
     if (cached) {
       setProfile(cached)
@@ -60,6 +77,8 @@ export function AuthProvider({ children }) {
       if (!error && data) {
         setProfile(data)
         cacheSet(`profile_${userId}`, data, PROFILE_TTL)
+        // Auch im localStorage als "letztes bekanntes Profil" speichern
+        localStorage.setItem('gfh_last_profile', JSON.stringify(data))
       }
     } finally {
       setLoading(false)
@@ -67,7 +86,8 @@ export function AuthProvider({ children }) {
   }
 
   async function signOut() {
-    cacheClearAll()   // Cache beim Logout komplett leeren
+    cacheClearAll()
+    localStorage.removeItem('gfh_last_profile')
     await supabase.auth.signOut()
   }
 

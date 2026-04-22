@@ -1,23 +1,18 @@
 /**
- * Einfaches sessionStorage-Cache mit TTL.
- * Daten werden pro Browser-Tab gespeichert und nach `ttlMs` als veraltet markiert.
- *
- * Nutzung:
- *   const cached = cacheGet('my-key')          // null wenn nicht vorhanden / abgelaufen
- *   cacheSet('my-key', data, 10 * 60 * 1000)   // 10 Minuten TTL
- *   cacheClear('my-key')                        // explizit löschen (z.B. nach Mutation)
- *   cacheClearAll()                             // alles löschen (z.B. beim Logout)
+ * localStorage-Cache mit TTL.
+ * localStorage überlebt PWA-Hintergrund-Kills, Browser-Neustarts und Tab-Schließen —
+ * im Gegensatz zu sessionStorage, das beim Kill gelöscht wird.
  */
 
-const PREFIX = 'gfh_'   // goldeimer festival hub
+const PREFIX = 'gfh_'
 
 export function cacheGet(key) {
   try {
-    const raw = sessionStorage.getItem(PREFIX + key)
+    const raw = localStorage.getItem(PREFIX + key)
     if (!raw) return null
     const { data, expiresAt } = JSON.parse(raw)
     if (Date.now() > expiresAt) {
-      sessionStorage.removeItem(PREFIX + key)
+      localStorage.removeItem(PREFIX + key)
       return null
     }
     return data
@@ -28,23 +23,27 @@ export function cacheGet(key) {
 
 export function cacheSet(key, data, ttlMs = 10 * 60 * 1000) {
   try {
-    sessionStorage.setItem(PREFIX + key, JSON.stringify({
+    localStorage.setItem(PREFIX + key, JSON.stringify({
       data,
       expiresAt: Date.now() + ttlMs,
     }))
   } catch {
-    // sessionStorage voll oder nicht verfügbar – still ignorieren
+    // localStorage voll → alten Cache leeren und nochmal versuchen
+    cacheClearAll()
+    try {
+      localStorage.setItem(PREFIX + key, JSON.stringify({ data, expiresAt: Date.now() + ttlMs }))
+    } catch { /* ignore */ }
   }
 }
 
 export function cacheClear(key) {
-  try { sessionStorage.removeItem(PREFIX + key) } catch { /* ignore */ }
+  try { localStorage.removeItem(PREFIX + key) } catch { /* ignore */ }
 }
 
 export function cacheClearAll() {
   try {
-    Object.keys(sessionStorage)
+    Object.keys(localStorage)
       .filter(k => k.startsWith(PREFIX))
-      .forEach(k => sessionStorage.removeItem(k))
+      .forEach(k => localStorage.removeItem(k))
   } catch { /* ignore */ }
 }
