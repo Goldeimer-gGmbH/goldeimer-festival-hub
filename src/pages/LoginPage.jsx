@@ -11,14 +11,27 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
-      options: { shouldCreateUser: false }
-    })
-    if (error) {
-      setError('Diese E-Mail ist nicht registriert. Wende dich an Goldeimer.')
-    } else {
-      setSent(true)
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim().toLowerCase(),
+        options: { shouldCreateUser: false }
+      })
+      if (error) {
+        // Spezifische Fehlermeldungen je nach Ursache
+        if (error.message?.includes('not found') || error.message?.includes('user')) {
+          setError('Diese E-Mail ist nicht in unserem System. Wende dich an Goldeimer.')
+        } else if (error.message?.includes('rate') || error.status === 429) {
+          setError('Zu viele Versuche. Bitte warte ein paar Minuten.')
+        } else if (error.message?.includes('network') || error.status >= 500) {
+          setError('Server nicht erreichbar. Bitte versuche es gleich nochmal.')
+        } else {
+          setError(`Fehler: ${error.message || 'Unbekannter Fehler'}`)
+        }
+      } else {
+        setSent(true)
+      }
+    } catch (e) {
+      setError('Verbindungsfehler. Bitte prüfe deine Internetverbindung.')
     }
     setLoading(false)
   }
