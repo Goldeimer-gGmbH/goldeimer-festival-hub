@@ -10,7 +10,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Goldeimer" />
-    <link rel="stylesheet" href="https://use.typekit.net/zxl3cpk.css" />
+    <!-- Verbindungen früh aufbauen → weniger Wartezeit -->
+    <link rel="preconnect" href="https://use.typekit.net" crossorigin>
+    <link rel="preconnect" href="https://wsdkmglkqxszyvomrfim.supabase.co">
+    <link rel="dns-prefetch" href="https://use.typekit.net">
+    <link rel="dns-prefetch" href="https://wsdkmglkqxszyvomrfim.supabase.co">
+    <!-- Fonts nicht-blockierend laden → App rendert sofort, Fonts tauschen nach -->
+    <link rel="stylesheet" href="https://use.typekit.net/zxl3cpk.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://use.typekit.net/zxl3cpk.css"></noscript>
   </head>
   <body>
     <div id="root"></div>

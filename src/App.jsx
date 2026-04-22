@@ -1,10 +1,25 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './components/AuthContext'
-import LoginPage from './pages/LoginPage'
-import HomePage from './pages/HomePage'
-import FestivalPage from './pages/FestivalPage'
-import InfosPage from './pages/InfosPage'
-import ProfilPage from './pages/ProfilPage'
+
+// Seiten erst laden wenn sie gebraucht werden → kleineres initiales Bundle
+const LoginPage    = lazy(() => import('./pages/LoginPage'))
+const HomePage     = lazy(() => import('./pages/HomePage'))
+const FestivalPage = lazy(() => import('./pages/FestivalPage'))
+const InfosPage    = lazy(() => import('./pages/InfosPage'))
+const ProfilPage   = lazy(() => import('./pages/ProfilPage'))
+
+// Minimaler Splash für Lazy-Loads (erscheint nur bei sehr langsamen Verbindungen)
+function PageFallback() {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      height: '100vh', background: 'var(--papier)',
+    }}>
+      <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 40, opacity: 0.5 }} />
+    </div>
+  )
+}
 
 function AppRoutes() {
   const { user, loading } = useAuth()
@@ -30,20 +45,24 @@ function AppRoutes() {
 
   if (!user) {
     return (
-      <Routes>
-        <Route path="*" element={<LoginPage />} />
-      </Routes>
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          <Route path="*" element={<LoginPage />} />
+        </Routes>
+      </Suspense>
     )
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/festival/:id" element={<FestivalPage />} />
-      <Route path="/infos" element={<InfosPage />} />
-      <Route path="/profil" element={<ProfilPage />} />
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+    <Suspense fallback={<PageFallback />}>
+      <Routes>
+        <Route path="/"              element={<HomePage />} />
+        <Route path="/festival/:id"  element={<FestivalPage />} />
+        <Route path="/infos"         element={<InfosPage />} />
+        <Route path="/profil"        element={<ProfilPage />} />
+        <Route path="*"              element={<Navigate to="/" />} />
+      </Routes>
+    </Suspense>
   )
 }
 
