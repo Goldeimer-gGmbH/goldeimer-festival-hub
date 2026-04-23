@@ -31,7 +31,7 @@ export default function FestivalPage() {
     const { data, error } = await supabase.rpc('get_my_festival_info', { p_festival_id: id })
     if (!error && data) {
       setData(data)
-      cacheSet(cacheKey, data)   // 10 Min TTL
+      cacheSet(cacheKey, data, 30 * 60 * 1000)   // 30 Min TTL
     }
     if (!cached) setLoading(false)
   }

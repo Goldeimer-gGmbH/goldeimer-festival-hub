@@ -34,7 +34,7 @@ export default function HomePage() {
       .order('created_at', { ascending: true })
     if (!error && data) {
       setAssignments(data)
-      cacheSet(cacheKey, data)   // 10 Min TTL (Standard)
+      cacheSet(cacheKey, data, 30 * 60 * 1000)   // 30 Min TTL
     }
     setLoading(false)
   }

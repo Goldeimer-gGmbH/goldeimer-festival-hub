@@ -4,7 +4,8 @@ import { cacheGet, cacheSet, cacheClearAll } from '../lib/cache'
 
 const AuthContext = createContext(null)
 
-const PROFILE_TTL = 30 * 60 * 1000  // 30 Minuten
+const PROFILE_TTL  = 30 * 60 * 1000  // 30 Minuten
+const KEEPALIVE_MS =  4 * 60 * 1000  //  4 Minuten — hält den Supabase-DB-Prozess warm
 
 // Gecachtes Profil synchron lesen — noch bevor Auth bestätigt ist.
 // Ermöglicht sofortiges Rendern ohne Ladescreen bei Wiederkehrenden.
@@ -22,6 +23,16 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(storedProfile)
   // Kein Ladescreen wenn wir schon ein gecachtes Profil haben
   const [loading, setLoading] = useState(!storedProfile)
+
+  // Hält den Supabase-Datenbankprozess warm solange die App offen ist.
+  // UptimeRobot allein reicht nicht — der /health-Ping weckt nur die API-Schicht,
+  // nicht den eigentlichen PostgreSQL-Prozess. Eine echte DB-Abfrage ist nötig.
+  useEffect(() => {
+    const keepalive = setInterval(async () => {
+      try { await supabase.from('profiles').select('id').limit(1) } catch { /* ignore */ }
+    }, KEEPALIVE_MS)
+    return () => clearInterval(keepalive)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
