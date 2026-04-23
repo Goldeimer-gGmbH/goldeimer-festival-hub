@@ -100,6 +100,9 @@ export default function HomePage() {
               <div className="festival-card-meta">
                 {formatDateRange(start, end)}{town ? ` | ${town}` : ''}
               </div>
+              <div className="festival-card-footer">
+                <span className="festival-card-arrow">Details →</span>
+              </div>
             </Link>
           )
         })}
