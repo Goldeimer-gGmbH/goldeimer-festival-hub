@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { cacheGet, cacheSet } from '../lib/cache'
+
+const CACHE_KEY = 'infos_content'
 
 export default function InfosPage() {
-  const [content, setContent] = useState([])
-  const [loading, setLoading] = useState(true)
+  const cached = cacheGet(CACHE_KEY)
+  const [content, setContent] = useState(cached || [])
+  const [loading, setLoading] = useState(!cached)
 
   useEffect(() => {
     loadContent()
@@ -14,11 +18,14 @@ export default function InfosPage() {
     const { data, error } = await supabase
       .from('content')
       .select('*')
-      .is('festival_id', null)   // Nur globale Inhalte
+      .is('festival_id', null)
       .eq('visibility', 'all')
       .order('sort_order')
 
-    if (!error && data) setContent(data)
+    if (!error && data) {
+      setContent(data)
+      cacheSet(CACHE_KEY, data, 30 * 60 * 1000)
+    }
     setLoading(false)
   }
 
