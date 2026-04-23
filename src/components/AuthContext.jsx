@@ -69,11 +69,34 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('auth_id', userId)
         .single()
+
+      // Fallback: per E-Mail suchen (für Profile die per Google Sheets angelegt wurden,
+      // bei denen auth_id noch null ist)
+      if (error || !data) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user?.email) {
+          const { data: byEmail, error: emailError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('email', user.email)
+            .single()
+          if (!emailError && byEmail) {
+            // auth_id nachträglich setzen — einmalig, self-healing für alle Google-Sheets-Profile
+            await supabase
+              .from('profiles')
+              .update({ auth_id: userId })
+              .eq('email', user.email)
+            data = { ...byEmail, auth_id: userId }
+            error = null
+          }
+        }
+      }
+
       if (!error && data) {
         setProfile(data)
         cacheSet(`profile_${userId}`, data, PROFILE_TTL)

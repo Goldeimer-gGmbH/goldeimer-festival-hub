@@ -87,19 +87,18 @@ export default function HomePage() {
 
         {assignments.map(a => {
           const details = a.festival?.details || {}
-          const startDate = details.start_official || details.start_supp || ''
           const town = details.festival_town || ''
+          const start = getRoleStart(a.role, details)
+          const end   = getRoleEnd(a.role, details)
 
           return (
             <Link key={a.id} to={`/festival/${a.festival.id}`} className="festival-card">
-              <div className="festival-card-badge">
-                <span className={`badge badge-${a.role}`}>{ROLLE_LABEL[a.role] || a.role}</span>
+              <div className="festival-card-header">
+                <div className="festival-card-name">{a.festival.name}</div>
+                <span className="festival-card-role">{ROLLE_LABEL[a.role] || a.role}</span>
               </div>
-              <div className="festival-card-name">{a.festival.name}</div>
               <div className="festival-card-meta">
-                {town && <span>📍 {town}</span>}
-                {startDate && <span>📅 {formatDate(startDate)}</span>}
-                <span style={{ marginLeft: 'auto', color: 'var(--gelb)', fontWeight: 700, fontSize: 'var(--text-xs)' }}>Details →</span>
+                {formatDateRange(start, end)}{town ? ` | ${town}` : ''}
               </div>
             </Link>
           )
@@ -125,11 +124,32 @@ export default function HomePage() {
   )
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return ''
+function getRoleStart(role, details) {
+  if (role === 'supporti_plus') return details.start_setup
+  if (role === 'supporti')      return details.start_supp
+  if (role === 'lead' || role === 'operator') return details.start_leadop
+  if (role === 'catering')      return details.start_kitchen
+  return details.start_official || details.start_supp
+}
+
+function getRoleEnd(role, details) {
+  if (role === 'supporti_plus') return details.end_takedown
+  if (role === 'supporti')      return details.end_supp
+  if (role === 'lead' || role === 'operator') return details.end_leadop
+  if (role === 'catering')      return details.end_kitchen
+  return details.end_official || details.end_supp
+}
+
+function formatDateRange(startStr, endStr) {
+  if (!startStr) return ''
   try {
-    const d = new Date(dateStr)
-    if (isNaN(d)) return dateStr
-    return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  } catch { return dateStr }
+    const s = new Date(startStr)
+    if (isNaN(s)) return startStr
+    const startFmt = s.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
+    if (!endStr) return startFmt + '.'
+    const e = new Date(endStr)
+    if (isNaN(e)) return startFmt + '.'
+    const endFmt = e.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    return `${startFmt} – ${endFmt}`
+  } catch { return startStr }
 }
