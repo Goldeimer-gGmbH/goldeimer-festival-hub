@@ -1,1 +1,3 @@
-/* /index.html 200
+# SPA-Routing wird von Cloudflare (wrangler.toml) und Netlify (_redirects) unterschiedlich konfiguriert.
+# Fuer Netlify:
+# /* /index.html 200
