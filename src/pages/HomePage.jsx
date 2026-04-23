@@ -138,11 +138,11 @@ function getRoleStart(role, details) {
 }
 
 function getRoleEnd(role, details) {
-  if (role === 'supporti_plus') return details.end_takedown
-  if (role === 'supporti')      return details.end_supp
-  if (role === 'lead' || role === 'operator') return details.end_leadop
-  if (role === 'catering')      return details.end_kitchen
-  return details.end_official || details.end_supp
+  if (role === 'supporti_plus') return details.end_takedown || details.end_official
+  if (role === 'supporti')      return details.end_supp     || details.end_official
+  if (role === 'lead' || role === 'operator') return details.end_leadop || details.end_official
+  if (role === 'catering')      return details.end_kitchen  || details.end_official
+  return details.end_official
 }
 
 function formatDateRange(startStr, endStr) {
