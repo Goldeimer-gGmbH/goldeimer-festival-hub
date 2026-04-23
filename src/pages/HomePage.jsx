@@ -45,7 +45,9 @@ export default function HomePage() {
     <div>
       <div className="header">
         <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
-        <Link to="/profil" style={{ textDecoration: 'none', fontSize: 22 }}>👤</Link>
+        <Link to="/profil" style={{ textDecoration: 'none', color: 'var(--schwarz)', display: 'flex', alignItems: 'center' }}>
+          <img src="/icon-account.svg" alt="Profil" style={{ width: 26, height: 26 }} />
+        </Link>
       </div>
 
       {/* Greeting Banner */}
@@ -55,7 +57,7 @@ export default function HomePage() {
         borderBottom: '1px solid rgba(255,255,255,0.08)',
       }}>
         <div className="statement" style={{ fontSize: 'var(--text-h0)', color: 'var(--gelb)', lineHeight: 1 }}>
-          Hey {vorname}! 👋
+          Hey {vorname}!
         </div>
         <p style={{ color: 'rgba(255,255,255,0.45)', marginTop: 6, fontSize: 'var(--text-sm)', fontWeight: 500 }}>
           Deine Festivals dieser Saison

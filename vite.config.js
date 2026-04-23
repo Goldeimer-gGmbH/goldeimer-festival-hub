@@ -7,6 +7,15 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        // Supabase-Requests niemals vom Service Worker cachen — immer frisch vom Netz
+        runtimeCaching: [{
+          urlPattern: /^https:\/\/wsdkmglkqxszyvomrfim\.supabase\.co\/.*/i,
+          handler: 'NetworkOnly',
+        }],
+      },
       manifest: {
         name: 'Goldeimer Festival Hub',
         short_name: 'Goldeimer Hub',
