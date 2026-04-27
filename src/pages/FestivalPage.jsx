@@ -428,11 +428,20 @@ function getAbreise(details, role) {
   return null
 }
 
+// Parst deutsches Datum "DD.MM.YYYY" — auch mit Suffix wie "abends" oder "oder DD.MM.YYYY"
+function parseDeDate(str) {
+  if (!str) return null
+  const match = String(str).match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/)
+  if (!match) return null
+  const [, day, month, year] = match
+  return new Date(+year, +month - 1, +day)
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return ''
   try {
-    const d = new Date(dateStr)
-    if (isNaN(d)) return dateStr
+    const d = parseDeDate(dateStr)
+    if (!d) return String(dateStr).split(' ')[0] // Fallback: ersten Teil zeigen
     return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
   } catch { return dateStr }
 }

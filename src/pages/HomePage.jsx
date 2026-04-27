@@ -145,16 +145,26 @@ function getRoleEnd(role, details) {
   return details.end_official
 }
 
+// Parst deutsches Datum "DD.MM.YYYY" — auch mit Suffix wie "abends" oder "oder DD.MM.YYYY"
+function parseDeDate(str) {
+  if (!str) return null
+  // Erstes Datum extrahieren (vor "oder", " ", etc.)
+  const match = String(str).match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/)
+  if (!match) return null
+  const [, day, month, year] = match
+  return new Date(+year, +month - 1, +day)
+}
+
 function formatDateRange(startStr, endStr) {
   if (!startStr) return ''
   try {
-    const s = new Date(startStr)
-    if (isNaN(s)) return startStr
+    const s = parseDeDate(startStr)
+    if (!s) return ''
     const startFmt = s.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
     if (!endStr) return startFmt + '.'
-    const e = new Date(endStr)
-    if (isNaN(e)) return startFmt + '.'
+    const e = parseDeDate(endStr)
+    if (!e) return startFmt + '.'
     const endFmt = e.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
     return `${startFmt} – ${endFmt}`
-  } catch { return startStr }
+  } catch { return '' }
 }
