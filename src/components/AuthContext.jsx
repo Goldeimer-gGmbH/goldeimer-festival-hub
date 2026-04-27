@@ -6,6 +6,7 @@ const AuthContext = createContext(null)
 
 const PROFILE_TTL  = 30 * 60 * 1000  // 30 Minuten
 const KEEPALIVE_MS =  4 * 60 * 1000  //  4 Minuten — hält den Supabase-DB-Prozess warm
+const DATA_TTL     = 30 * 60 * 1000  // 30 Minuten für prefetched Daten
 
 // Gecachtes Profil synchron lesen — noch bevor Auth bestätigt ist.
 // Ermöglicht sofortiges Rendern ohne Ladescreen bei Wiederkehrenden.
@@ -25,11 +26,10 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(!storedProfile)
 
   // Hält den Supabase-Datenbankprozess warm solange die App offen ist.
-  // UptimeRobot allein reicht nicht — der /health-Ping weckt nur die API-Schicht,
-  // nicht den eigentlichen PostgreSQL-Prozess. Eine echte DB-Abfrage ist nötig.
   useEffect(() => {
     const keepalive = setInterval(async () => {
-      try { await supabase.from('profiles').select('id').limit(1) } catch { /* ignore */ }
+      // festivals ist immer öffentlich lesbar → trifft sicher den DB-Prozess
+      try { await supabase.from('festivals').select('id').limit(1) } catch { /* ignore */ }
     }, KEEPALIVE_MS)
     return () => clearInterval(keepalive)
   }, [])
@@ -111,12 +111,38 @@ export function AuthProvider({ children }) {
       if (!error && data) {
         setProfile(data)
         cacheSet(`profile_${userId}`, data, PROFILE_TTL)
-        // Auch im localStorage als "letztes bekanntes Profil" speichern
         localStorage.setItem('gfh_last_profile', JSON.stringify(data))
+        // Alle Seiten im Hintergrund vorladen → kein Kaltstart beim Navigieren
+        prefetchAll(data)
       }
     } finally {
       setLoading(false)
     }
+  }
+
+  // Lädt alle Seiteninhalte still im Hintergrund und schreibt sie in den Cache.
+  // So ist jede Seite sofort verfügbar, egal wann der User darauf klickt.
+  async function prefetchAll(profile) {
+    try {
+      // InfosPage: globale Inhalte
+      if (!cacheGet('infos_content')) {
+        const { data } = await supabase
+          .from('content').select('*')
+          .is('festival_id', null).eq('visibility', 'all').order('sort_order')
+        if (data) cacheSet('infos_content', data, DATA_TTL)
+      }
+
+      // HomePage: Assignments des Users
+      if (!cacheGet(`assignments_${profile.id}`)) {
+        const { data } = await supabase
+          .from('assignments')
+          .select(`id, role, status, festival:festivals(id, name, details)`)
+          .eq('profile_id', profile.id)
+          .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
+          .order('created_at', { ascending: true })
+        if (data) cacheSet(`assignments_${profile.id}`, data, DATA_TTL)
+      }
+    } catch { /* Prefetch ist best-effort, Fehler ignorieren */ }
   }
 
   async function signOut() {
