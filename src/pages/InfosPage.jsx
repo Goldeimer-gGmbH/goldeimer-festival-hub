@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { cacheGet, cacheSet } from '../lib/cache'
+import { fetchWithTimeout } from '../lib/fetchWithTimeout'
 
 const CACHE_KEY = 'infos_content'
 
@@ -9,22 +10,21 @@ export default function InfosPage() {
   const cached = cacheGet(CACHE_KEY)
   const [content, setContent] = useState(cached || [])
   const [loading, setLoading] = useState(!cached)
+  const [error, setError] = useState(false)
 
-  useEffect(() => {
-    loadContent()
-  }, [])
+  useEffect(() => { loadContent() }, [])
 
   async function loadContent() {
-    const { data, error } = await supabase
-      .from('content')
-      .select('*')
-      .is('festival_id', null)
-      .eq('visibility', 'all')
-      .order('sort_order')
-
+    setError(false)
+    const { data, error } = await fetchWithTimeout(
+      supabase.from('content').select('*')
+        .is('festival_id', null).eq('visibility', 'all').order('sort_order')
+    )
     if (!error && data) {
       setContent(data)
       cacheSet(CACHE_KEY, data, 30 * 60 * 1000)
+    } else if (error) {
+      setError(true)
     }
     setLoading(false)
   }
@@ -39,6 +39,14 @@ export default function InfosPage() {
 
       <div className="page" style={{ paddingTop: 16 }}>
         {loading && <div className="loading">Lädt...</div>}
+
+        {!loading && error && (
+          <div className="card" style={{ textAlign: 'center', padding: 32 }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
+            <p className="card-sub" style={{ marginBottom: 16 }}>Verbindung unterbrochen.</p>
+            <button className="button" onClick={loadContent}>Nochmal versuchen</button>
+          </div>
+        )}
 
         {!loading && content.length === 0 && (
           <div className="card" style={{ textAlign: 'center', padding: 32 }}>

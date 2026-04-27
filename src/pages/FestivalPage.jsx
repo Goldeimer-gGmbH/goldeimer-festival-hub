@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
 import { cacheGet, cacheSet } from '../lib/cache'
+import { fetchWithTimeout } from '../lib/fetchWithTimeout'
 
 const ROLLE_LABEL = {
   lead: 'Lead', operator: 'Operator',
@@ -21,26 +22,26 @@ export default function FestivalPage() {
   async function loadFestivalInfo() {
     const cacheKey = `festival_${id}`
 
-    // Gecachte Daten sofort zeigen → Festival-Seite öffnet ohne Wartezeit
     const cached = cacheGet(cacheKey)
-    if (cached) {
-      setData(cached)
-      setLoading(false)
-    }
+    if (cached) { setData(cached); setLoading(false) }
 
-    const { data, error } = await supabase.rpc('get_my_festival_info', { p_festival_id: id })
+    const { data, error } = await fetchWithTimeout(
+      supabase.rpc('get_my_festival_info', { p_festival_id: id })
+    )
     if (!error && data) {
       setData(data)
-      cacheSet(cacheKey, data, 30 * 60 * 1000)   // 30 Min TTL
+      cacheSet(cacheKey, data, 30 * 60 * 1000)
     }
     if (!cached) setLoading(false)
   }
 
   if (loading) return <div className="loading">Lädt Festival-Infos...</div>
   if (!data || data.error) return (
-    <div className="page">
-      <p style={{ color: 'var(--rot)' }}>Fehler: Bist du für dieses Festival zugewiesen?</p>
-      <Link to="/">← Zurück</Link>
+    <div className="page" style={{ paddingTop: 'var(--sp-8)', textAlign: 'center' }}>
+      <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
+      <p className="card-sub" style={{ marginBottom: 20 }}>Verbindung unterbrochen.</p>
+      <button className="button" onClick={loadFestivalInfo}>Nochmal versuchen</button>
+      <div style={{ marginTop: 20 }}><Link to="/">← Zurück</Link></div>
     </div>
   )
 

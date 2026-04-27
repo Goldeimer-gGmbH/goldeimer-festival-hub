@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
 import { cacheGet, cacheSet } from '../lib/cache'
+import { fetchWithTimeout } from '../lib/fetchWithTimeout'
 
 const ROLLE_LABEL = {
   lead: 'Lead', operator: 'Operator',
@@ -13,28 +14,29 @@ export default function HomePage() {
   const { profile } = useAuth()
   const [assignments, setAssignments] = useState([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
 
   useEffect(() => { loadAssignments() }, [])
 
   async function loadAssignments() {
     const cacheKey = `assignments_${profile.id}`
+    setFetchError(false)
 
-    // Gecachte Daten sofort anzeigen → keine Ladespinner beim Navigieren
     const cached = cacheGet(cacheKey)
-    if (cached) {
-      setAssignments(cached)
-      setLoading(false)
-    }
+    if (cached) { setAssignments(cached); setLoading(false) }
 
-    const { data, error } = await supabase
-      .from('assignments')
-      .select(`id, role, status, festival:festivals(id, name, details)`)
-      .eq('profile_id', profile.id)
-      .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
-      .order('created_at', { ascending: true })
+    const { data, error } = await fetchWithTimeout(
+      supabase.from('assignments')
+        .select(`id, role, status, festival:festivals(id, name, details)`)
+        .eq('profile_id', profile.id)
+        .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
+        .order('created_at', { ascending: true })
+    )
     if (!error && data) {
       setAssignments(data)
-      cacheSet(cacheKey, data, 30 * 60 * 1000)   // 30 Min TTL
+      cacheSet(cacheKey, data, 30 * 60 * 1000)
+    } else if (error && !cached) {
+      setFetchError(true)
     }
     setLoading(false)
   }
@@ -80,7 +82,15 @@ export default function HomePage() {
           </>
         )}
 
-        {!loading && assignments.length === 0 && (
+        {!loading && fetchError && (
+          <div className="card" style={{ textAlign: 'center', padding: 'var(--sp-8)' }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
+            <p className="card-sub" style={{ marginBottom: 16 }}>Verbindung unterbrochen.</p>
+            <button className="button" onClick={loadAssignments}>Nochmal versuchen</button>
+          </div>
+        )}
+
+        {!loading && !fetchError && assignments.length === 0 && (
           <div className="card" style={{ textAlign: 'center', padding: 'var(--sp-8)' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🎪</div>
             <p className="card-sub">Noch keine Festivals zugewiesen. Melde dich bei Goldeimer.</p>
