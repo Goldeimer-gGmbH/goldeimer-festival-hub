@@ -29,6 +29,11 @@
   --border:         rgba(29,29,27,0.12);  /* --border-color */
   --border-stark:   rgba(29,29,27,0.25);
 
+  /* Text auf dunklem Hintergrund → Creme statt Weiß */
+  --on-dark:        #fff4e0;               /* = --papier, volle Deckkraft */
+  --on-dark-sub:    rgba(255,244,224,0.6); /* gedämpft für sekundäre Texte */
+  --on-dark-border: rgba(255,244,224,0.12);/* für Trennlinien auf Dunkel */
+
   /* Spacing — direkt aus css-variables.liquid */
   --sp-1:  0.25rem;   /* 4px */
   --sp-2:  0.5rem;    /* 8px */

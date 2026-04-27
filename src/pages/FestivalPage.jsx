@@ -188,7 +188,7 @@ export default function FestivalPage() {
                 }}>
                   <span style={{ fontSize: 32 }}>🚨</span>
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>Notfallnummer</div>
+                    <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--on-dark-sub)', marginBottom: 4 }}>Notfallnummer</div>
                     <a href={`tel:${details.emergency_number || details.notfall}`}
                       style={{ fontSize: 24, fontWeight: 900, color: 'var(--weiss)', textDecoration: 'none', fontFamily: 'var(--font-statement)', letterSpacing: '0.05em' }}>
                       {details.emergency_number || details.notfall}

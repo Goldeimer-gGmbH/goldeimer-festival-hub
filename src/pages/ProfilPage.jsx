@@ -21,7 +21,7 @@ export default function ProfilPage() {
       {/* ID Card Hero */}
       <div style={{
         background: 'var(--schwarz)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        borderBottom: '1px solid var(--on-dark-border)',
         padding: 'var(--sp-6) var(--sp-5) var(--sp-5)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-5)' }}>
@@ -37,7 +37,7 @@ export default function ProfilPage() {
             <div className="statement" style={{ fontSize: 'var(--text-h2)', color: 'var(--gelb)', lineHeight: 1.1 }}>
               {(profile?.full_name || 'Kein Name')}
             </div>
-            <div style={{ fontSize: 'var(--text-sm)', color: 'rgba(255,255,255,0.45)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--on-dark-sub)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {profile?.email}
             </div>
             {profile?.role && (
@@ -57,7 +57,7 @@ export default function ProfilPage() {
           display: 'flex', alignItems: 'center', gap: 'var(--sp-2)',
         }}>
           <span style={{ fontSize: 14 }}>🎪</span>
-          <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'var(--font-heading)' }}>
+          <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--on-dark-sub)', letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'var(--font-heading)' }}>
             Goldeimer Crew — Saison 2025
           </span>
         </div>

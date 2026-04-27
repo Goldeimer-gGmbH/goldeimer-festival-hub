@@ -54,12 +54,12 @@ export default function HomePage() {
       <div style={{
         background: 'var(--schwarz)',
         padding: 'var(--sp-6) var(--sp-4) var(--sp-5)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        borderBottom: '1px solid var(--on-dark-border)',
       }}>
         <div className="statement" style={{ fontSize: 'var(--text-h0)', color: 'var(--gelb)', lineHeight: 1 }}>
           Hey {vorname}!
         </div>
-        <p style={{ color: 'rgba(255,255,255,0.45)', marginTop: 6, fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+        <p style={{ color: 'var(--on-dark-sub)', marginTop: 6, fontSize: 'var(--text-sm)', fontWeight: 500 }}>
           Deine Festivals dieser Saison
         </p>
       </div>
@@ -74,7 +74,7 @@ export default function HomePage() {
                 opacity: 0.15 + i * 0.1,
               }}>
                 <div style={{ height: 28, width: '60%', background: 'var(--gelb)', borderRadius: 'var(--rounded-xs)', marginBottom: 10 }} />
-                <div style={{ height: 12, width: '40%', background: 'rgba(255,255,255,0.3)', borderRadius: 'var(--rounded-xs)' }} />
+                <div style={{ height: 12, width: '40%', background: 'var(--on-dark-sub)', borderRadius: 'var(--rounded-xs)' }} />
               </div>
             ))}
           </>
