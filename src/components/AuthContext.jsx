@@ -4,9 +4,8 @@ import { cacheGet, cacheSet, cacheClearAll } from '../lib/cache'
 
 const AuthContext = createContext(null)
 
-const PROFILE_TTL  = 30 * 60 * 1000  // 30 Minuten
-const KEEPALIVE_MS =  4 * 60 * 1000  //  4 Minuten — hält den Supabase-DB-Prozess warm
-const DATA_TTL     = 30 * 60 * 1000  // 30 Minuten für prefetched Daten
+const PROFILE_TTL = 30 * 60 * 1000  // 30 Minuten
+const DATA_TTL    = 30 * 60 * 1000  // 30 Minuten für prefetched Daten
 
 // Gecachtes Profil synchron lesen — noch bevor Auth bestätigt ist.
 // Ermöglicht sofortiges Rendern ohne Ladescreen bei Wiederkehrenden.
@@ -25,14 +24,8 @@ export function AuthProvider({ children }) {
   // Kein Ladescreen wenn wir schon ein gecachtes Profil haben
   const [loading, setLoading] = useState(!storedProfile)
 
-  // Hält den Supabase-Datenbankprozess warm solange die App offen ist.
-  useEffect(() => {
-    const keepalive = setInterval(async () => {
-      // festivals ist immer öffentlich lesbar → trifft sicher den DB-Prozess
-      try { await supabase.from('festivals').select('id').limit(1) } catch { /* ignore */ }
-    }, KEEPALIVE_MS)
-    return () => clearInterval(keepalive)
-  }, [])
+  // DB-Keepalive läuft jetzt serverseitig via pg_cron (alle 5 Min in Supabase).
+  // Browser-seitiger Keepalive ist auf Mobile unzuverlässig (Timer-Throttling).
 
   useEffect(() => {
     let cancelled = false
