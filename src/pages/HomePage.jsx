@@ -93,9 +93,9 @@ export default function HomePage() {
         </p>
 
         {/* Welle: Schwarz → Papier */}
-        <svg viewBox="0 0 480 48" preserveAspectRatio="none"
-          style={{ display: 'block', width: '100%', height: 48, marginBottom: -1 }}>
-          <path d="M0,24 C60,48 140,8 220,28 C290,46 370,10 480,22 L480,48 L0,48 Z"
+        <svg viewBox="0 0 480 64" preserveAspectRatio="none"
+          style={{ display: 'block', width: '100%', height: 56, marginBottom: -2 }}>
+          <path d="M0,32 C80,64 160,8 260,36 C340,58 420,12 480,28 L480,64 L0,64 Z"
             fill="var(--papier)" />
         </svg>
       </div>
@@ -207,9 +207,9 @@ export default function HomePage() {
         {/* Footer */}
         <div style={{ marginTop: 'var(--sp-10)', marginLeft: 'calc(-1 * var(--sp-4))', marginRight: 'calc(-1 * var(--sp-4))' }}>
           {/* Welle: Papier → Schwarz */}
-          <svg viewBox="0 0 480 48" preserveAspectRatio="none"
-            style={{ display: 'block', width: '100%', height: 48, marginBottom: -1 }}>
-            <path d="M0,26 C80,0 180,44 280,20 C360,4 420,38 480,22 L480,48 L0,48 Z"
+          <svg viewBox="0 0 480 64" preserveAspectRatio="none"
+            style={{ display: 'block', width: '100%', height: 56, marginBottom: -2 }}>
+            <path d="M0,36 C80,8 180,56 280,24 C360,4 420,48 480,28 L480,64 L0,64 Z"
               fill="var(--schwarz)" />
           </svg>
           <div style={{

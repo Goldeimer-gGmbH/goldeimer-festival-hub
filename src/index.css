@@ -97,6 +97,12 @@
 }
 
 /* ─── Base ──────────────────────────────────────────────────── */
+html {
+  /* Außerhalb des 480px-Body (Desktop) erscheint Schwarz statt Browser-Weiß.
+     Dadurch wirkt der schwarze Header-Bereich nahtlos – keine sichtbare Box. */
+  background: var(--schwarz);
+}
+
 body {
   background: var(--papier);
   color: var(--schwarz);
