@@ -25,7 +25,8 @@
   --rot:            #e9330c;   /* CTA-Farbe (Zur Anmeldung, primäre Actions) */
 
   /* Subtile Farben */
-  --grau-text:      rgba(29,29,27,0.5);
+  --grau-text:      #1d1d1b;              /* = schwarz, überall lesbare Schrift */
+  --nav-inactive:   rgba(29,29,27,0.4);   /* nur für Bottom-Nav inaktiv */
   --border:         rgba(29,29,27,0.12);  /* --border-color */
   --border-stark:   rgba(29,29,27,0.25);
 
@@ -510,7 +511,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   padding: var(--sp-2) var(--sp-1) var(--sp-4);
   text-decoration: none;
-  color: var(--grau-text);
+  color: var(--nav-inactive);
   font-size: 0.65rem;
   font-weight: var(--heading-weight);
   letter-spacing: 0.06em;
