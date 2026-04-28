@@ -280,8 +280,8 @@ h1, h2, h3, h4, h5, h6 {
 .festival-card {
   background: var(--weiss);
   border-radius: var(--rounded);
-  padding: var(--sp-4);
-  margin-bottom: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-2);
   text-decoration: none;
   display: block;
   transition: box-shadow 0.15s ease, transform 0.15s ease;

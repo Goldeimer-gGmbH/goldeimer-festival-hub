@@ -30,7 +30,6 @@ export default function HomePage() {
         .select(`id, role, status, festival:festivals(id, name, details)`)
         .eq('profile_id', profile.id)
         .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
-        .order('created_at', { ascending: true })
     )
     if (!error && data) {
       setAssignments(data)
@@ -42,6 +41,22 @@ export default function HomePage() {
   }
 
   const vorname = profile?.full_name?.split(' ')[0] || 'Hey'
+  const isLeadOrOp = profile?.role === 'lead' || profile?.role === 'operator'
+
+  // Festivals nach Startdatum sortieren, vergangene ans Ende
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const sorted = [...assignments].sort((a, b) => {
+    const aEnd = parseDeDate(getRoleEnd(a.role, a.festival?.details || {}))
+    const bEnd = parseDeDate(getRoleEnd(b.role, b.festival?.details || {}))
+    const aStart = parseDeDate(getRoleStart(a.role, a.festival?.details || {}))
+    const bStart = parseDeDate(getRoleStart(b.role, b.festival?.details || {}))
+    const aPast = aEnd ? aEnd < today : false
+    const bPast = bEnd ? bEnd < today : false
+    if (aPast !== bPast) return aPast ? 1 : -1   // vergangene ans Ende
+    return (aStart || 0) - (bStart || 0)          // sonst chronologisch
+  })
 
   return (
     <div>
@@ -62,26 +77,25 @@ export default function HomePage() {
           Hey {vorname}!
         </div>
         <p style={{ color: 'var(--on-dark-sub)', marginTop: 6, fontSize: 'var(--text-sm)', fontWeight: 500 }}>
-          Deine Festivals dieser Saison
+          Deine Festivals 2026 mit Goldeimer
         </p>
       </div>
 
       <div className="page" style={{ paddingTop: 'var(--sp-5)' }}>
-        {loading && (
-          <>
-            {[1, 2].map(i => (
-              <div key={i} style={{
-                background: 'var(--schwarz)', borderRadius: 'var(--rounded-lg)',
-                padding: 'var(--sp-5) var(--sp-4)', marginBottom: 'var(--sp-4)',
-                opacity: 0.15 + i * 0.1,
-              }}>
-                <div style={{ height: 28, width: '60%', background: 'var(--gelb)', borderRadius: 'var(--rounded-xs)', marginBottom: 10 }} />
-                <div style={{ height: 12, width: '40%', background: 'var(--on-dark-sub)', borderRadius: 'var(--rounded-xs)' }} />
-              </div>
-            ))}
-          </>
-        )}
 
+        {/* Skeleton */}
+        {loading && [1, 2].map(i => (
+          <div key={i} style={{
+            background: 'var(--weiss)', borderRadius: 'var(--rounded)',
+            padding: 'var(--sp-3) var(--sp-4)', marginBottom: 'var(--sp-2)',
+            opacity: 0.5,
+          }}>
+            <div style={{ height: 16, width: '55%', background: 'var(--border)', borderRadius: 4, marginBottom: 8 }} />
+            <div style={{ height: 12, width: '35%', background: 'var(--border)', borderRadius: 4 }} />
+          </div>
+        ))}
+
+        {/* Fehler */}
         {!loading && fetchError && (
           <div className="card" style={{ textAlign: 'center', padding: 'var(--sp-8)' }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
@@ -90,6 +104,7 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* Leer */}
         {!loading && !fetchError && assignments.length === 0 && (
           <div className="card" style={{ textAlign: 'center', padding: 'var(--sp-8)' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🎪</div>
@@ -97,14 +112,22 @@ export default function HomePage() {
           </div>
         )}
 
-        {assignments.map(a => {
+        {/* Festival-Karten */}
+        {sorted.map(a => {
           const details = a.festival?.details || {}
-          const town = details.festival_town || ''
-          const start = getRoleStart(a.role, details)
-          const end   = getRoleEnd(a.role, details)
+          const town    = details.festival_town || ''
+          const start   = getRoleStart(a.role, details)
+          const end     = getRoleEnd(a.role, details)
+          const endDate = parseDeDate(end)
+          const isPast  = endDate ? endDate < today : false
 
           return (
-            <Link key={a.id} to={`/festival/${a.festival.id}`} className="festival-card">
+            <Link
+              key={a.id}
+              to={`/festival/${a.festival.id}`}
+              className="festival-card"
+              style={isPast ? { opacity: 0.45 } : {}}
+            >
               <div className="festival-card-header">
                 <div className="festival-card-name">{a.festival.name}</div>
                 <span className="festival-card-role">{ROLLE_LABEL[a.role] || a.role}</span>
@@ -112,28 +135,35 @@ export default function HomePage() {
               <div className="festival-card-meta">
                 {formatDateRange(start, end)}{town ? ` | ${town}` : ''}
               </div>
-              <div className="festival-card-footer">
-                <span className="festival-card-arrow">Details →</span>
-              </div>
             </Link>
           )
         })}
 
-        <div className="section-title">Allgemein</div>
+        {/* Allgemeine Infos */}
+        <div className="section-title" style={{ marginTop: 'var(--sp-8)' }}>
+          {isLeadOrOp ? 'Infos für Leads & Operators' : 'Allgemeine Infos'}
+        </div>
         <Link to="/infos" style={{ textDecoration: 'none' }}>
           <div className="card" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 'var(--sp-4)' }}>
             <div style={{
-              width: 48, height: 48, background: 'var(--gelb)',
+              width: 44, height: 44, background: 'var(--gelb)',
               borderRadius: 'var(--rounded)', flexShrink: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
             }}>📖</div>
             <div>
-              <div className="card-title">Anleitungen & Infos</div>
-              <div className="card-sub">Trockentoiletten, Abläufe, FAQ</div>
+              <div className="card-title">
+                {isLeadOrOp ? 'Anleitungen, Briefings & FAQ' : 'Anleitungen & Infos'}
+              </div>
+              <div className="card-sub" style={{ fontSize: 'var(--text-xs)', marginTop: 2 }}>
+                {isLeadOrOp
+                  ? 'Auf-/Abbau, Briefings, Orderbird, FAQ'
+                  : 'Trockentoiletten, Abläufe, FAQ'}
+              </div>
             </div>
-            <span style={{ marginLeft: 'auto', fontSize: 18, color: 'var(--grau-text)' }}>→</span>
+            <span style={{ marginLeft: 'auto', fontSize: 18 }}>→</span>
           </div>
         </Link>
+
       </div>
     </div>
   )
@@ -155,10 +185,8 @@ function getRoleEnd(role, details) {
   return details.end_official
 }
 
-// Parst deutsches Datum "DD.MM.YYYY" — auch mit Suffix wie "abends" oder "oder DD.MM.YYYY"
 function parseDeDate(str) {
   if (!str) return null
-  // Erstes Datum extrahieren (vor "oder", " ", etc.)
   const match = String(str).match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/)
   if (!match) return null
   const [, day, month, year] = match
