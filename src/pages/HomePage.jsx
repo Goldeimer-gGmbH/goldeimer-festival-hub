@@ -10,6 +10,17 @@ const ROLLE_LABEL = {
   supporti_plus: 'Supporti+', supporti: 'Supporti', catering: 'Catering'
 }
 
+const ALL_TOPICS = [
+  { icon: '🔧', title: 'Auf- und Abbauanleitung Modul',      slug: 'abbau-modul' },
+  { icon: '📦', title: 'Auf- und Abbauanleitung Container',  slug: 'abbau-container' },
+  { icon: '👥', title: 'Crew-Briefing',                      slug: 'crew-briefing' },
+  { icon: '📢', title: 'Promo-Team-Briefing',                slug: 'promo-briefing' },
+  { icon: '🤝', title: 'Welcome-Meeting-Briefing',           slug: 'welcome-briefing' },
+  { icon: '📱', title: 'How to Orderbird',                   slug: 'orderbird',       leadOnly: true },
+  { icon: '❓', title: 'FAQ',                                slug: 'faq' },
+  { icon: '📜', title: 'Code of Conduct',                   slug: 'code-of-conduct' },
+]
+
 export default function HomePage() {
   const { profile } = useAuth()
   const [assignments, setAssignments] = useState([])
@@ -43,6 +54,8 @@ export default function HomePage() {
   const vorname = profile?.full_name?.split(' ')[0] || 'Hey'
   const isLeadOrOp = profile?.role === 'lead' || profile?.role === 'operator'
 
+  const topics = ALL_TOPICS.filter(t => !t.leadOnly || isLeadOrOp)
+
   // Festivals nach Startdatum sortieren, vergangene ans Ende
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -54,8 +67,8 @@ export default function HomePage() {
     const bStart = parseDeDate(getRoleStart(b.role, b.festival?.details || {}))
     const aPast = aEnd ? aEnd < today : false
     const bPast = bEnd ? bEnd < today : false
-    if (aPast !== bPast) return aPast ? 1 : -1   // vergangene ans Ende
-    return (aStart || 0) - (bStart || 0)          // sonst chronologisch
+    if (aPast !== bPast) return aPast ? 1 : -1
+    return (aStart || 0) - (bStart || 0)
   })
 
   return (
@@ -70,15 +83,21 @@ export default function HomePage() {
       {/* Greeting Banner */}
       <div style={{
         background: 'var(--schwarz)',
-        padding: 'var(--sp-6) var(--sp-4) var(--sp-5)',
-        borderBottom: '1px solid var(--on-dark-border)',
+        padding: 'var(--sp-6) var(--sp-4) 0',
       }}>
         <div className="statement" style={{ fontSize: 'var(--text-h0)', color: 'var(--gelb)', lineHeight: 1 }}>
           Hey {vorname}!
         </div>
-        <p style={{ color: 'var(--on-dark-sub)', marginTop: 6, fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+        <p style={{ color: 'var(--on-dark-sub)', marginTop: 6, marginBottom: 'var(--sp-6)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
           Deine Festivals 2026 mit Goldeimer
         </p>
+
+        {/* Welle: Schwarz → Papier */}
+        <svg viewBox="0 0 480 48" preserveAspectRatio="none"
+          style={{ display: 'block', width: '100%', height: 48, marginBottom: -1 }}>
+          <path d="M0,24 C60,48 140,8 220,28 C290,46 370,10 480,22 L480,48 L0,48 Z"
+            fill="var(--papier)" />
+        </svg>
       </div>
 
       <div className="page" style={{ paddingTop: 'var(--sp-5)' }}>
@@ -136,36 +155,73 @@ export default function HomePage() {
                 <div className="festival-card-meta">
                   {formatDateRange(start, end)}{town ? ` | ${town}` : ''}
                 </div>
-                <span style={{ fontSize: 16, color: 'var(--grau-dunkel)' }}>→</span>
+                <span style={{ fontSize: 16, opacity: 0.45 }}>→</span>
               </div>
             </Link>
           )
         })}
 
-        {/* Allgemeine Infos */}
+        {/* Infos & Anleitungen */}
         <div className="section-title" style={{ marginTop: 'var(--sp-8)' }}>
-          {isLeadOrOp ? 'Infos für Leads & Operators' : 'Allgemeine Infos'}
+          {isLeadOrOp ? 'Infos für Leads & Operator' : 'Allgemeine Infos'}
         </div>
-        <Link to="/infos" style={{ textDecoration: 'none' }}>
-          <div className="card" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 'var(--sp-4)' }}>
-            <div style={{
-              width: 44, height: 44, background: 'var(--gelb)',
-              borderRadius: 'var(--rounded)', flexShrink: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
-            }}>📖</div>
-            <div>
-              <div className="card-title">
-                {isLeadOrOp ? 'Anleitungen, Briefings & FAQ' : 'Anleitungen & Infos'}
-              </div>
-              <div className="card-sub" style={{ fontSize: 'var(--text-xs)', marginTop: 2 }}>
-                {isLeadOrOp
-                  ? 'Auf-/Abbau, Briefings, Orderbird, FAQ'
-                  : 'Trockentoiletten, Abläufe, FAQ'}
-              </div>
-            </div>
-            <span style={{ marginLeft: 'auto', fontSize: 18 }}>→</span>
+
+        {/* Topic-Liste */}
+        <div style={{
+          background: 'var(--weiss)',
+          borderRadius: 'var(--rounded)',
+          overflow: 'hidden',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          {topics.map((topic, i) => (
+            <Link
+              key={topic.slug}
+              to={`/infos?section=${topic.slug}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--sp-3)',
+                padding: 'var(--sp-3) var(--sp-4)',
+                borderBottom: i < topics.length - 1 ? '1px solid var(--border)' : 'none',
+                textDecoration: 'none',
+                color: 'var(--schwarz)',
+              }}
+            >
+              <span style={{
+                width: 36, height: 36,
+                background: 'var(--gelb)',
+                borderRadius: 'var(--rounded-sm)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 18, flexShrink: 0,
+              }}>
+                {topic.icon}
+              </span>
+              <span style={{ flex: 1, fontWeight: 600, fontSize: 'var(--text-sm)' }}>
+                {topic.title}
+              </span>
+              <span style={{ fontSize: 18, opacity: 0.4 }}>→</span>
+            </Link>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div style={{ marginTop: 'var(--sp-10)', marginLeft: 'calc(-1 * var(--sp-4))', marginRight: 'calc(-1 * var(--sp-4))' }}>
+          {/* Welle: Papier → Schwarz */}
+          <svg viewBox="0 0 480 48" preserveAspectRatio="none"
+            style={{ display: 'block', width: '100%', height: 48, marginBottom: -1 }}>
+            <path d="M0,26 C80,0 180,44 280,20 C360,4 420,38 480,22 L480,48 L0,48 Z"
+              fill="var(--schwarz)" />
+          </svg>
+          <div style={{
+            background: 'var(--schwarz)',
+            padding: 'var(--sp-5) var(--sp-4)',
+            textAlign: 'center',
+          }}>
+            <p style={{ color: 'var(--on-dark-sub)', fontSize: 'var(--text-xs)' }}>
+              © Goldeimer gGmbH · Kacke für den guten Zweck 💛
+            </p>
           </div>
-        </Link>
+        </div>
 
       </div>
     </div>
