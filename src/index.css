@@ -98,9 +98,8 @@
 
 /* ─── Base ──────────────────────────────────────────────────── */
 html {
-  /* Außerhalb des 480px-Body (Desktop) erscheint Schwarz statt Browser-Weiß.
-     Dadurch wirkt der schwarze Header-Bereich nahtlos – keine sichtbare Box. */
-  background: var(--schwarz);
+  /* Außerhalb des 480px-Body (Desktop) Papier-Hintergrund – kein weißer Rahmen */
+  background: var(--papier);
 }
 
 body {
@@ -113,6 +112,7 @@ body {
   min-height: 100vh;
   max-width: 480px;
   margin: 0 auto;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 

@@ -80,17 +80,21 @@ export default function HomePage() {
         </Link>
       </div>
 
-      {/* Greeting Banner */}
+      {/* Greeting Banner – Full-Bleed (breiter als der 480px-Body) */}
       <div style={{
         background: 'var(--schwarz)',
-        padding: 'var(--sp-6) var(--sp-4) 0',
+        width: '100vw',
+        marginLeft: 'calc(-50vw + 50%)',
       }}>
-        <div className="statement" style={{ fontSize: 'var(--text-h0)', color: 'var(--gelb)', lineHeight: 1 }}>
-          Hey {vorname}!
+        {/* Innerer Content bleibt auf max 480px zentriert */}
+        <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--sp-6) var(--sp-4) 0' }}>
+          <div className="statement" style={{ fontSize: 'var(--text-h0)', color: 'var(--gelb)', lineHeight: 1 }}>
+            Hey {vorname}!
+          </div>
+          <p style={{ color: 'var(--on-dark-sub)', marginTop: 6, marginBottom: 'var(--sp-6)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+            Deine Festivals 2026 mit Goldeimer
+          </p>
         </div>
-        <p style={{ color: 'var(--on-dark-sub)', marginTop: 6, marginBottom: 'var(--sp-6)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
-          Deine Festivals 2026 mit Goldeimer
-        </p>
 
         {/* Welle: Schwarz → Papier */}
         <svg viewBox="0 0 480 64" preserveAspectRatio="none"
@@ -204,8 +208,12 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Footer */}
-        <div style={{ marginTop: 'var(--sp-10)', marginLeft: 'calc(-1 * var(--sp-4))', marginRight: 'calc(-1 * var(--sp-4))' }}>
+        {/* Footer – Full-Bleed */}
+        <div style={{
+          marginTop: 'var(--sp-10)',
+          width: '100vw',
+          marginLeft: 'calc(-50vw + 50%)',
+        }}>
           {/* Welle: Papier → Schwarz */}
           <svg viewBox="0 0 480 64" preserveAspectRatio="none"
             style={{ display: 'block', width: '100%', height: 56, marginBottom: -2 }}>

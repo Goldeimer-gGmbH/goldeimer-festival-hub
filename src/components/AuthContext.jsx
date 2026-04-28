@@ -57,10 +57,34 @@ export function AuthProvider({ children }) {
       }
     )
 
+    // PWA-Fix: Wenn die App nach längerem Hintergrund wieder sichtbar wird,
+    // Session sofort auffrischen. Mobil throttelt Timer-basierte Token-Refresh,
+    // daher explizit beim App-Fokus triggern.
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (cancelled) return
+          if (session?.user) {
+            setUser(session.user)
+            // Token wurde intern refreshed – kein volles loadProfile nötig,
+            // außer wenn aktuell kein Profil vorhanden ist
+            if (!profile) loadProfile(session.user.id)
+          } else {
+            // Session wirklich abgelaufen → ausloggen
+            localStorage.removeItem('gfh_last_profile')
+            setProfile(null)
+            setUser(null)
+          }
+        })
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
     return () => {
       cancelled = true
       clearTimeout(timeout)
       subscription.unsubscribe()
+      document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [])
 
