@@ -132,8 +132,11 @@ export default function HomePage() {
                 <div className="festival-card-name">{a.festival.name}</div>
                 <span className="festival-card-role">{ROLLE_LABEL[a.role] || a.role}</span>
               </div>
-              <div className="festival-card-meta">
-                {formatDateRange(start, end)}{town ? ` | ${town}` : ''}
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 'var(--sp-2)' }}>
+                <div className="festival-card-meta">
+                  {formatDateRange(start, end)}{town ? ` | ${town}` : ''}
+                </div>
+                <span style={{ fontSize: 16, color: 'var(--grau-dunkel)' }}>→</span>
               </div>
             </Link>
           )
