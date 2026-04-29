@@ -1,7 +1,7 @@
 /**
  * Wraps a Supabase query promise with a timeout.
- * If the query doesn't resolve within `ms` milliseconds,
- * it returns { data: null, error: new Error('timeout') }.
+ * Returns { data, error, isAuthError } where isAuthError = true wenn die
+ * Session abgelaufen ist (JWT invalid/expired, 401, PGRST301).
  */
 export async function fetchWithTimeout(queryPromise, ms = 8000) {
   let timer
@@ -10,7 +10,16 @@ export async function fetchWithTimeout(queryPromise, ms = 8000) {
   )
   try {
     const result = await Promise.race([queryPromise, timeout])
-    return result
+    // Auth-Fehler erkennen: abgelaufener JWT oder fehlende Berechtigung
+    const isAuthError = !!(
+      result.error && (
+        result.error.status === 401 ||
+        result.error.code === 'PGRST301' ||
+        String(result.error.message).toLowerCase().includes('jwt') ||
+        String(result.error.message).toLowerCase().includes('not authenticated')
+      )
+    )
+    return { ...result, isAuthError }
   } finally {
     clearTimeout(timer)
   }

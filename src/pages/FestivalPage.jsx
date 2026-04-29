@@ -127,30 +127,47 @@ const ABLAUF_LEAD = [
 
 export default function FestivalPage() {
   const { id } = useParams()
-  const { profile } = useAuth()
+  const { profile, signOut } = useAuth()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
+  const [authError, setAuthError] = useState(false)
   const [activeTab, setActiveTab] = useState('ablauf')
 
   useEffect(() => { loadFestivalInfo() }, [id])
 
   async function loadFestivalInfo() {
+    setFetchError(false)
+    setAuthError(false)
     const cacheKey = `festival_${id}`
     const cached = cacheGet(cacheKey)
     if (cached) { setData(cached); setLoading(false) }
 
-    const { data, error } = await fetchWithTimeout(
+    const { data, error, isAuthError } = await fetchWithTimeout(
       supabase.rpc('get_my_festival_info', { p_festival_id: id })
     )
     if (!error && data) {
       setData(data)
       cacheSet(cacheKey, data, 30 * 60 * 1000)
+    } else if (error) {
+      if (isAuthError) setAuthError(true)
+      else if (!cached) setFetchError(true)
     }
     if (!cached) setLoading(false)
   }
 
   if (loading) return <div className="loading">Lädt Festival-Infos...</div>
-  if (!data || data.error) return (
+  if (authError) return (
+    <div className="page" style={{ paddingTop: 'var(--sp-8)', textAlign: 'center' }}>
+      <div style={{ fontSize: 32, marginBottom: 12 }}>🔑</div>
+      <p className="card-sub" style={{ marginBottom: 20 }}>
+        Deine Sitzung ist abgelaufen. Bitte melde dich neu an.
+      </p>
+      <button className="button" onClick={signOut}>Neu anmelden</button>
+      <div style={{ marginTop: 20 }}><Link to="/">← Zurück</Link></div>
+    </div>
+  )
+  if (fetchError || !data || data.error) return (
     <div className="page" style={{ paddingTop: 'var(--sp-8)', textAlign: 'center' }}>
       <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
       <p className="card-sub" style={{ marginBottom: 20 }}>Verbindung unterbrochen.</p>

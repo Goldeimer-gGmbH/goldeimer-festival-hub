@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { cacheGet, cacheSet, cacheClearAll } from '../lib/cache'
 
@@ -24,6 +24,10 @@ export function AuthProvider({ children }) {
   // Kein Ladescreen wenn wir schon ein gecachtes Profil haben
   const [loading, setLoading] = useState(!storedProfile)
 
+  // Ref für aktuelle profile-Wert — löst das Stale-Closure-Problem im
+  // visibilitychange-Handler, der nur einmal registriert wird.
+  const profileRef = useRef(storedProfile)
+
   // DB-Keepalive läuft jetzt serverseitig via pg_cron (alle 5 Min in Supabase).
   // Browser-seitiger Keepalive ist auf Mobile unzuverlässig (Timer-Throttling).
 
@@ -34,11 +38,14 @@ export function AuthProvider({ children }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (cancelled) return
       setUser(session?.user ?? null)
-      if (session?.user) loadProfile(session.user.id)
-      else {
-        // Kein aktiver User → Cache leeren und Login zeigen
-        localStorage.removeItem('gfh_last_profile')
+      if (session?.user) {
+        loadProfile(session.user.id)
+      } else {
+        // Kein aktiver User → kompletten App-Cache leeren und Login zeigen
+        // (nicht nur gfh_last_profile, sondern auch alle Daten-Caches)
+        cacheClearAll()
         setProfile(null)
+        profileRef.current = null
         setLoading(false)
       }
     })
@@ -48,10 +55,13 @@ export function AuthProvider({ children }) {
         if (cancelled) return
         if (event === 'INITIAL_SESSION') return
         setUser(session?.user ?? null)
-        if (session?.user) await loadProfile(session.user.id)
-        else {
-          localStorage.removeItem('gfh_last_profile')
+        if (session?.user) {
+          await loadProfile(session.user.id)
+        } else {
+          // Kompletten Cache leeren (Session abgelaufen oder Logout)
+          cacheClearAll()
           setProfile(null)
+          profileRef.current = null
           setLoading(false)
         }
       }
@@ -66,13 +76,15 @@ export function AuthProvider({ children }) {
           if (cancelled) return
           if (session?.user) {
             setUser(session.user)
-            // Token wurde intern refreshed – kein volles loadProfile nötig,
-            // außer wenn aktuell kein Profil vorhanden ist
-            if (!profile) loadProfile(session.user.id)
+            // profileRef.current statt profile — verhindert Stale-Closure-Bug
+            // (dieser Handler wird nur einmal registriert, daher muss der
+            // aktuelle Wert immer aus dem Ref gelesen werden)
+            if (!profileRef.current) loadProfile(session.user.id)
           } else {
-            // Session wirklich abgelaufen → ausloggen
-            localStorage.removeItem('gfh_last_profile')
+            // Session wirklich abgelaufen → kompletten Cache leeren + ausloggen
+            cacheClearAll()
             setProfile(null)
+            profileRef.current = null
             setUser(null)
           }
         })
@@ -127,6 +139,7 @@ export function AuthProvider({ children }) {
 
       if (!error && data) {
         setProfile(data)
+        profileRef.current = data
         cacheSet(`profile_${userId}`, data, PROFILE_TTL)
         localStorage.setItem('gfh_last_profile', JSON.stringify(data))
         // Alle Seiten im Hintergrund vorladen → kein Kaltstart beim Navigieren

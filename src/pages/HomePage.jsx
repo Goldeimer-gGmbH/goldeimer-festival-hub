@@ -104,21 +104,23 @@ const ALL_TOPICS = [
 ]
 
 export default function HomePage() {
-  const { profile } = useAuth()
+  const { profile, signOut } = useAuth()
   const [assignments, setAssignments] = useState([])
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(false)
+  const [authError, setAuthError] = useState(false)
 
   useEffect(() => { loadAssignments() }, [])
 
   async function loadAssignments() {
     const cacheKey = `assignments_${profile.id}`
     setFetchError(false)
+    setAuthError(false)
 
     const cached = cacheGet(cacheKey)
     if (cached) { setAssignments(cached); setLoading(false) }
 
-    const { data, error } = await fetchWithTimeout(
+    const { data, error, isAuthError } = await fetchWithTimeout(
       supabase.from('assignments')
         .select(`id, role, status, festival:festivals(id, name, details)`)
         .eq('profile_id', profile.id)
@@ -127,8 +129,9 @@ export default function HomePage() {
     if (!error && data) {
       setAssignments(data)
       cacheSet(cacheKey, data, 30 * 60 * 1000)
-    } else if (error && !cached) {
-      setFetchError(true)
+    } else if (error) {
+      if (isAuthError) setAuthError(true)
+      else if (!cached) setFetchError(true)
     }
     setLoading(false)
   }
@@ -201,8 +204,19 @@ export default function HomePage() {
           </div>
         ))}
 
-        {/* Fehler */}
-        {!loading && fetchError && (
+        {/* Session abgelaufen */}
+        {!loading && authError && (
+          <div className="card" style={{ textAlign: 'center', padding: 'var(--sp-8)' }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>🔑</div>
+            <p className="card-sub" style={{ marginBottom: 16 }}>
+              Deine Sitzung ist abgelaufen. Bitte melde dich neu an.
+            </p>
+            <button className="button" onClick={signOut}>Neu anmelden</button>
+          </div>
+        )}
+
+        {/* Netzwerkfehler */}
+        {!loading && fetchError && !authError && (
           <div className="card" style={{ textAlign: 'center', padding: 'var(--sp-8)' }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
             <p className="card-sub" style={{ marginBottom: 16 }}>Verbindung unterbrochen.</p>
