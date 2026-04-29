@@ -1,14 +1,26 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+
+const RESEND_COOLDOWN = 60 // Sekunden zwischen Magic-Link-Anfragen
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [cooldown, setCooldown] = useState(0) // verbleibende Sekunden
+  const timerRef = useRef(null)
+
+  // Countdown-Timer: läuft nach jedem erfolgreichen Senden
+  useEffect(() => {
+    if (cooldown <= 0) return
+    timerRef.current = setTimeout(() => setCooldown(c => c - 1), 1000)
+    return () => clearTimeout(timerRef.current)
+  }, [cooldown])
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (cooldown > 0) return
     setLoading(true)
     setError('')
     try {
@@ -21,7 +33,8 @@ export default function LoginPage() {
         if (error.message?.includes('not found') || error.message?.includes('user')) {
           setError('Diese E-Mail ist nicht in unserem System. Wende dich an Goldeimer.')
         } else if (error.message?.includes('rate') || error.status === 429) {
-          setError('Zu viele Versuche. Bitte warte ein paar Minuten.')
+          setError('Zu viele Versuche. Bitte warte ein paar Minuten und versuche es dann erneut.')
+          setCooldown(RESEND_COOLDOWN)
         } else if (error.message?.includes('network') || error.status >= 500) {
           setError('Server nicht erreichbar. Bitte versuche es gleich nochmal.')
         } else {
@@ -29,11 +42,18 @@ export default function LoginPage() {
         }
       } else {
         setSent(true)
+        setCooldown(RESEND_COOLDOWN)
       }
     } catch (e) {
       setError('Verbindungsfehler. Bitte prüfe deine Internetverbindung.')
     }
     setLoading(false)
+  }
+
+  function handleResend() {
+    if (cooldown > 0) return
+    setSent(false)
+    setError('')
   }
 
   if (sent) {
@@ -55,8 +75,16 @@ export default function LoginPage() {
             Login-Link an <strong style={{ color: 'var(--schwarz)' }}>{email}</strong> geschickt.
             Kein Passwort nötig – einfach auf den Link klicken.
           </p>
-          <button onClick={() => setSent(false)} className="button button--secondary" style={{ marginTop: 28 }}>
-            Nochmal versuchen
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--grau-text)', marginTop: 12, lineHeight: 1.5 }}>
+            Nichts angekommen? Schau auch im Spam-Ordner. Der Link ist 60 Minuten gültig.
+          </p>
+          <button
+            onClick={handleResend}
+            disabled={cooldown > 0}
+            className="button button--secondary"
+            style={{ marginTop: 28 }}
+          >
+            {cooldown > 0 ? `Nochmal senden (${cooldown}s)` : 'Nochmal senden'}
           </button>
         </div>
       </div>
@@ -143,8 +171,8 @@ export default function LoginPage() {
             </div>
           )}
 
-          <button type="submit" disabled={loading || !email} className="button" style={{ marginTop: 'var(--sp-2)' }}>
-            {loading ? 'Wird gesendet...' : 'Login-Link anfordern →'}
+          <button type="submit" disabled={loading || !email || cooldown > 0} className="button" style={{ marginTop: 'var(--sp-2)' }}>
+            {loading ? 'Wird gesendet...' : cooldown > 0 ? `Bitte warten (${cooldown}s)` : 'Login-Link anfordern →'}
           </button>
         </form>
 
