@@ -207,8 +207,11 @@ export default function LoginPage() {
       {/* Formular */}
       <div className="page" style={{ paddingTop: 'var(--sp-6)' }}>
         <h1 style={{ fontSize: 'var(--text-h2)', marginBottom: 'var(--sp-2)' }}>Einloggen</h1>
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--grau-text)', marginBottom: 'var(--sp-4)', lineHeight: 1.6 }}>
+          Gib die E-Mail-Adresse ein, die du bereits bei der Festivalanmeldung genutzt hast. Wir schicken dir per Mail einen Magic Link zu. Kein Passwort nötig.
+        </p>
         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--grau-text)', marginBottom: 'var(--sp-6)', lineHeight: 1.6 }}>
-          Gib deine E-Mail ein – wir schicken dir einen Magic Link. Kein Passwort nötig.
+          Beachte: In das Goldeimer Festival Hub gelangst du nur, wenn du mindestens eine Festivalzusage in der aktuellen Saison hast.
         </p>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
@@ -249,13 +252,27 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p style={{
-          textAlign: 'center', marginTop: 'var(--sp-6)',
-          fontSize: 'var(--text-xs)', color: 'var(--grau-text)',
-          letterSpacing: '0.06em', textTransform: 'uppercase',
+        {/* Footer – Full-Bleed */}
+        <div style={{
+          marginTop: 'var(--sp-10)',
+          width: '100vw',
+          marginLeft: 'calc(-50vw + 50%)',
         }}>
-          Nur für angemeldete Goldeimer-Crew
-        </p>
+          <svg viewBox="0 0 480 64" preserveAspectRatio="none"
+            style={{ display: 'block', width: '100%', height: 56, marginBottom: -2 }}>
+            <path d="M0,36 C80,8 180,56 280,24 C360,4 420,48 480,28 L480,64 L0,64 Z"
+              fill="var(--schwarz)" />
+          </svg>
+          <div style={{
+            background: 'var(--schwarz)',
+            padding: 'var(--sp-5) var(--sp-4)',
+            textAlign: 'center',
+          }}>
+            <p style={{ color: 'var(--on-dark-sub)', fontSize: 'var(--text-xs)' }}>
+              © Goldeimer gGmbH · Kacke für den guten Zweck 💛
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )
