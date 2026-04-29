@@ -82,6 +82,9 @@
   --shadow-sm: 0 2px 8px rgba(29,29,27,0.08);
   --shadow:    0 4px 16px rgba(29,29,27,0.08);
   --shadow-md: 0 8px 32px rgba(29,29,27,0.12);
+
+  /* Header-Höhe: Logo 36px + padding oben/unten je 16px + Border 1px */
+  --header-height: 69px;
 }
 
 /* Font-Größen Desktop */
@@ -112,8 +115,10 @@ body {
   min-height: 100vh;
   max-width: 480px;
   margin: 0 auto;
-  overflow-x: clip; /* clip statt hidden — erzeugt keinen Scroll-Container, position:sticky bleibt funktionsfähig */
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
+  /* Platz für den fixed Header oben freihalten */
+  padding-top: var(--header-height);
 }
 
 /* Kein Browser-Standard Lila/Blau für Links */
@@ -158,8 +163,14 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: sticky;
+  /* fixed statt sticky — funktioniert zuverlässig unabhängig von overflow-Einstellungen */
+  position: fixed;
   top: 0;
+  /* Zentriert und auf Body-Breite begrenzt (wie der Body selbst: max 480px, zentriert) */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
   z-index: 100;
   border-bottom: 1px solid var(--border);
 }
