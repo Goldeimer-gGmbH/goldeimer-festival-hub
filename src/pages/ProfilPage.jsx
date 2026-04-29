@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../components/AuthContext'
+import { IconStar, IconBrief, IconStift } from '../components/Icons'
 
 const ROLLE_LABEL = {
   lead: 'Lead', operator: 'Operator',
@@ -56,7 +57,7 @@ export default function ProfilPage() {
           padding: 'var(--sp-3) var(--sp-4)',
           display: 'flex', alignItems: 'center', gap: 'var(--sp-2)',
         }}>
-          <span style={{ fontSize: 14 }}>🎪</span>
+          <IconStar size={14} />
           <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--on-dark-sub)', letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'var(--font-heading)' }}>
             Goldeimer Crew — Saison 2025
           </span>
@@ -68,7 +69,7 @@ export default function ProfilPage() {
         <div className="card">
           <ul className="info-list">
             <li>
-              <span className="info-icon">📧</span>
+              <span className="info-icon"><IconBrief size={22}/></span>
               <div>
                 <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grau-text)', marginBottom: 3 }}>E-Mail</div>
                 <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{profile?.email}</div>
@@ -76,7 +77,7 @@ export default function ProfilPage() {
             </li>
             {profile?.experience_bucket && (
               <li>
-                <span className="info-icon">⭐</span>
+                <span className="info-icon"><IconStar size={22}/></span>
                 <div>
                   <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grau-text)', marginBottom: 3 }}>Festival-Erfahrung</div>
                   <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{profile.experience_bucket} Festivals</div>
@@ -84,7 +85,7 @@ export default function ProfilPage() {
               </li>
             )}
             <li>
-              <span className="info-icon">📝</span>
+              <span className="info-icon"><IconStift size={22}/></span>
               <div>
                 <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grau-text)', marginBottom: 3 }}>Vertragsstatus</div>
                 <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>

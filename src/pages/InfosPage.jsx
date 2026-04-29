@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { cacheGet, cacheSet } from '../lib/cache'
 import { fetchWithTimeout } from '../lib/fetchWithTimeout'
+import { IconStar, IconPin, IconKalender, IconStift, IconInfos, IconKontakte } from '../components/Icons'
 
 const CACHE_KEY = 'infos_content'
 
@@ -42,7 +43,7 @@ export default function InfosPage() {
 
         {!loading && error && (
           <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
+            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconStar size={32} /></div>
             <p className="card-sub" style={{ marginBottom: 16 }}>Verbindung unterbrochen.</p>
             <button className="button" onClick={loadContent}>Nochmal versuchen</button>
           </div>
@@ -50,7 +51,7 @@ export default function InfosPage() {
 
         {!loading && content.length === 0 && (
           <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>📖</div>
+            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconStar size={40} /></div>
             <p className="card-sub">
               Hier erscheinen bald Anleitungen und Infos für euch.
             </p>
@@ -66,14 +67,14 @@ export default function InfosPage() {
           <div style={{ marginTop: 16 }}>
             <div className="section-title">Demnächst hier</div>
             {[
-              { icon: '🚽', title: 'Trockentoiletten reinigen', sub: 'Schritt-für-Schritt Anleitung' },
-              { icon: '♻️', title: 'Abfallsortierung', sub: 'Was kommt wohin' },
-              { icon: '🌧️', title: 'Bei Regen', sub: 'Was tun wenn das Wetter umschlägt' },
-              { icon: '🆘', title: 'Notfallprotokoll', sub: 'Ablauf bei medizinischen Notfällen' },
+              { icon: <IconStift size={26}/>, title: 'Trockentoiletten reinigen', sub: 'Schritt-für-Schritt Anleitung' },
+              { icon: <IconStar size={26}/>,  title: 'Abfallsortierung', sub: 'Was kommt wohin' },
+              { icon: <IconStar size={26}/>,  title: 'Bei Regen', sub: 'Was tun wenn das Wetter umschlägt' },
+              { icon: <IconKontakte size={26}/>, title: 'Notfallprotokoll', sub: 'Ablauf bei medizinischen Notfällen' },
             ].map((item, i) => (
               <div key={i} className="card" style={{ opacity: 0.5 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: 28 }}>{item.icon}</span>
+                  <span style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.icon}</span>
                   <div>
                     <div className="card-title">{item.title}</div>
                     <div className="card-sub">{item.sub}</div>
@@ -92,17 +93,17 @@ function ContentCard({ item }) {
   const [expanded, setExpanded] = useState(false)
 
   const typeIcon = {
-    anleitung: '📋',
-    lageplan: '🗺️',
-    notfallnummern: '🚨',
-    schichtplan: '📅',
-    info: '💡'
-  }[item.content_type] || '📄'
+    anleitung:     <IconStift size={26}/>,
+    lageplan:      <IconPin size={26}/>,
+    notfallnummern:<IconKontakte size={26}/>,
+    schichtplan:   <IconKalender size={26}/>,
+    info:          <IconInfos size={26}/>,
+  }[item.content_type] || <IconStar size={26}/>
 
   return (
     <div className="card" style={{ cursor: item.body ? 'pointer' : 'default' }} onClick={() => item.body && setExpanded(!expanded)}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ fontSize: 28, flexShrink: 0 }}>{typeIcon}</span>
+        <span style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{typeIcon}</span>
         <div style={{ flex: 1 }}>
           <div className="card-title">{item.title}</div>
         </div>

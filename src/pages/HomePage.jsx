@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
 import { cacheGet, cacheSet } from '../lib/cache'
 import { fetchWithTimeout } from '../lib/fetchWithTimeout'
+import { IconStar } from '../components/Icons'
 
 const ROLLE_LABEL = {
   lead: 'Lead', operator: 'Operator',
@@ -206,7 +207,7 @@ export default function HomePage() {
         {/* Session abgelaufen */}
         {!loading && authError && (
           <div className="card" style={{ textAlign: 'center', padding: 'var(--sp-8)' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>🔑</div>
+            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconStar size={32} /></div>
             <p className="card-sub" style={{ marginBottom: 16 }}>
               Deine Sitzung ist abgelaufen. Bitte melde dich neu an.
             </p>
@@ -217,7 +218,7 @@ export default function HomePage() {
         {/* Netzwerkfehler */}
         {!loading && fetchError && !authError && (
           <div className="card" style={{ textAlign: 'center', padding: 'var(--sp-8)' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
+            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconStar size={32} /></div>
             <p className="card-sub" style={{ marginBottom: 16 }}>Verbindung unterbrochen.</p>
             <button className="button" onClick={loadAssignments}>Nochmal versuchen</button>
           </div>
@@ -226,7 +227,7 @@ export default function HomePage() {
         {/* Leer */}
         {!loading && !fetchError && assignments.length === 0 && (
           <div className="card" style={{ textAlign: 'center', padding: 'var(--sp-8)' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🎪</div>
+            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconStar size={40} /></div>
             <p className="card-sub">Noch keine Festivals zugewiesen. Melde dich bei Goldeimer.</p>
           </div>
         )}

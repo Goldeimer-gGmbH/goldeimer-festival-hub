@@ -4,47 +4,22 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
 import { cacheGet, cacheSet } from '../lib/cache'
 import { fetchWithTimeout } from '../lib/fetchWithTimeout'
+import {
+  IconAblauf, IconInfos, IconKontakte, IconFeedback,
+  IconKalender, IconTransport, IconOrderbird, IconStift, IconLupe,
+  IconStar, IconPin,
+} from '../components/Icons'
 
 const ROLLE_LABEL = {
   lead: 'Lead', operator: 'Operator',
   supporti_plus: 'Supporti+', supporti: 'Supporti', catering: 'Catering'
 }
 
-// ── Tab Icons ────────────────────────────────────────────────────────────────
-
-function TabIconAblauf() {
-  return (
-    <svg role="presentation" focusable="false" width="18" height="18" viewBox="0 0 28 28" style={{ display: 'block' }}>
-      <path fill="currentColor" d="M21.61,7c-2.03-2.14-4.89-3.39-7.7-3.3-5.73.14-10.04,4.45-10.25,10.24-.1,2.8,1.09,5.58,3.28,7.63,1.87,1.74,4.22,2.7,6.57,2.7.29,0,.59-.01.88-.04,5.49-.57,9.34-4.58,9.81-10.2.21-2.54-.71-5.04-2.59-7.03ZM22.71,13.91c-.41,4.87-3.73,8.33-8.47,8.83-2.21.23-4.49-.6-6.27-2.27-1.88-1.75-2.9-4.11-2.81-6.48.18-4.97,3.88-8.67,8.79-8.8,2.38-.06,4.83,1,6.57,2.84,1.58,1.68,2.36,3.76,2.19,5.88Z"/>
-      <path fill="currentColor" d="M14,7.84c-.42,0-.75.34-.75.75v4.96l-1.85,3.27c-.21.36-.08.82.28,1.02.12.07.24.1.37.1.26,0,.51-.14.65-.38l1.89-3.34.05-.08c.03-.06.06-.12.08-.19.02-.06.03-.12.03-.18v-5.18c0-.41-.34-.75-.75-.75Z"/>
-    </svg>
-  )
-}
-
-function TabIconInfos() {
-  return (
-    <svg role="presentation" focusable="false" width="18" height="18" viewBox="0 0 28 28" style={{ display: 'block' }}>
-      <path fill="currentColor" d="M21.12,6.54c-1.46-1.57-3.63-2.43-5.91-2.35-2.2.07-4.19,1.02-5.48,2.6-2.46,3.04-2.57,6.91-.34,10.08,0,0,0,0,0,0-.44.36-1.61,1.37-2.28,2.35-.44.65-1.96,1.91-2.8,2.56-.5.38-.6,1.09-.22,1.59.22.29.56.45.9.45.24,0,.48-.08.68-.23.25-.19,2.51-1.92,3.3-3.08.49-.72,1.55-1.64,1.95-1.97,1.17.91,2.62,1.41,4.22,1.46h.23c2.17,0,4.3-.88,5.72-2.38,3.02-3.18,3.02-7.84.01-11.08ZM11.09,16.62c-2.3-2.71-2.37-6.2-.19-8.89,1.01-1.24,2.6-1.99,4.36-2.04.08-.01.16-.01.23-.01,1.77,0,3.41.68,4.53,1.88,1.23,1.32,1.84,2.94,1.84,4.54s-.61,3.2-1.84,4.49c-1.18,1.25-2.96,1.96-4.81,1.91-1.67-.05-3.14-.72-4.12-1.88Z"/>
-      <path fill="currentColor" d="M20.03,12.92c-.23,0-.42-.19-.42-.43,0-2.65-2.16-4.81-4.81-4.81-.23,0-.42-.19-.42-.43s.19-.43.42-.43c3.12,0,5.66,2.54,5.66,5.66,0,.23-.19.43-.42.43Z"/>
-    </svg>
-  )
-}
-
-function TabIconKontakte() {
-  return (
-    <svg role="presentation" focusable="false" width="18" height="18" viewBox="0 0 28 28" style={{ display: 'block' }}>
-      <path fill="currentColor" d="M24.57,13.74c.38-.17.55-.61.39-.99-.11-.26-.36-.42-.63-.44h0s.04-1.68.04-1.68h0s.26-.12.26-.12c.38-.16.55-.61.39-.99-.11-.25-.35-.41-.61-.44h0s.05-1.84.05-1.84h0s.05-.02.05-.02c.38-.16.55-.61.39-.99-.17-.38-.61-.55-.99-.39l-.5.22s-.01.01-.02.02c-.01,0-.03.01-.04.02-.71.38-1.86,1.02-2.88,1.59-.29-.73-1.19-1.33-2.68-1.81-1.55-.49-3.6-.8-5.77-.86-4.18-.11-8.67.72-8.73,2.8v.14s-.01.05-.01.08v.07l-.23,3.53.13,6-.25,3.25v.13c.2,2.05,4.46,3.24,8.56,3.35.36.01.7.01,1.04.01,3.34,0,5.65-.48,7.57-1.55,1.49-.66,3.14-1.98,3.61-2.37,0,0,.01-.01.02-.02.06,0,.12-.01.18-.04l.5-.22c.38-.16.55-.61.39-.99-.12-.28-.39-.44-.67-.45h0s.04-1.65.04-1.65h0s.31-.14.31-.14c.38-.17.55-.61.39-.99-.12-.27-.37-.43-.65-.44l.04-1.67.29-.12ZM12,6.52c3.1.09,5.34.68,6.41,1.21.4.19.64.37.69.52-.03.08-.11.16-.24.24-.33.24-.99.49-1.93.7-.58.13-1.28.24-2.08.32-.19.02-.39.04-.6.05-.21.02-.42.02-.64.03h-.05c-.06.01-.13.01-.2.01-.46.01-.94.01-1.45,0-.46-.01-.9-.03-1.32-.07-1.48-.11-2.71-.34-3.65-.61-.96-.26-1.62-.56-1.93-.8-.12-.09-.19-.17-.21-.24.05-.14.3-.32.73-.5,1-.43,3.01-.87,5.74-.87.24,0,.48,0,.73,0Z"/>
-    </svg>
-  )
-}
-
-function TabIconFeedback() {
-  return (
-    <svg role="presentation" focusable="false" width="18" height="18" viewBox="0 0 28 28" style={{ display: 'block' }}>
-      <path fill="currentColor" d="M20.03,24.41c-.73,0-1.25-.61-1.44-.83-.9-1.05-1.93-1.75-3.02-2.49-.12-.08-.24-.14-.36-.21-.2-.1-.4-.21-.57-.34-.12-.09-.22-.19-.3-.27-.06.04-.11.08-.16.11-.15.11-.31.22-.47.32l-.33.22c-.53.35-1.19.79-1.75,1.42l-.11.13-.16.06c-.51.21-1.17.72-1.96,1.51l-.2.14c-.72.36-1.21.06-1.38-.09-.52-.43-.53-1.18-.38-1.69l.12-.41c.14-.5.28-1.02.49-1.51.14-.33.3-.65.47-.97.3-.6.59-1.17.72-1.76l.05-.21c.04-.17.15-.63.17-.88-.11-.09-.32-.21-.43-.27-.12-.07-.22-.13-.29-.18-.47-.34-1.27-.89-2.21-1.54l-.23-.16c-.09-.06-.22-.14-.38-.24-1.3-.81-3.08-1.91-2.44-3.14.45-.86,1.71-.9,3.18-.87.17,0,.32,0,.43,0,1.21-.03,2.4.02,3.54.14.09,0,.21.03.34.06.07.01.16.03.25.05.03-.11.05-.24.07-.31.02-.11.04-.21.06-.29.15-.45.37-1.3.61-2.19l.17-.67c.03-.12.07-.28.11-.47.26-1.22.52-2.26,1.14-2.71.53-.38.96-.33,1.24-.22.68.27.84,1.08.95,1.62.02.11.04.2.06.27.16.47.32.94.51,1.4l.21.74c.22.78.44,1.59.68,2.03l.08.22c.06.33.07.44.71.38h.07s.07,0,.07,0c.42.04,1.16,0,1.87-.05.28-.02.57-.03.85-.05.08,0,.21-.01.36-.03,1.77-.14,2.76-.12,3.26.36.36.35.48.88.32,1.41-.24.77-.98,1.27-1.58,1.68-.18.12-.34.23-.48.34-.81.59-1.42,1.17-1.87,1.6l-.21.18c-.43.27-.83.72-1.02.97.19.66.72,2.37,1.08,3.2l.04.12c.03.13.12.33.22.57.4.96.9,2.15.48,3.01-.18.36-.49.6-.89.71-.12.03-.23.04-.34.04Z"/>
-    </svg>
-  )
-}
+// Tab-Icons: kommen aus Icons.jsx, hier als lokale Wrapper mit Tab-Größe
+const TabIconAblauf   = () => <IconAblauf   size={18} />
+const TabIconInfos    = () => <IconInfos    size={18} />
+const TabIconKontakte = () => <IconKontakte size={18} />
+const TabIconFeedback = () => <IconFeedback size={18} />
 
 // ── Ablauf-Daten ──────────────────────────────────────────────────────────────
 
@@ -171,7 +146,7 @@ export default function FestivalPage() {
   if (loading) return <div className="loading">Lädt Festival-Infos...</div>
   if (authError) return (
     <div className="page" style={{ paddingTop: 'var(--sp-8)', textAlign: 'center' }}>
-      <div style={{ fontSize: 32, marginBottom: 12 }}>🔑</div>
+      <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconStar size={36} /></div>
       <p className="card-sub" style={{ marginBottom: 20 }}>
         Deine Sitzung ist abgelaufen. Bitte melde dich neu an.
       </p>
@@ -181,7 +156,7 @@ export default function FestivalPage() {
   )
   if (notFound) return (
     <div className="page" style={{ paddingTop: 'var(--sp-8)', textAlign: 'center' }}>
-      <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
+      <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconLupe size={36} /></div>
       <p className="card-sub" style={{ marginBottom: 20 }}>
         Festival nicht gefunden oder kein Zugriff.
       </p>
@@ -190,7 +165,7 @@ export default function FestivalPage() {
   )
   if (fetchError || (data && data.error)) return (
     <div className="page" style={{ paddingTop: 'var(--sp-8)', textAlign: 'center' }}>
-      <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
+      <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconStar size={36} /></div>
       <p className="card-sub" style={{ marginBottom: 20 }}>Verbindung unterbrochen.</p>
       <button className="button" onClick={loadFestivalInfo}>Nochmal versuchen</button>
       <div style={{ marginTop: 20 }}><Link to="/">← Zurück</Link></div>
@@ -221,7 +196,7 @@ export default function FestivalPage() {
 
       {/* Festival Bar */}
       <div className="festival-bar">
-        <span>🎪</span>
+        <IconStar size={16} />
         <span>{details.festival_town || ''}</span>
         {details.start_official && (
           <span style={{ marginLeft: 'auto', color: 'rgba(255,229,0,0.6)', fontSize: 12 }}>
@@ -300,7 +275,7 @@ export default function FestivalPage() {
                   alignItems: 'center',
                   gap: 14,
                 }}>
-                  <span style={{ fontSize: 32 }}>🚨</span>
+                  <IconKontakte size={32} />
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--on-dark-sub)', marginBottom: 4 }}>Notfallnummer</div>
                     <a href={`tel:${details.emergency_number || details.notfall}`}
@@ -340,7 +315,7 @@ export default function FestivalPage() {
 
             {(!data.leads || data.leads.length === 0) && !details.emergency_number && (
               <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-                <div style={{ fontSize: 32, marginBottom: 8 }}>📞</div>
+                <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconKontakte size={32} /></div>
                 <p className="card-sub">Kontakte werden noch eingetragen.</p>
               </div>
             )}
@@ -365,7 +340,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, content }) {
     return (
       <div>
         <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-          <div style={{ fontSize: 36, marginBottom: 10 }}>🔜</div>
+          <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center' }}><IconAblauf size={36} /></div>
           <div className="card-title" style={{ marginBottom: 6 }}>Kommt bald</div>
           <p className="card-sub">Der Ablauf für Supportis und Catering-Crew folgt in Kürze.</p>
         </div>
@@ -643,14 +618,14 @@ function InfosTab({ details, role, content }) {
       <div className="card">
         <ul className="info-list">
           <li>
-            <span className="info-icon">📅</span>
+            <span className="info-icon"><IconKalender size={22}/></span>
             <div>
               <div style={lbl}>Anreise</div>
               <div style={val}>{getAnreise(details, role) || 'Wird noch bekannt gegeben'}</div>
             </div>
           </li>
           <li>
-            <span className="info-icon">🏠</span>
+            <span className="info-icon"><IconKalender size={22}/></span>
             <div>
               <div style={lbl}>Abreise</div>
               <div style={val}>{getAbreise(details, role) || 'Wird noch bekannt gegeben'}</div>
@@ -658,7 +633,7 @@ function InfosTab({ details, role, content }) {
           </li>
           {details.festival_town && (
             <li>
-              <span className="info-icon">📍</span>
+              <span className="info-icon"><IconPin size={22}/></span>
               <div>
                 <div style={lbl}>Ort</div>
                 <div style={val}>{details.festival_town}</div>
@@ -667,7 +642,7 @@ function InfosTab({ details, role, content }) {
           )}
           {details.festival_address && (
             <li>
-              <span className="info-icon">🏢</span>
+              <span className="info-icon"><IconPin size={22}/></span>
               <div>
                 <div style={lbl}>Anschrift</div>
                 <div style={valMulti}>{details.festival_address}</div>
@@ -684,7 +659,7 @@ function InfosTab({ details, role, content }) {
 
           {/* Lageplan: immer anzeigen — "Folgt" als Platzhalter wenn leer */}
           <li>
-            <span className="info-icon">🗺️</span>
+            <span className="info-icon"><IconPin size={22}/></span>
             <div>
               <div style={lbl}>Lageplan</div>
               {details.festival_lageplan
@@ -696,7 +671,7 @@ function InfosTab({ details, role, content }) {
 
           {details.need_total && (
             <li>
-              <span className="info-icon">👥</span>
+              <span className="info-icon"><IconKontakte size={22}/></span>
               <div>
                 <div style={lbl}>Crew-Größe</div>
                 <div style={val}>{details.need_total} Personen</div>
@@ -706,7 +681,7 @@ function InfosTab({ details, role, content }) {
 
           {isLeadOp && details.link_crew_list && (
             <li>
-              <span className="info-icon">📋</span>
+              <span className="info-icon"><IconStift size={22}/></span>
               <div>
                 <div style={lbl}>Crew-Liste</div>
                 <a href={details.link_crew_list} target="_blank" rel="noopener noreferrer" style={linkStyle}>Liste öffnen ↗</a>
@@ -726,7 +701,7 @@ function InfosTab({ details, role, content }) {
 
               {details.shift_table_link && (
                 <li>
-                  <span className="info-icon">📊</span>
+                  <span className="info-icon"><IconKalender size={22}/></span>
                   <div>
                     <div style={lbl}>Schichtplan</div>
                     <a href={details.shift_table_link} target="_blank" rel="noopener noreferrer" style={linkStyle}>Plan öffnen ↗</a>
@@ -736,7 +711,7 @@ function InfosTab({ details, role, content }) {
 
               {details.goldeimer_hours && (
                 <li>
-                  <span className="info-icon">⏰</span>
+                  <span className="info-icon"><IconAblauf size={22}/></span>
                   <div>
                     <div style={lbl}>Goldeimer Öffnungszeiten</div>
                     <div style={valMulti}>{details.goldeimer_hours}</div>
@@ -746,7 +721,7 @@ function InfosTab({ details, role, content }) {
 
               {details.goldeimer_prices && (
                 <li>
-                  <span className="info-icon">💰</span>
+                  <span className="info-icon"><IconStar size={22}/></span>
                   <div>
                     <div style={lbl}>Preise</div>
                     <div style={valMulti}>{details.goldeimer_prices}</div>
@@ -756,7 +731,7 @@ function InfosTab({ details, role, content }) {
 
               {details.festival_money_info && (
                 <li>
-                  <span className="info-icon">💳</span>
+                  <span className="info-icon"><IconOrderbird size={22}/></span>
                   <div>
                     <div style={lbl}>Kassensystem</div>
                     <div style={valMulti}>{details.festival_money_info}</div>
@@ -766,7 +741,7 @@ function InfosTab({ details, role, content }) {
 
               {isLeadOp && details.festival_actions && (
                 <li>
-                  <span className="info-icon">🎯</span>
+                  <span className="info-icon"><IconStar size={22}/></span>
                   <div>
                     <div style={lbl}>Aktionen</div>
                     <div style={valMulti}>{details.festival_actions}</div>
@@ -776,7 +751,7 @@ function InfosTab({ details, role, content }) {
 
               {isKitchenVisible && details.kitchen_crew_list && (
                 <li>
-                  <span className="info-icon">🍳</span>
+                  <span className="info-icon"><IconStar size={22}/></span>
                   <div>
                     <div style={lbl}>Küche</div>
                     <a href={details.kitchen_crew_list} target="_blank" rel="noopener noreferrer" style={linkStyle}>Liste öffnen ↗</a>
@@ -786,7 +761,7 @@ function InfosTab({ details, role, content }) {
 
               {isLeadOp && details.logistic_info && (
                 <li>
-                  <span className="info-icon">🚛</span>
+                  <span className="info-icon"><IconTransport size={22}/></span>
                   <div>
                     <div style={lbl}>Logistik-Infos</div>
                     <div style={valMulti}>{details.logistic_info}</div>
@@ -861,7 +836,7 @@ function FeedbackTab({ festivalId, profileId }) {
   if (sent) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>🙌</div>
+        <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconStar size={40} /></div>
         <div className="display" style={{ fontSize: 28, marginBottom: 8 }}>DANKE!</div>
         <p className="card-sub">Dein Feedback wurde gespeichert und wird gelesen.</p>
         <button className="button button--secondary" style={{ marginTop: 16 }} onClick={() => setSent(false)}>
