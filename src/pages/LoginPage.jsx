@@ -96,7 +96,7 @@ export default function LoginPage() {
   }
 
   // Gemeinsame Struktur: schwarzer Außenrahmen füllt immer den ganzen Screen
-  const PageShell = ({ bannerHeadline, bannerSub, bannerExtra, children }) => (
+  const PageShell = ({ bannerHeadline, bannerSubtitle, bannerSub, bannerExtra, children }) => (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', background: 'var(--schwarz)' }}>
       {/* Header */}
       <div className="header">
@@ -109,6 +109,11 @@ export default function LoginPage() {
           <div className="statement" style={{ fontSize: 'var(--text-h0)', color: 'var(--gelb)', lineHeight: 1 }}>
             {bannerHeadline}
           </div>
+          {bannerSubtitle && (
+            <p style={{ color: 'var(--papier)', marginTop: 4, marginBottom: 0, fontSize: 'var(--text-h3)', fontWeight: 700 }}>
+              {bannerSubtitle}
+            </p>
+          )}
           {bannerSub && (
             <p style={{ color: 'var(--on-dark-sub)', marginTop: 6, marginBottom: 6, fontSize: 'var(--text-sm)', fontWeight: 500 }}>
               {bannerSub}
@@ -116,10 +121,11 @@ export default function LoginPage() {
           )}
           {bannerExtra}
         </div>
+        {/* Welle: Schwarz → Papier. SVG-Background ist Papier damit die Wellenform sichtbar ist. */}
         <svg viewBox="0 0 480 64" preserveAspectRatio="none"
-          style={{ display: 'block', width: '100%', height: 56, marginBottom: -2 }}>
-          <path d="M0,32 C80,64 160,8 260,36 C340,58 420,12 480,28 L480,64 L0,64 Z"
-            fill="var(--papier)" />
+          style={{ display: 'block', width: '100%', height: 56, marginBottom: -2, background: 'var(--papier)' }}>
+          <path d="M0,0 L480,0 L480,32 C400,64 320,8 220,36 C140,58 60,12 0,28 Z"
+            fill="var(--schwarz)" />
         </svg>
       </div>
 
@@ -128,10 +134,10 @@ export default function LoginPage() {
         {children}
       </div>
 
-      {/* Footer – Welle + Schwarz, Rest des Screens immer schwarz */}
-      <div style={{ width: '100vw', marginLeft: 'calc(-50vw + 50%)', background: 'var(--papier)' }}>
+      {/* Footer – Welle Papier→Schwarz. SVG-Background ist Papier. Danach nur noch Schwarz. */}
+      <div style={{ width: '100vw', marginLeft: 'calc(-50vw + 50%)' }}>
         <svg viewBox="0 0 480 64" preserveAspectRatio="none"
-          style={{ display: 'block', width: '100%', height: 56, marginBottom: -2 }}>
+          style={{ display: 'block', width: '100%', height: 56, marginBottom: -2, background: 'var(--papier)' }}>
           <path d="M0,36 C80,8 180,56 280,24 C360,4 420,48 480,28 L480,64 L0,64 Z"
             fill="var(--schwarz)" />
         </svg>
@@ -178,7 +184,8 @@ export default function LoginPage() {
   /* ── Login-Formular ── */
   return (
     <PageShell
-      bannerHeadline="Goldeimer Festival Hub"
+      bannerHeadline="Goldeimer"
+      bannerSubtitle="Festival Hub"
       bannerExtra={
         <div style={{ paddingBottom: 'var(--sp-5)', marginTop: 'var(--sp-3)' }}>
           <span style={{
