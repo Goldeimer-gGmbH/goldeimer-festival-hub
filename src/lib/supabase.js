@@ -7,7 +7,9 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    // PWA nutzt keine URL-basierte Auth — unnötigen URL-Scan bei jedem Reload vermeiden
-    detectSessionInUrl: false,
+    // detectSessionInUrl muss true (default) bleiben — Magic Links liefern den
+    // Auth-Token als URL-Fragment (#access_token=...). Mit false würde der Token
+    // ignoriert und der User landet nach dem Link-Klick wieder auf dem Login.
+    detectSessionInUrl: true,
   },
 })
