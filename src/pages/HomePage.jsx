@@ -134,7 +134,8 @@ export default function HomePage() {
   }
 
   const vorname = profile?.full_name?.split(' ')[0] || 'Hey'
-  const isLeadOrOp = profile?.role === 'lead' || profile?.role === 'operator'
+  // Zeige Lead-spezifische Inhalte, wenn die Person bei IRGENDEINEM Festival Lead/Operator ist
+  const isLeadOrOp = assignments.some(a => a.role === 'lead' || a.role === 'operator')
 
   const topics = ALL_TOPICS.filter(t => !t.leadOnly || isLeadOrOp)
 
