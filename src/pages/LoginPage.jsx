@@ -140,7 +140,7 @@ export default function LoginPage() {
           <div className="statement" style={{ fontSize: 'var(--text-h0)', color: 'var(--gelb)', lineHeight: 1 }}>
             Goldeimer
           </div>
-          <p style={{ color: 'var(--on-dark-sub)', marginTop: 4, marginBottom: 6, fontSize: 'var(--text-h3)', fontWeight: 700 }}>
+          <p style={{ color: 'var(--papier)', marginTop: 4, marginBottom: 6, fontSize: 'var(--text-h3)', fontWeight: 700 }}>
             Festival Hub
           </p>
           {/* Saison-Badge */}
@@ -153,7 +153,7 @@ export default function LoginPage() {
               letterSpacing: '0.08em', textTransform: 'uppercase',
               fontFamily: 'var(--font-heading)',
             }}>
-              🎪 Saison 2026
+              Saison 2026
             </span>
           </div>
         </div>
