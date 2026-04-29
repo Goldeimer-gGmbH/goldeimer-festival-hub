@@ -112,7 +112,7 @@ body {
   min-height: 100vh;
   max-width: 480px;
   margin: 0 auto;
-  overflow-x: hidden;
+  overflow-x: clip; /* clip statt hidden — erzeugt keinen Scroll-Container, position:sticky bleibt funktionsfähig */
   -webkit-font-smoothing: antialiased;
 }
 
