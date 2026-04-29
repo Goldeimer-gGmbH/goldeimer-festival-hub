@@ -105,20 +105,19 @@ const ALL_TOPICS = [
 
 export default function HomePage() {
   const { profile, signOut } = useAuth()
-  const [assignments, setAssignments] = useState([])
-  const [loading, setLoading] = useState(true)
+  const cacheKey = `assignments_${profile?.id}`
+  // Lazy-Init: wenn Cache warm → sofort Daten + kein Spinner
+  const [assignments, setAssignments] = useState(() => cacheGet(cacheKey) || [])
+  const [loading, setLoading] = useState(() => !cacheGet(cacheKey))
   const [fetchError, setFetchError] = useState(false)
   const [authError, setAuthError] = useState(false)
 
   useEffect(() => { loadAssignments() }, [])
 
   async function loadAssignments() {
-    const cacheKey = `assignments_${profile.id}`
     setFetchError(false)
     setAuthError(false)
-
     const cached = cacheGet(cacheKey)
-    if (cached) { setAssignments(cached); setLoading(false) }
 
     const { data, error, isAuthError } = await fetchWithTimeout(
       supabase.from('assignments')
@@ -128,7 +127,7 @@ export default function HomePage() {
     )
     if (!error && data) {
       setAssignments(data)
-      cacheSet(cacheKey, data, 30 * 60 * 1000)
+      cacheSet(cacheKey, data, 8 * 60 * 60 * 1000)
     } else if (error) {
       if (isAuthError) setAuthError(true)
       else if (!cached) setFetchError(true)

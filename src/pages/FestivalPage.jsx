@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
 import { cacheGet, cacheSet } from '../lib/cache'
@@ -127,31 +127,43 @@ const ABLAUF_LEAD = [
 
 export default function FestivalPage() {
   const { id } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { profile, signOut } = useAuth()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(false)
+  const [notFound, setNotFound] = useState(false)
   const [authError, setAuthError] = useState(false)
-  const [activeTab, setActiveTab] = useState('ablauf')
+  // Tab aus URL lesen → überlebt Reload und Browser-Back
+  const activeTab = searchParams.get('tab') || 'ablauf'
+  function setActiveTab(tab) {
+    setSearchParams(tab === 'ablauf' ? {} : { tab }, { replace: true })
+  }
 
   useEffect(() => { loadFestivalInfo() }, [id])
 
   async function loadFestivalInfo() {
     setFetchError(false)
     setAuthError(false)
+    setNotFound(false)
     const cacheKey = `festival_${id}`
     const cached = cacheGet(cacheKey)
     if (cached) { setData(cached); setLoading(false) }
 
-    const { data, error, isAuthError } = await fetchWithTimeout(
+    const { data: rpcData, error, isAuthError } = await fetchWithTimeout(
       supabase.rpc('get_my_festival_info', { p_festival_id: id })
     )
-    if (!error && data) {
-      setData(data)
-      cacheSet(cacheKey, data, 30 * 60 * 1000)
+    if (!error && rpcData) {
+      setData(rpcData)
+      cacheSet(cacheKey, rpcData, 8 * 60 * 60 * 1000)
     } else if (error) {
+      console.error('[FestivalPage] RPC Fehler:', error.message, error)
       if (isAuthError) setAuthError(true)
       else if (!cached) setFetchError(true)
+    } else if (!rpcData && !cached) {
+      // Kein Fehler, aber auch keine Daten → kein Zugriff auf dieses Festival
+      console.warn('[FestivalPage] RPC lieferte null für festival_id:', id)
+      setNotFound(true)
     }
     if (!cached) setLoading(false)
   }
@@ -167,7 +179,16 @@ export default function FestivalPage() {
       <div style={{ marginTop: 20 }}><Link to="/">← Zurück</Link></div>
     </div>
   )
-  if (fetchError || !data || data.error) return (
+  if (notFound) return (
+    <div className="page" style={{ paddingTop: 'var(--sp-8)', textAlign: 'center' }}>
+      <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
+      <p className="card-sub" style={{ marginBottom: 20 }}>
+        Festival nicht gefunden oder kein Zugriff.
+      </p>
+      <div style={{ marginTop: 20 }}><Link to="/">← Zurück</Link></div>
+    </div>
+  )
+  if (fetchError || (data && data.error)) return (
     <div className="page" style={{ paddingTop: 'var(--sp-8)', textAlign: 'center' }}>
       <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
       <p className="card-sub" style={{ marginBottom: 20 }}>Verbindung unterbrochen.</p>
@@ -175,6 +196,7 @@ export default function FestivalPage() {
       <div style={{ marginTop: 20 }}><Link to="/">← Zurück</Link></div>
     </div>
   )
+  if (!data) return null
 
   const details = data.festival?.details || {}
   const role = data.assignment_role
@@ -258,65 +280,7 @@ export default function FestivalPage() {
 
         {/* ── INFOS ── */}
         {activeTab === 'infos' && (
-          <div>
-            <div className="section-title">Deine Zeiten</div>
-            <div className="card">
-              <ul className="info-list">
-                <li>
-                  <span className="info-icon">📅</span>
-                  <div>
-                    <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grau-text)', marginBottom: 3 }}>Anreise</div>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>{getAnreise(details, role) || 'Wird noch bekannt gegeben'}</div>
-                  </div>
-                </li>
-                <li>
-                  <span className="info-icon">🏠</span>
-                  <div>
-                    <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grau-text)', marginBottom: 3 }}>Abreise</div>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>{getAbreise(details, role) || 'Wird noch bekannt gegeben'}</div>
-                  </div>
-                </li>
-                {details.festival_town && (
-                  <li>
-                    <span className="info-icon">📍</span>
-                    <div>
-                      <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grau-text)', marginBottom: 3 }}>Ort</div>
-                      <div style={{ fontSize: 14, fontWeight: 600 }}>{details.festival_town}</div>
-                    </div>
-                  </li>
-                )}
-              </ul>
-            </div>
-
-            {data.content && data.content.length > 0 && (
-              <>
-                <div className="section-title">Infos & Dokumente</div>
-                {data.content.map(c => (
-                  <div key={c.id} className="card">
-                    <div className="card-title">{c.title}</div>
-                    {c.body && (
-                      <div style={{ fontSize: 14, lineHeight: 1.65, marginTop: 8, color: 'var(--schwarz)', whiteSpace: 'pre-wrap' }}>
-                        {c.body}
-                      </div>
-                    )}
-                    {c.file_url && (
-                      <a href={c.file_url} target="_blank" rel="noopener noreferrer"
-                        className="button button--secondary" style={{ marginTop: 12, textDecoration: 'none' }}>
-                        📄 Dokument öffnen
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </>
-            )}
-
-            {(!data.content || data.content.length === 0) && (
-              <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-                <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
-                <p className="card-sub">Infos werden noch eingetragen.</p>
-              </div>
-            )}
-          </div>
+          <InfosTab details={details} role={role} content={data.content} />
         )}
 
         {/* ── KONTAKTE ── */}
@@ -507,8 +471,15 @@ function AblaufItem({ item, isLast, content }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <div className="card-title" style={{ marginBottom: 0 }}>{item.title}</div>
           {hasContent && (
-            <span style={{ color: 'var(--grau-text)', fontSize: 14, flexShrink: 0 }}>
-              {expanded ? '▲' : '▼'}
+            <span style={{ color: 'var(--grau-text)', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+              <svg role="presentation" focusable="false" width="8" height="6" viewBox="0 0 8 6"
+                style={{
+                  display: 'block',
+                  transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+                  transition: 'transform 0.2s ease',
+                }}>
+                <path d="m1 1.5 3 3 3-3" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+              </svg>
             </span>
           )}
           {!hasContent && (
@@ -636,6 +607,233 @@ function ChecklistSection({ festivalId, profileId, checklists }) {
           </div>
         )
       })}
+    </div>
+  )
+}
+
+// ── InfosTab ──────────────────────────────────────────────────────────────────
+
+function InfosTab({ details, role, content }) {
+  const isLeadOp        = role === 'lead' || role === 'operator'
+  const isKitchenVisible = role === 'catering' || role === 'operator' || role === 'lead'
+
+  const lbl = {
+    fontSize: 11, fontWeight: 800, textTransform: 'uppercase',
+    letterSpacing: '0.08em', color: 'var(--grau-text)', marginBottom: 3,
+  }
+  const val = { fontSize: 14, fontWeight: 600 }
+  const valMulti = { fontSize: 14, fontWeight: 600, whiteSpace: 'pre-wrap', lineHeight: 1.6 }
+  const linkStyle = {
+    fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', textDecoration: 'underline',
+  }
+  const ghost = { fontSize: 14, fontWeight: 600, color: 'var(--grau-text)', fontStyle: 'italic' }
+
+  // Betrieb-Sektion nur anzeigen wenn mindestens ein Feld befüllt ist
+  const hasBetrieb = details.shift_table_link || details.goldeimer_hours ||
+    details.goldeimer_prices || details.festival_money_info ||
+    (isLeadOp && details.festival_actions) ||
+    (isKitchenVisible && details.kitchen_crew_list) ||
+    (isLeadOp && details.logistic_info)
+
+  return (
+    <div>
+
+      {/* ── Deine Zeiten ── */}
+      <div className="section-title">Deine Zeiten</div>
+      <div className="card">
+        <ul className="info-list">
+          <li>
+            <span className="info-icon">📅</span>
+            <div>
+              <div style={lbl}>Anreise</div>
+              <div style={val}>{getAnreise(details, role) || 'Wird noch bekannt gegeben'}</div>
+            </div>
+          </li>
+          <li>
+            <span className="info-icon">🏠</span>
+            <div>
+              <div style={lbl}>Abreise</div>
+              <div style={val}>{getAbreise(details, role) || 'Wird noch bekannt gegeben'}</div>
+            </div>
+          </li>
+          {details.festival_town && (
+            <li>
+              <span className="info-icon">📍</span>
+              <div>
+                <div style={lbl}>Ort</div>
+                <div style={val}>{details.festival_town}</div>
+              </div>
+            </li>
+          )}
+          {details.festival_address && (
+            <li>
+              <span className="info-icon">🏢</span>
+              <div>
+                <div style={lbl}>Anschrift</div>
+                <div style={valMulti}>{details.festival_address}</div>
+              </div>
+            </li>
+          )}
+        </ul>
+      </div>
+
+      {/* ── Festival ── */}
+      <div className="section-title">Festival</div>
+      <div className="card">
+        <ul className="info-list">
+
+          {/* Lageplan: immer anzeigen — "Folgt" als Platzhalter wenn leer */}
+          <li>
+            <span className="info-icon">🗺️</span>
+            <div>
+              <div style={lbl}>Lageplan</div>
+              {details.festival_lageplan
+                ? <a href={details.festival_lageplan} target="_blank" rel="noopener noreferrer" style={linkStyle}>Karte öffnen ↗</a>
+                : <div style={ghost}>Folgt</div>
+              }
+            </div>
+          </li>
+
+          {details.need_total && (
+            <li>
+              <span className="info-icon">👥</span>
+              <div>
+                <div style={lbl}>Crew-Größe</div>
+                <div style={val}>{details.need_total} Personen</div>
+              </div>
+            </li>
+          )}
+
+          {isLeadOp && details.link_crew_list && (
+            <li>
+              <span className="info-icon">📋</span>
+              <div>
+                <div style={lbl}>Crew-Liste</div>
+                <a href={details.link_crew_list} target="_blank" rel="noopener noreferrer" style={linkStyle}>Liste öffnen ↗</a>
+              </div>
+            </li>
+          )}
+
+        </ul>
+      </div>
+
+      {/* ── Betrieb ── */}
+      {hasBetrieb && (
+        <>
+          <div className="section-title">Betrieb</div>
+          <div className="card">
+            <ul className="info-list">
+
+              {details.shift_table_link && (
+                <li>
+                  <span className="info-icon">📊</span>
+                  <div>
+                    <div style={lbl}>Schichtplan</div>
+                    <a href={details.shift_table_link} target="_blank" rel="noopener noreferrer" style={linkStyle}>Plan öffnen ↗</a>
+                  </div>
+                </li>
+              )}
+
+              {details.goldeimer_hours && (
+                <li>
+                  <span className="info-icon">⏰</span>
+                  <div>
+                    <div style={lbl}>Goldeimer Öffnungszeiten</div>
+                    <div style={valMulti}>{details.goldeimer_hours}</div>
+                  </div>
+                </li>
+              )}
+
+              {details.goldeimer_prices && (
+                <li>
+                  <span className="info-icon">💰</span>
+                  <div>
+                    <div style={lbl}>Preise</div>
+                    <div style={valMulti}>{details.goldeimer_prices}</div>
+                  </div>
+                </li>
+              )}
+
+              {details.festival_money_info && (
+                <li>
+                  <span className="info-icon">💳</span>
+                  <div>
+                    <div style={lbl}>Kassensystem</div>
+                    <div style={valMulti}>{details.festival_money_info}</div>
+                  </div>
+                </li>
+              )}
+
+              {isLeadOp && details.festival_actions && (
+                <li>
+                  <span className="info-icon">🎯</span>
+                  <div>
+                    <div style={lbl}>Aktionen</div>
+                    <div style={valMulti}>{details.festival_actions}</div>
+                  </div>
+                </li>
+              )}
+
+              {isKitchenVisible && details.kitchen_crew_list && (
+                <li>
+                  <span className="info-icon">🍳</span>
+                  <div>
+                    <div style={lbl}>Küche</div>
+                    <a href={details.kitchen_crew_list} target="_blank" rel="noopener noreferrer" style={linkStyle}>Liste öffnen ↗</a>
+                  </div>
+                </li>
+              )}
+
+              {isLeadOp && details.logistic_info && (
+                <li>
+                  <span className="info-icon">🚛</span>
+                  <div>
+                    <div style={lbl}>Logistik-Infos</div>
+                    <div style={valMulti}>{details.logistic_info}</div>
+                  </div>
+                </li>
+              )}
+
+            </ul>
+          </div>
+        </>
+      )}
+
+      {/* ── Sonstiges ── */}
+      {details.festival_sonstiges && (
+        <>
+          <div className="section-title">Sonstiges</div>
+          <div className="card">
+            <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', color: 'var(--schwarz)' }}>
+              {details.festival_sonstiges}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Dokumente (aus content-Tabelle) ── */}
+      {content && content.length > 0 && (
+        <>
+          <div className="section-title">Dokumente</div>
+          {content.map(c => (
+            <div key={c.id} className="card">
+              <div className="card-title">{c.title}</div>
+              {c.body && (
+                <div style={{ fontSize: 14, lineHeight: 1.65, marginTop: 8, color: 'var(--schwarz)', whiteSpace: 'pre-wrap' }}>
+                  {c.body}
+                </div>
+              )}
+              {c.file_url && (
+                <a href={c.file_url} target="_blank" rel="noopener noreferrer"
+                  className="button button--secondary" style={{ marginTop: 12, textDecoration: 'none' }}>
+                  📄 Dokument öffnen
+                </a>
+              )}
+            </div>
+          ))}
+        </>
+      )}
+
     </div>
   )
 }

@@ -23,6 +23,16 @@ function clearCooldown() {
   try { localStorage.removeItem(STORAGE_KEY) } catch {}
 }
 
+function IconBrief({ size = 64 }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28"
+      width={size} height={size} style={{ display: 'block' }}
+      fill="var(--schwarz)">
+      <path d="M25.3,11.37l-.18-4.08s-.01-.01,0-.02c.02-.14.01-.29-.05-.43-.12-.28-.36-.44-.71-.46l-13.14.29h-.04l-7.46-.29c-.32,0-.61.18-.72.48-.04.11-.06.22-.04.32t0,.02s-.01.1-.01.16l.21,4.66-.22,4.94v3.9c0,.2.09.4.23.54s.33.21.52.21h.02l7.56-.14,8.05.14h5.06c.2,0,.39-.08.53-.23.14-.14.22-.34.21-.54l-.17-5.19.35-4.28ZM4.44,16.99l.22-4.98-.15-3.2,2.42,2.04,2.21,2.5.92.88-5.62,5.34v-2.58ZM19.34,20.11l-8.07-.14-6.14.12,5.55-5.28,2.84,2.7c.14.13.33.2.51.2.19,0,.37-.06.51-.2l2.88-2.67,5.54,5.27h-3.62ZM23.81,11.34l-.35,4.27.12,3.92-5.53-5.27,2.62-2.43,3.03-2.98.11,2.49ZM12.93,8.23l5.18-.16h4.24l-2.72,2.68-2.67,2.48-.63.58-2.29,2.12-2.27-2.16-.62-.58-.93-.89-2.2-2.48s-.05-.05-.08-.08l-1.97-1.67h2.38l2.75.1h.11l1.72.06Z"/>
+    </svg>
+  )
+}
+
 export default function LoginPage() {
   const [email, setEmail]       = useState('')
   const [sent, setSent]         = useState(false)
@@ -151,13 +161,15 @@ export default function LoginPage() {
   /* ── Bestätigung: Magic Link wurde verschickt ── */
   if (sent) {
     return (
-      <PageShell bannerHeadline="Check deine Mails!" bannerSub="Dein Login-Link ist unterwegs">
+      <PageShell bannerHeadline="Check deine Mails!">
         <div style={{
           background: 'var(--weiss)', borderRadius: 'var(--rounded)',
           padding: 'var(--sp-6)', boxShadow: 'var(--shadow-sm)',
           textAlign: 'center', marginBottom: 'var(--sp-4)',
         }}>
-          <div style={{ fontSize: 56, lineHeight: 1, marginBottom: 'var(--sp-4)' }}>📬</div>
+          <div style={{ marginBottom: 'var(--sp-4)', display: 'flex', justifyContent: 'center' }}>
+            <IconBrief size={64} />
+          </div>
           <p style={{ fontSize: 'var(--text-sm)', color: 'var(--grau-text)', marginBottom: 4 }}>
             Login-Link geschickt an
           </p>

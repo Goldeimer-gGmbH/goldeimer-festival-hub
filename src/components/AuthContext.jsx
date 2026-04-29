@@ -4,8 +4,8 @@ import { cacheGet, cacheSet, cacheClearAll } from '../lib/cache'
 
 const AuthContext = createContext(null)
 
-const PROFILE_TTL = 30 * 60 * 1000  // 30 Minuten
-const DATA_TTL    = 30 * 60 * 1000  // 30 Minuten für prefetched Daten
+const PROFILE_TTL = 8 * 60 * 60 * 1000  // 8 Stunden
+const DATA_TTL    = 8 * 60 * 60 * 1000  // 8 Stunden für prefetched Daten
 
 // Gecachtes Profil synchron lesen — noch bevor Auth bestätigt ist.
 // Ermöglicht sofortiges Rendern ohne Ladescreen bei Wiederkehrenden.
@@ -41,8 +41,13 @@ export function AuthProvider({ children }) {
       if (session?.user) {
         loadProfile(session.user.id)
       } else {
-        // Kein aktiver User → kompletten App-Cache leeren und Login zeigen
-        // (nicht nur gfh_last_profile, sondern auch alle Daten-Caches)
+        // getSession() null kann bedeuten: echter Logout, ODER Token-Refresh ist
+        // wegen fehlendem Netz gescheitert. Wenn wir offline sind und ein gecachtes
+        // Profil haben, zeigen wir die App weiter — kein Cache-Löschen, kein Login.
+        if (!navigator.onLine && profileRef.current) {
+          setLoading(false)
+          return
+        }
         cacheClearAll()
         setProfile(null)
         profileRef.current = null
@@ -58,6 +63,10 @@ export function AuthProvider({ children }) {
         if (session?.user) {
           await loadProfile(session.user.id)
         } else {
+          if (!navigator.onLine && profileRef.current) {
+            setLoading(false)
+            return
+          }
           // Kompletten Cache leeren (Session abgelaufen oder Logout)
           cacheClearAll()
           setProfile(null)
@@ -81,6 +90,8 @@ export function AuthProvider({ children }) {
             // aktuelle Wert immer aus dem Ref gelesen werden)
             if (!profileRef.current) loadProfile(session.user.id)
           } else {
+            // Offline + gecachtes Profil → App weiter zeigen, kein Cache löschen
+            if (!navigator.onLine && profileRef.current) return
             // Session wirklich abgelaufen → kompletten Cache leeren + ausloggen
             cacheClearAll()
             setProfile(null)

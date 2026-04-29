@@ -10,11 +10,21 @@ export default defineConfig({
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
-        // Supabase-Requests niemals vom Service Worker cachen — immer frisch vom Netz
-        runtimeCaching: [{
-          urlPattern: /^https:\/\/wsdkmglkqxszyvomrfim\.supabase\.co\/.*/i,
-          handler: 'NetworkOnly',
-        }],
+        // App-Shell (JS/CSS/Icons) aus Cache laden → sofortiger Start auch offline
+        // Supabase-API-Calls gehen immer ans Netz (Daten liegen im localStorage-Cache)
+        runtimeCaching: [
+          {
+            // Supabase API: immer vom Netz, nie vom SW-Cache
+            urlPattern: /^https:\/\/wsdkmglkqxszyvomrfim\.supabase\.co\/.*/i,
+            handler: 'NetworkOnly',
+          },
+          {
+            // Statische Assets (Fonts, externe CDNs): Cache-First
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: { cacheName: 'google-fonts', expiration: { maxAgeSeconds: 60 * 60 * 24 * 365 } },
+          },
+        ],
       },
       manifest: {
         name: 'Goldeimer Festival Hub',

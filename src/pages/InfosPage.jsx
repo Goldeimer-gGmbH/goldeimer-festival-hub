@@ -22,7 +22,7 @@ export default function InfosPage() {
     )
     if (!error && data) {
       setContent(data)
-      cacheSet(CACHE_KEY, data, 30 * 60 * 1000)
+      cacheSet(CACHE_KEY, data, 8 * 60 * 60 * 1000)
     } else if (error) {
       setError(true)
     }
@@ -107,8 +107,15 @@ function ContentCard({ item }) {
           <div className="card-title">{item.title}</div>
         </div>
         {item.body && (
-          <span style={{ color: 'var(--grau-dunkel)', fontSize: 18 }}>
-            {expanded ? '▲' : '▼'}
+          <span style={{ color: 'var(--grau-dunkel)', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+            <svg role="presentation" focusable="false" width="8" height="6" viewBox="0 0 8 6"
+              style={{
+                display: 'block',
+                transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+                transition: 'transform 0.2s ease',
+              }}>
+              <path d="m1 1.5 3 3 3-3" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+            </svg>
           </span>
         )}
       </div>
