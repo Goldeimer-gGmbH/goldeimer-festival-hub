@@ -1,17 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
-const RESEND_COOLDOWN = 60 // Sekunden zwischen Magic-Link-Anfragen
+const RESEND_COOLDOWN = 60 // Sekunden zwischen OTP-Anfragen
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
+  const [email, setEmail]     = useState('')
+  const [sent, setSent]       = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [cooldown, setCooldown] = useState(0) // verbleibende Sekunden
+  const [error, setError]     = useState('')
+  const [cooldown, setCooldown] = useState(0)
   const timerRef = useRef(null)
 
-  // Countdown-Timer: läuft nach jedem erfolgreichen Senden
+  // Countdown-Timer nach jedem Senden
   useEffect(() => {
     if (cooldown <= 0) return
     timerRef.current = setTimeout(() => setCooldown(c => c - 1), 1000)
@@ -26,10 +26,9 @@ export default function LoginPage() {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim().toLowerCase(),
-        options: { shouldCreateUser: false }
+        options: { shouldCreateUser: false },
       })
       if (error) {
-        // Spezifische Fehlermeldungen je nach Ursache
         if (error.message?.includes('not found') || error.message?.includes('user')) {
           setError('Diese E-Mail ist nicht in unserem System. Wende dich an Goldeimer.')
         } else if (error.message?.includes('rate') || error.status === 429) {
@@ -44,7 +43,7 @@ export default function LoginPage() {
         setSent(true)
         setCooldown(RESEND_COOLDOWN)
       }
-    } catch (e) {
+    } catch {
       setError('Verbindungsfehler. Bitte prüfe deine Internetverbindung.')
     }
     setLoading(false)
@@ -56,33 +55,65 @@ export default function LoginPage() {
     setError('')
   }
 
+  /* ── Bestätigung: Magic Link wurde verschickt ── */
   if (sent) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <div style={{
-          background: 'var(--gelb)',
-          padding: '60px 24px 48px',
-          textAlign: 'center',
-          borderBottom: '1px solid rgba(29,29,27,0.15)',
-        }}>
-          <div style={{ fontSize: 64, lineHeight: 1 }}>📬</div>
-          <div className="statement" style={{ fontSize: 'var(--text-h0)', marginTop: 16, color: 'var(--schwarz)' }}>
-            Check deine Mails!
-          </div>
+      <div>
+        {/* Header */}
+        <div className="header">
+          <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
         </div>
-        <div style={{ padding: 'var(--sp-8) var(--sp-6)', flex: 1 }}>
-          <p style={{ fontSize: 'var(--text-base)', lineHeight: 1.6, color: 'var(--grau-text)' }}>
-            Login-Link an <strong style={{ color: 'var(--schwarz)' }}>{email}</strong> geschickt.
-            Kein Passwort nötig – einfach auf den Link klicken.
-          </p>
-          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--grau-text)', marginTop: 12, lineHeight: 1.5 }}>
-            Nichts angekommen? Schau auch im Spam-Ordner. Der Link ist 60 Minuten gültig.
-          </p>
+
+        {/* Schwarzes Banner */}
+        <div style={{
+          background: 'var(--schwarz)',
+          width: '100vw',
+          marginLeft: 'calc(-50vw + 50%)',
+        }}>
+          <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--sp-6) var(--sp-4) 0' }}>
+            <div className="statement" style={{ fontSize: 'var(--text-h0)', color: 'var(--gelb)', lineHeight: 1 }}>
+              Check deine Mails!
+            </div>
+            <p style={{ color: 'var(--on-dark-sub)', marginTop: 6, marginBottom: 'var(--sp-6)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+              Dein Login-Link ist unterwegs
+            </p>
+          </div>
+          <svg viewBox="0 0 480 64" preserveAspectRatio="none"
+            style={{ display: 'block', width: '100%', height: 56, marginBottom: -2 }}>
+            <path d="M0,32 C80,64 160,8 260,36 C340,58 420,12 480,28 L480,64 L0,64 Z"
+              fill="var(--papier)" />
+          </svg>
+        </div>
+
+        {/* Content */}
+        <div className="page" style={{ paddingTop: 'var(--sp-6)' }}>
+          {/* Info-Karte */}
+          <div style={{
+            background: 'var(--weiss)',
+            borderRadius: 'var(--rounded)',
+            padding: 'var(--sp-6)',
+            boxShadow: 'var(--shadow-sm)',
+            textAlign: 'center',
+            marginBottom: 'var(--sp-4)',
+          }}>
+            <div style={{ fontSize: 56, lineHeight: 1, marginBottom: 'var(--sp-4)' }}>📬</div>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--grau-text)', marginBottom: 4 }}>
+              Login-Link geschickt an
+            </p>
+            <p style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--schwarz)', marginBottom: 'var(--sp-4)' }}>
+              {email}
+            </p>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--grau-text)', lineHeight: 1.6 }}>
+              Kein Passwort nötig – einfach auf den Link klicken.
+              Nichts angekommen? Schau auch im Spam-Ordner. Der Link ist 60 Minuten gültig.
+            </p>
+          </div>
+
           <button
             onClick={handleResend}
             disabled={cooldown > 0}
             className="button button--secondary"
-            style={{ marginTop: 28 }}
+            style={{ width: '100%' }}
           >
             {cooldown > 0 ? `Nochmal senden (${cooldown}s)` : 'Nochmal senden'}
           </button>
@@ -91,57 +122,50 @@ export default function LoginPage() {
     )
   }
 
+  /* ── Login-Formular ── */
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-
-      {/* Hero */}
-      <div style={{
-        background: 'var(--gelb)',
-        padding: '52px 24px 40px',
-        position: 'relative',
-        overflow: 'hidden',
-        borderBottom: '1px solid rgba(29,29,27,0.15)',
-      }}>
-        <div style={{
-          position: 'absolute', bottom: -20, right: -20,
-          width: 140, height: 140,
-          background: 'var(--schwarz)', opacity: 0.05,
-          transform: 'rotate(20deg)', borderRadius: 'var(--rounded-lg)',
-        }} />
-
-        <div style={{ position: 'relative' }}>
-          <div style={{
-            display: 'inline-flex', width: 72, height: 72,
-            background: 'var(--schwarz)', borderRadius: 'var(--rounded)',
-            alignItems: 'center', justifyContent: 'center', fontSize: 36, marginBottom: 18,
-          }}>
-            🚽
-          </div>
-          <div className="statement" style={{ fontSize: 'var(--text-h0)', color: 'var(--schwarz)', lineHeight: 1, marginBottom: 4 }}>
-            Goldeimer
-          </div>
-          <div style={{
-            fontFamily: 'var(--font-heading)', fontWeight: 700,
-            fontSize: 'var(--text-h3)', color: 'var(--schwarz)',
-            letterSpacing: 'var(--heading-ls)', opacity: 0.65, marginBottom: 16,
-          }}>
-            Festival Hub
-          </div>
-          <div style={{
-            display: 'inline-block',
-            background: 'var(--schwarz)', color: 'var(--gelb)',
-            padding: '4px 12px', borderRadius: 'var(--rounded-full)',
-            fontSize: 'var(--text-xs)', fontWeight: 700,
-            letterSpacing: '0.08em', textTransform: 'uppercase',
-            fontFamily: 'var(--font-heading)',
-          }}>
-            🎪 Saison 2025
-          </div>
-        </div>
+    <div>
+      {/* Header */}
+      <div className="header">
+        <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
       </div>
 
-      {/* Form */}
-      <div style={{ padding: 'var(--sp-8) var(--sp-5)', flex: 1 }}>
+      {/* Schwarzes Banner */}
+      <div style={{
+        background: 'var(--schwarz)',
+        width: '100vw',
+        marginLeft: 'calc(-50vw + 50%)',
+      }}>
+        <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--sp-6) var(--sp-4) 0' }}>
+          <div className="statement" style={{ fontSize: 'var(--text-h0)', color: 'var(--gelb)', lineHeight: 1 }}>
+            Goldeimer
+          </div>
+          <p style={{ color: 'var(--on-dark-sub)', marginTop: 4, marginBottom: 6, fontSize: 'var(--text-h3)', fontWeight: 700 }}>
+            Festival Hub
+          </p>
+          {/* Saison-Badge */}
+          <div style={{ paddingBottom: 'var(--sp-5)' }}>
+            <span style={{
+              display: 'inline-block',
+              background: 'var(--gelb)', color: 'var(--schwarz)',
+              padding: '4px 12px', borderRadius: 'var(--rounded-full)',
+              fontSize: 'var(--text-xs)', fontWeight: 700,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              fontFamily: 'var(--font-heading)',
+            }}>
+              🎪 Saison 2026
+            </span>
+          </div>
+        </div>
+        <svg viewBox="0 0 480 64" preserveAspectRatio="none"
+          style={{ display: 'block', width: '100%', height: 56, marginBottom: -2 }}>
+          <path d="M0,32 C80,64 160,8 260,36 C340,58 420,12 480,28 L480,64 L0,64 Z"
+            fill="var(--papier)" />
+        </svg>
+      </div>
+
+      {/* Formular */}
+      <div className="page" style={{ paddingTop: 'var(--sp-6)' }}>
         <h1 style={{ fontSize: 'var(--text-h2)', marginBottom: 'var(--sp-2)' }}>Einloggen</h1>
         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--grau-text)', marginBottom: 'var(--sp-6)', lineHeight: 1.6 }}>
           Gib deine E-Mail ein – wir schicken dir einen Magic Link. Kein Passwort nötig.
@@ -171,12 +195,21 @@ export default function LoginPage() {
             </div>
           )}
 
-          <button type="submit" disabled={loading || !email || cooldown > 0} className="button" style={{ marginTop: 'var(--sp-2)' }}>
+          <button
+            type="submit"
+            disabled={loading || !email || cooldown > 0}
+            className="button"
+            style={{ marginTop: 'var(--sp-2)' }}
+          >
             {loading ? 'Wird gesendet...' : cooldown > 0 ? `Bitte warten (${cooldown}s)` : 'Login-Link anfordern →'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: 'var(--sp-6)', fontSize: 'var(--text-xs)', color: 'var(--grau-text)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+        <p style={{
+          textAlign: 'center', marginTop: 'var(--sp-6)',
+          fontSize: 'var(--text-xs)', color: 'var(--grau-text)',
+          letterSpacing: '0.06em', textTransform: 'uppercase',
+        }}>
           Nur für angemeldete Goldeimer-Crew
         </p>
       </div>
