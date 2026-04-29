@@ -1,28 +1,56 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
-const RESEND_COOLDOWN = 60 // Sekunden zwischen OTP-Anfragen
+const COOLDOWN_NORMAL    = 60          // Sekunden nach erfolgreichem Senden
+const COOLDOWN_RATELIMIT = 10 * 60     // 10 Minuten nach Rate-Limit-Fehler
+const STORAGE_KEY        = 'gfh_otp_cooldown_until'
+
+// Verbleibende Sekunden aus gespeichertem Timestamp berechnen
+function getStoredCooldown() {
+  try {
+    const until = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10)
+    return Math.max(0, Math.ceil((until - Date.now()) / 1000))
+  } catch { return 0 }
+}
+
+function saveCooldown(seconds) {
+  try {
+    localStorage.setItem(STORAGE_KEY, String(Date.now() + seconds * 1000))
+  } catch {}
+}
+
+function clearCooldown() {
+  try { localStorage.removeItem(STORAGE_KEY) } catch {}
+}
 
 export default function LoginPage() {
-  const [email, setEmail]     = useState('')
-  const [sent, setSent]       = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
-  const [cooldown, setCooldown] = useState(0)
+  const [email, setEmail]       = useState('')
+  const [sent, setSent]         = useState(false)
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
+  const [isRateLimit, setIsRateLimit] = useState(false)
+  // Beim Laden: noch laufenden Countdown aus localStorage wiederherstellen
+  const [cooldown, setCooldown] = useState(() => getStoredCooldown())
   const timerRef = useRef(null)
 
-  // Countdown-Timer nach jedem Senden
+  // Countdown-Timer — läuft auch nach Seiten-Reload weiter
   useEffect(() => {
-    if (cooldown <= 0) return
-    timerRef.current = setTimeout(() => setCooldown(c => c - 1), 1000)
+    if (cooldown <= 0) { clearCooldown(); return }
+    timerRef.current = setTimeout(() => setCooldown(c => Math.max(0, c - 1)), 1000)
     return () => clearTimeout(timerRef.current)
   }, [cooldown])
+
+  function startCooldown(seconds) {
+    saveCooldown(seconds)
+    setCooldown(seconds)
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
     if (cooldown > 0) return
     setLoading(true)
     setError('')
+    setIsRateLimit(false)
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim().toLowerCase(),
@@ -32,8 +60,9 @@ export default function LoginPage() {
         if (error.message?.includes('not found') || error.message?.includes('user')) {
           setError('Diese E-Mail ist nicht in unserem System. Wende dich an Goldeimer.')
         } else if (error.message?.includes('rate') || error.status === 429) {
-          setError('Zu viele Versuche. Bitte warte ein paar Minuten und versuche es dann erneut.')
-          setCooldown(RESEND_COOLDOWN)
+          setIsRateLimit(true)
+          setError('Zu viele Versuche. Bitte warte 10 Minuten bevor du es erneut versuchst.')
+          startCooldown(COOLDOWN_RATELIMIT)
         } else if (error.message?.includes('network') || error.status >= 500) {
           setError('Server nicht erreichbar. Bitte versuche es gleich nochmal.')
         } else {
@@ -41,7 +70,7 @@ export default function LoginPage() {
         }
       } else {
         setSent(true)
-        setCooldown(RESEND_COOLDOWN)
+        startCooldown(COOLDOWN_NORMAL)
       }
     } catch {
       setError('Verbindungsfehler. Bitte prüfe deine Internetverbindung.')
@@ -53,6 +82,17 @@ export default function LoginPage() {
     if (cooldown > 0) return
     setSent(false)
     setError('')
+    setIsRateLimit(false)
+  }
+
+  // Countdown lesbar formatieren: ab 60s als "X:XX min" anzeigen
+  function fmtCooldown(s) {
+    if (s >= 60) {
+      const m = Math.floor(s / 60)
+      const sec = s % 60
+      return `${m}:${String(sec).padStart(2, '0')} min`
+    }
+    return `${s}s`
   }
 
   /* ── Bestätigung: Magic Link wurde verschickt ── */
@@ -115,7 +155,7 @@ export default function LoginPage() {
             className="button button--secondary"
             style={{ width: '100%' }}
           >
-            {cooldown > 0 ? `Nochmal senden (${cooldown}s)` : 'Nochmal senden'}
+            {cooldown > 0 ? `Nochmal senden (${fmtCooldown(cooldown)})` : 'Nochmal senden'}
           </button>
         </div>
       </div>
@@ -201,7 +241,11 @@ export default function LoginPage() {
             className="button"
             style={{ marginTop: 'var(--sp-2)' }}
           >
-            {loading ? 'Wird gesendet...' : cooldown > 0 ? `Bitte warten (${cooldown}s)` : 'Login-Link anfordern →'}
+            {loading
+              ? 'Wird gesendet...'
+              : cooldown > 0
+                ? `Bitte warten (${fmtCooldown(cooldown)})`
+                : 'Login-Link anfordern →'}
           </button>
         </form>
 
