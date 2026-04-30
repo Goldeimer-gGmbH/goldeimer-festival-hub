@@ -11,15 +11,18 @@ const DATA_TTL    = 48 * 60 * 60 * 1000  // 48 Stunden für prefetched Daten
 const SUPABASE_REF = 'wsdkmglkqxszyvomrfim'
 
 // Prüft ob Supabase einen Refresh-Token im localStorage hat.
-// Wenn ja, ist der User wahrscheinlich noch eingeloggt — nur das Netz fehlt
-// gerade für den Token-Refresh. In diesem Fall sollen gecachte Daten weiter
-// angezeigt werden, statt den Cache zu löschen und Login zu erzwingen.
+// Supabase speichert den Key je nach Version unterschiedlich
+// (sb-[ref]-auth-token ODER sb-[hostname]-auth-token) — daher
+// alle Keys nach dem Muster durchsuchen statt hart zu kodieren.
 function hasSupabaseRefreshToken() {
   try {
-    const raw = localStorage.getItem(`sb-${SUPABASE_REF}-auth-token`)
-    if (!raw) return false
-    const parsed = JSON.parse(raw)
-    return !!(parsed?.refresh_token)
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        const parsed = JSON.parse(localStorage.getItem(key) || 'null')
+        if (parsed?.refresh_token) return true
+      }
+    }
+    return false
   } catch { return false }
 }
 
@@ -65,7 +68,10 @@ export function AuthProvider({ children }) {
           setLoading(false)
           return
         }
-        cacheClearAll()
+        // Nur das Profil-Marker löschen — Daten-Caches bleiben erhalten.
+        // cacheClearAll() hier würde gfh_last_profile löschen und den
+        // nächsten App-Start ohne Sofort-Rendering starten (sichtbarer Ladescreen).
+        localStorage.removeItem('gfh_last_profile')
         setProfile(null)
         profileRef.current = null
         setLoading(false)
@@ -84,8 +90,9 @@ export function AuthProvider({ children }) {
             setLoading(false)
             return
           }
-          // Kompletten Cache leeren (Session wirklich abgelaufen oder Logout)
-          cacheClearAll()
+          // Nur Profil-Marker entfernen, keine Daten-Caches löschen.
+          // Vollständiges Löschen nur bei explizitem signOut().
+          localStorage.removeItem('gfh_last_profile')
           setProfile(null)
           profileRef.current = null
           setLoading(false)
@@ -108,8 +115,9 @@ export function AuthProvider({ children }) {
             if (!profileRef.current) loadProfile(session.user.id)
           } else {
             if (profileRef.current && hasSupabaseRefreshToken()) return
-            // Session wirklich abgelaufen (kein Refresh-Token mehr) → ausloggen
-            cacheClearAll()
+            // Session wirklich abgelaufen (kein Refresh-Token mehr) → ausloggen.
+            // Nur Profil-Marker entfernen, Daten-Caches bleiben erhalten.
+            localStorage.removeItem('gfh_last_profile')
             setProfile(null)
             profileRef.current = null
             setUser(null)
