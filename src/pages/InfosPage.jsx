@@ -23,7 +23,7 @@ export default function InfosPage() {
     )
     if (!error && data) {
       setContent(data)
-      cacheSet(CACHE_KEY, data, 8 * 60 * 60 * 1000)
+      cacheSet(CACHE_KEY, data, 48 * 60 * 60 * 1000)
     } else if (error) {
       setError(true)
     }

@@ -128,7 +128,7 @@ export default function HomePage() {
     )
     if (!error && data) {
       setAssignments(data)
-      cacheSet(cacheKey, data, 8 * 60 * 60 * 1000)
+      cacheSet(cacheKey, data, 48 * 60 * 60 * 1000)
     } else if (error) {
       if (isAuthError) setAuthError(true)
       else if (!cached) setFetchError(true)

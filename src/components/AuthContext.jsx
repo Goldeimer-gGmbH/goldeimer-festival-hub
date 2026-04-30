@@ -4,8 +4,24 @@ import { cacheGet, cacheSet, cacheClearAll } from '../lib/cache'
 
 const AuthContext = createContext(null)
 
-const PROFILE_TTL = 8 * 60 * 60 * 1000  // 8 Stunden
-const DATA_TTL    = 8 * 60 * 60 * 1000  // 8 Stunden für prefetched Daten
+const PROFILE_TTL = 48 * 60 * 60 * 1000  // 48 Stunden
+const DATA_TTL    = 48 * 60 * 60 * 1000  // 48 Stunden für prefetched Daten
+
+// Supabase Project Ref für direkten localStorage-Zugriff
+const SUPABASE_REF = 'wsdkmglkqxszyvomrfim'
+
+// Prüft ob Supabase einen Refresh-Token im localStorage hat.
+// Wenn ja, ist der User wahrscheinlich noch eingeloggt — nur das Netz fehlt
+// gerade für den Token-Refresh. In diesem Fall sollen gecachte Daten weiter
+// angezeigt werden, statt den Cache zu löschen und Login zu erzwingen.
+function hasSupabaseRefreshToken() {
+  try {
+    const raw = localStorage.getItem(`sb-${SUPABASE_REF}-auth-token`)
+    if (!raw) return false
+    const parsed = JSON.parse(raw)
+    return !!(parsed?.refresh_token)
+  } catch { return false }
+}
 
 // Gecachtes Profil synchron lesen — noch bevor Auth bestätigt ist.
 // Ermöglicht sofortiges Rendern ohne Ladescreen bei Wiederkehrenden.
@@ -41,10 +57,11 @@ export function AuthProvider({ children }) {
       if (session?.user) {
         loadProfile(session.user.id)
       } else {
-        // getSession() null kann bedeuten: echter Logout, ODER Token-Refresh ist
-        // wegen fehlendem Netz gescheitert. Wenn wir offline sind und ein gecachtes
-        // Profil haben, zeigen wir die App weiter — kein Cache-Löschen, kein Login.
-        if (!navigator.onLine && profileRef.current) {
+        // getSession() null ≠ ausgeloggt. Auf Mobile schlägt der Token-Refresh
+        // regelmäßig fehl (schlechtes Netz, Timer-Throttling im Hintergrund).
+        // Wenn Supabase noch einen Refresh-Token hat, ist der User wahrscheinlich
+        // noch eingeloggt — gecachte Daten weiter zeigen, nicht löschen.
+        if (profileRef.current && hasSupabaseRefreshToken()) {
           setLoading(false)
           return
         }
@@ -63,11 +80,11 @@ export function AuthProvider({ children }) {
         if (session?.user) {
           await loadProfile(session.user.id)
         } else {
-          if (!navigator.onLine && profileRef.current) {
+          if (profileRef.current && hasSupabaseRefreshToken()) {
             setLoading(false)
             return
           }
-          // Kompletten Cache leeren (Session abgelaufen oder Logout)
+          // Kompletten Cache leeren (Session wirklich abgelaufen oder Logout)
           cacheClearAll()
           setProfile(null)
           profileRef.current = null
@@ -90,9 +107,8 @@ export function AuthProvider({ children }) {
             // aktuelle Wert immer aus dem Ref gelesen werden)
             if (!profileRef.current) loadProfile(session.user.id)
           } else {
-            // Offline + gecachtes Profil → App weiter zeigen, kein Cache löschen
-            if (!navigator.onLine && profileRef.current) return
-            // Session wirklich abgelaufen → kompletten Cache leeren + ausloggen
+            if (profileRef.current && hasSupabaseRefreshToken()) return
+            // Session wirklich abgelaufen (kein Refresh-Token mehr) → ausloggen
             cacheClearAll()
             setProfile(null)
             profileRef.current = null
@@ -103,11 +119,25 @@ export function AuthProvider({ children }) {
     }
     document.addEventListener('visibilitychange', handleVisibility)
 
+    // Wenn das Gerät wieder online geht: Session-Refresh nachholen.
+    // Wichtig für den Fall dass der Token-Refresh vorher wegen fehlenden Netzes
+    // still übergangen wurde — jetzt nachholen ohne den User zu stören.
+    const handleOnline = () => {
+      if (!profileRef.current) return
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (cancelled || !session?.user) return
+        setUser(session.user)
+        loadProfile(session.user.id)
+      })
+    }
+    window.addEventListener('online', handleOnline)
+
     return () => {
       cancelled = true
       clearTimeout(timeout)
       subscription.unsubscribe()
       document.removeEventListener('visibilitychange', handleVisibility)
+      window.removeEventListener('online', handleOnline)
     }
   }, [])
 

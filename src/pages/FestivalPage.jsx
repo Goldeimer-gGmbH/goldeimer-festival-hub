@@ -130,7 +130,7 @@ export default function FestivalPage() {
     )
     if (!error && rpcData) {
       setData(rpcData)
-      cacheSet(cacheKey, rpcData, 8 * 60 * 60 * 1000)
+      cacheSet(cacheKey, rpcData, 48 * 60 * 60 * 1000)
     } else if (error) {
       console.error('[FestivalPage] RPC Fehler:', error.message, error)
       if (isAuthError) setAuthError(true)
