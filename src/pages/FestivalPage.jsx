@@ -15,88 +15,153 @@ const ROLLE_LABEL = {
   supporti_plus: 'Supporti+', supporti: 'Supporti', catering: 'Catering'
 }
 
-// Tab-Icons: kommen aus Icons.jsx, hier als lokale Wrapper mit Tab-Größe
-const TabIconAblauf   = () => <IconAblauf   size={18} />
-const TabIconInfos    = () => <IconInfos    size={18} />
-const TabIconKontakte = () => <IconKontakte size={18} />
-const TabIconFeedback = () => <IconFeedback size={18} />
+const FKP_FESTIVALS = ['hurricane', 'southside', 'deichbrand', 'highfield', "m'era luna", 'mera luna']
+function isFkpFestival(name) {
+  const lower = (name || '').toLowerCase()
+  return FKP_FESTIVALS.some(f => lower.includes(f))
+}
 
-// ── Ablauf-Daten ──────────────────────────────────────────────────────────────
+// Tab-Icons mit einheitlicher Größe
+const TabIconAblauf   = () => <IconAblauf   size={20} />
+const TabIconInfos    = () => <IconInfos    size={20} />
+const TabIconKontakte = () => <IconKontakte size={20} />
+const TabIconFeedback = () => <IconFeedback size={20} />
 
-// Chronologischer Festivalablauf für Lead & Operator
-const ABLAUF_LEAD = [
-  {
-    id: 'anreise-leadop',
-    step: 1,
-    time: 'Aufbautag – Anreise',
-    title: 'Anreise Lead & Operator',
-    tag: 'Checkliste',
-    slug: 'anreise-leadop',
-  },
-  {
-    id: 'start-aufbau',
-    step: 2,
-    time: 'Aufbautag',
-    title: 'Start Aufbau',
-    slug: 'start-aufbau',
-  },
-  {
-    id: 'open-camping',
-    step: 3,
-    time: 'Tag 0 – Abend vor Festivalbeginn',
-    title: 'Open Campingplatz',
-    slug: 'open-camping',
-  },
-  {
-    id: 'welcome-meeting',
-    step: 4,
-    time: 'Tag 0 – Abend vor Festivalbeginn',
-    title: 'Welcome Meeting',
-    slug: 'welcome-meeting',
-  },
-  {
-    id: 'promo-briefing',
-    step: 5,
-    time: '1. Festivaltag – morgens',
-    title: 'Promo-Team-Briefing',
-    slug: 'promo-briefing',
-  },
-  {
-    id: 'moho-briefing',
-    step: 6,
-    time: '1. Festivaltag – vor Schichtstart',
-    title: 'Moho-Briefing',
-    slug: 'moho-briefing',
-  },
-  {
-    id: 'erste-schichten',
-    step: 7,
-    time: '1. Festivaltag – ab 9:00 Uhr',
-    title: 'Erste Schichten',
-    slug: 'erste-schichten',
-  },
-  {
-    id: 'crew-briefing',
-    step: 8,
-    time: '1. Festivaltag – Mittag',
-    title: 'Crew-Briefing',
-    slug: 'crew-briefing',
-  },
-  {
-    id: 'abbau',
-    step: 9,
-    time: 'Letzter Festivaltag – nach Betrieb',
-    title: 'Abbau',
-    slug: 'abbau',
-  },
-  {
-    id: 'close-camping',
-    step: 10,
-    time: 'Letzter Festivaltag – Abend',
-    title: 'Close Campingplatz',
-    slug: 'close-camping',
-  },
+// ── Ablauf-Inhalte ────────────────────────────────────────────────────────────
+
+function buildAnreisetagContent(festivalName) {
+  const isFkp = isFkpFestival(festivalName)
+  const items = [
+    { text: 'Goldeimer-Standorte mit der Festival-Produktion gegengecheckt / die Standorte gezeigt' },
+  ]
+  if (isFkp) {
+    items.push({
+      text: 'Produktionsordnung von der Aufbau-Crew unterschreiben lassen und an die Festival-Produktion geben (nur FKP-Festivals)',
+      extra: { label: 'Per E-Mail: arbeitsschutz-southside@fkpscorpio.com', email: 'arbeitsschutz-southside@fkpscorpio.com' },
+    })
+  }
+  items.push(
+    { text: 'Aufbau-Besprechung: Wann starten wir, wer baut welche Camps auf' },
+    { text: 'Sicherheitseinweisung für alle am Aufbau beteiligten Personen → Link folgt' },
+  )
+  return items
+}
+
+const CONTENT_AUFBAUTAG = [
+  { text: 'Aufbau der Toiletten (der frühe Vogel! 🐦)' },
+  { text: 'Koffer für jedes Camp checken und vorbereiten' },
 ]
+
+const CONTENT_TAG1 = [
+  { text: 'Letzter Feinschliff an den Klos, Toiletten betriebsbereit machen' },
+  { text: 'Koffer an Operator für jeden Camp rausgeben' },
+  { text: 'Jedem Standort wurde ein nummeriertes elektronisches Zahlungsgerät zugewiesen → darauf achten, dass immer das gleiche nummerierte Zahlungsgerät pro Standort verwendet wird' },
+  { text: '10 Uhr: Campingplatz- und Goldeimer-Öffnung' },
+  { text: '15 Uhr: Welcome Meeting mit Newbies' },
+  { text: '16 Uhr: Erste Supporti-Schichten' },
+  { text: '23 Uhr: Crew Briefing' },
+  { text: 'Bargeld abschöpfen' },
+  { text: 'Nach Betriebsschluss: Kassensturz mit allen Orderbirds machen' },
+]
+
+const CONTENT_TAG2 = [
+  { section: true, text: 'Morgens' },
+  { text: 'Koffer an Frühschicht rausgeben' },
+  { text: 'Info in die Crew-Gruppe schreiben mit aktualisierten Preisen (Kreideschilder anpassen) und Infos für den Tag' },
+  { section: true, text: 'Tagsüber' },
+  { text: 'Bargeld abschöpfen und in beschrifteten Beuteln sichern' },
+  { text: 'Bestell-Listen (Bauzäune, Strom) bei Festival-Produktion unterschreiben' },
+  { text: 'Benötigte IBC-Abpumpungen frühzeitig mit Urin-Dienstleister koordinieren. Spätestens, wenn der erste IBC voll ist und der zweite angebrochen wird.' },
+  { text: 'Bargeld nochmal abschöpfen und in beschrifteten Beuteln sichern' },
+  { text: 'Bargeld bei FKP einzahlen' },
+  { section: true, text: 'Nach Betriebsschluss' },
+  { text: 'Koffer entgegennehmen' },
+  { text: 'Kassensturz mit allen Orderbirds → How-to-Orderbird-Anleitung' },
+  { text: 'Lead-Koffer für den nächsten Tag fertigmachen' },
+]
+
+const CONTENT_TAG_MITTE = [
+  { text: 'Koffer an Frühschicht rausgeben' },
+  { text: 'Info in die Crew-Gruppe schreiben mit aktualisierten Preisen (Kreideschilder anpassen) und Infos für den Tag' },
+  { text: 'Bargeld abschöpfen und ggf. einzahlen' },
+  { text: 'Koffer entgegennehmen' },
+  { text: 'Kassensturz' },
+]
+
+const CONTENT_VORLETZTER_TAG = [
+  { text: 'Koffer an Frühschicht rausgeben' },
+  { text: 'Info in die Crew-Gruppe schreiben mit aktualisierten Preisen (Kreideschilder anpassen) und Infos für den Tag' },
+  { text: 'Die letzte IBC-Abpumpung wird frühzeitig angemeldet (für zeitige Abreise)' },
+  { text: 'Mit der Spedition ist abgesprochen, wann und an welchem zentralen Punkt die FSBs aller Module eingeladen werden können' },
+  { text: 'Abbau-Besprechung mit Operators + Küche' },
+  { text: 'Koffer entgegennehmen' },
+]
+
+const CONTENT_LETZTER_TAG = [
+  { text: 'Koffer an Frühschicht rausgeben' },
+  { text: 'Info in die Crew-Gruppe schreiben mit aktualisierten Preisen (Kreideschilder anpassen) und Infos für den Tag' },
+  { text: 'Abbau' },
+]
+
+// Erzeugt die Tages-Liste dynamisch aus den Festival-Datumfeldern
+function generateAblaufDays(details, role, festivalName) {
+  const days = []
+  const isLeadOp = role === 'lead' || role === 'operator'
+  if (!isLeadOp) return days
+
+  if (details.start_leadop) {
+    days.push({
+      type: 'anreisetag',
+      label: 'Anreisetag',
+      date: details.start_leadop,
+      todo: 'Vorbereitung',
+      content: buildAnreisetagContent(festivalName),
+    })
+  }
+
+  if (details.start_setup) {
+    days.push({
+      type: 'aufbautag',
+      label: 'Aufbautag',
+      date: details.start_setup,
+      todo: 'Aufbau',
+      content: CONTENT_AUFBAUTAG,
+    })
+  }
+
+  const suppStart = parseDeDate(details.start_supp)
+  const suppEnd   = parseDeDate(details.end_supp)
+
+  if (suppStart && suppEnd) {
+    const MS_DAY   = 24 * 60 * 60 * 1000
+    const totalDays = Math.round((suppEnd - suppStart) / MS_DAY) + 1
+
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(suppStart.getTime() + i * MS_DAY)
+      const dateStr = toDeDate(d)
+
+      let type, label, todo, content
+
+      if (i === 0) {
+        type = 'tag1'; todo = 'Betriebsstart'; content = CONTENT_TAG1
+      } else if (i === totalDays - 1) {
+        type = 'letzter'; todo = 'Letzte Schicht & Abbau'; content = CONTENT_LETZTER_TAG
+      } else if (totalDays > 2 && i === totalDays - 2) {
+        type = 'vorletzter'; todo = 'Regelbetrieb vorletzter Tag'; content = CONTENT_VORLETZTER_TAG
+      } else if (i === 1) {
+        type = 'tag2'; todo = 'Regelbetrieb'; content = CONTENT_TAG2
+      } else {
+        type = 'mitte'; todo = 'Regelbetrieb'; content = CONTENT_TAG_MITTE
+      }
+
+      label = i === totalDays - 1 ? 'Abreisetag' : `Goldeimer-Tag ${i + 1}`
+
+      days.push({ type, label, date: dateStr, todo, content })
+    }
+  }
+
+  return days
+}
 
 // ── Hauptkomponente ───────────────────────────────────────────────────────────
 
@@ -104,12 +169,12 @@ export default function FestivalPage() {
   const { id } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const { profile, signOut } = useAuth()
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [data, setData]           = useState(null)
+  const [loading, setLoading]     = useState(true)
   const [fetchError, setFetchError] = useState(false)
-  const [notFound, setNotFound] = useState(false)
+  const [notFound, setNotFound]   = useState(false)
   const [authError, setAuthError] = useState(false)
-  // Tab aus URL lesen → überlebt Reload und Browser-Back
+
   const activeTab = searchParams.get('tab') || 'ablauf'
   function setActiveTab(tab) {
     setSearchParams(tab === 'ablauf' ? {} : { tab }, { replace: true })
@@ -118,9 +183,7 @@ export default function FestivalPage() {
   useEffect(() => { loadFestivalInfo() }, [id])
 
   async function loadFestivalInfo() {
-    setFetchError(false)
-    setAuthError(false)
-    setNotFound(false)
+    setFetchError(false); setAuthError(false); setNotFound(false)
     const cacheKey = `festival_${id}`
     const cached = cacheGet(cacheKey)
     if (cached) { setData(cached); setLoading(false) }
@@ -132,12 +195,9 @@ export default function FestivalPage() {
       setData(rpcData)
       cacheSet(cacheKey, rpcData, 48 * 60 * 60 * 1000)
     } else if (error) {
-      console.error('[FestivalPage] RPC Fehler:', error.message, error)
       if (isAuthError) setAuthError(true)
       else if (!cached) setFetchError(true)
     } else if (!rpcData && !cached) {
-      // Kein Fehler, aber auch keine Daten → kein Zugriff auf dieses Festival
-      console.warn('[FestivalPage] RPC lieferte null für festival_id:', id)
       setNotFound(true)
     }
     if (!cached) setLoading(false)
@@ -147,9 +207,7 @@ export default function FestivalPage() {
   if (authError) return (
     <div className="page" style={{ paddingTop: 'var(--sp-8)', textAlign: 'center' }}>
       <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconStar size={36} /></div>
-      <p className="card-sub" style={{ marginBottom: 20 }}>
-        Deine Sitzung ist abgelaufen. Bitte melde dich neu an.
-      </p>
+      <p className="card-sub" style={{ marginBottom: 20 }}>Deine Sitzung ist abgelaufen. Bitte melde dich neu an.</p>
       <button className="button" onClick={signOut}>Neu anmelden</button>
       <div style={{ marginTop: 20 }}><Link to="/">← Zurück</Link></div>
     </div>
@@ -157,9 +215,7 @@ export default function FestivalPage() {
   if (notFound) return (
     <div className="page" style={{ paddingTop: 'var(--sp-8)', textAlign: 'center' }}>
       <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconLupe size={36} /></div>
-      <p className="card-sub" style={{ marginBottom: 20 }}>
-        Festival nicht gefunden oder kein Zugriff.
-      </p>
+      <p className="card-sub" style={{ marginBottom: 20 }}>Festival nicht gefunden oder kein Zugriff.</p>
       <div style={{ marginTop: 20 }}><Link to="/">← Zurück</Link></div>
     </div>
   )
@@ -173,76 +229,73 @@ export default function FestivalPage() {
   )
   if (!data) return null
 
-  const details = data.festival?.details || {}
-  const role = data.assignment_role
+  const details     = data.festival?.details || {}
+  const role        = data.assignment_role
+  const festivalName = data.festival?.name || ''
 
   const tabs = [
-    { key: 'ablauf',   label: 'ABLAUF',    Icon: TabIconAblauf },
-    { key: 'infos',    label: 'INFOS',     Icon: TabIconInfos },
-    { key: 'kontakte', label: 'KONTAKTE',  Icon: TabIconKontakte },
-    { key: 'feedback', label: 'FEEDBACK',  Icon: TabIconFeedback },
+    { key: 'ablauf',   label: 'Ablauf',    Icon: TabIconAblauf },
+    { key: 'infos',    label: 'Infos',     Icon: TabIconInfos },
+    { key: 'kontakte', label: 'Kontakte',  Icon: TabIconKontakte },
+    { key: 'feedback', label: 'Feedback',  Icon: TabIconFeedback },
   ]
 
   return (
     <div>
-      {/* Header */}
-      <div className="header">
-        <Link to="/" style={{ textDecoration: 'none', fontSize: 20, color: 'var(--schwarz)', fontWeight: 700 }}>←</Link>
-        <span className="header-logo" style={{ fontSize: 17 }}>{data.festival?.name?.toUpperCase()}</span>
-        <span className={`badge badge-${role}`} style={{ fontSize: 9 }}>
-          {ROLLE_LABEL[role] || role}
-        </span>
+      {/* ── Logo-Header (schwarz) ── */}
+      <div
+        className="header"
+        style={{ background: 'var(--schwarz)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+      >
+        <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
+        {/* Spacer für symmetrisches Layout */}
+        <span style={{ width: 26 }} />
       </div>
 
-      {/* Festival Bar */}
-      <div className="festival-bar">
-        <IconStar size={16} />
-        <span>{details.festival_town || ''}</span>
-        {details.start_official && (
-          <span style={{ marginLeft: 'auto', color: 'rgba(255,229,0,0.6)', fontSize: 12 }}>
-            {formatDate(details.start_official)}
-          </span>
-        )}
-      </div>
-
-      {/* Tabs */}
+      {/* ── Festival-Hero (schwarz → Welle → papier) ── */}
       <div style={{
-        display: 'flex',
-        background: 'var(--weiss)',
-        borderBottom: '3px solid var(--schwarz)',
+        background: 'var(--schwarz)',
+        width: '100vw',
+        marginLeft: 'calc(-50vw + 50%)',
       }}>
-        {tabs.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            style={{
-              flex: 1,
-              padding: '10px 2px',
-              border: 'none',
-              borderRight: '1px solid var(--grau)',
-              background: activeTab === tab.key ? 'var(--gelb)' : 'var(--weiss)',
-              fontSize: 8,
-              fontFamily: 'var(--font-heading)',
-              fontWeight: 800,
-              letterSpacing: '0.06em',
-              color: 'var(--schwarz)',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 3,
-              transition: 'background 0.15s',
-            }}
+        <div style={{ maxWidth: 480, margin: '0 auto', padding: '14px var(--sp-4) 0' }}>
+          <div
+            className="statement"
+            style={{ fontSize: 'var(--text-h1)', color: 'var(--papier)', lineHeight: 1.05, letterSpacing: '-0.01em' }}
           >
-            <tab.Icon />
-            {tab.label}
-          </button>
-        ))}
+            {festivalName.toUpperCase()}
+          </div>
+          <div style={{ marginTop: 10, marginBottom: 'var(--sp-5)' }}>
+            <span style={{
+              background: 'var(--gruen)',
+              color: 'var(--weiss)',
+              padding: '3px 10px',
+              borderRadius: 'var(--rounded-full)',
+              fontSize: 11,
+              fontWeight: 800,
+              fontFamily: 'var(--font-heading)',
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+            }}>
+              {ROLLE_LABEL[role] || role}
+            </span>
+          </div>
+        </div>
+        <svg viewBox="0 0 480 48" preserveAspectRatio="none"
+          style={{ display: 'block', width: '100%', height: 40, marginBottom: -2 }}>
+          <path d="M0,24 C80,48 160,6 260,28 C340,44 420,8 480,20 L480,48 L0,48 Z"
+            fill="var(--papier)" />
+        </svg>
       </div>
 
-      <div className="page" style={{ paddingTop: 18 }}>
-
-        {/* ── ABLAUF / CHECKS ── */}
+      {/* ── Tab-Inhalt ── */}
+      <div
+        className="page"
+        style={{
+          paddingTop: 16,
+          paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 16px))',
+        }}
+      >
         {activeTab === 'ablauf' && (
           <AblaufTab
             role={role}
@@ -250,82 +303,63 @@ export default function FestivalPage() {
             profileId={profile.id}
             checklists={data.checklists}
             content={data.content}
+            festivalName={festivalName}
+            details={details}
           />
         )}
 
-        {/* ── INFOS ── */}
         {activeTab === 'infos' && (
           <InfosTab details={details} role={role} content={data.content} />
         )}
 
-        {/* ── KONTAKTE ── */}
         {activeTab === 'kontakte' && (
-          <div>
-            {(details.emergency_number || details.notfall) && (
-              <>
-                <div className="section-title">Notfall</div>
-                <div style={{
-                  background: 'var(--rot)',
-                  border: '2px solid var(--rot)',
-                  borderRadius: 'var(--radius)',
-                  padding: '16px',
-                  boxShadow: '4px 4px 0 rgba(0,0,0,0.3)',
-                  marginBottom: 14,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 14,
-                }}>
-                  <IconKontakte size={32} />
-                  <div>
-                    <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--on-dark-sub)', marginBottom: 4 }}>Notfallnummer</div>
-                    <a href={`tel:${details.emergency_number || details.notfall}`}
-                      style={{ fontSize: 24, fontWeight: 900, color: 'var(--weiss)', textDecoration: 'none', fontFamily: 'var(--font-statement)', letterSpacing: '0.05em' }}>
-                      {details.emergency_number || details.notfall}
-                    </a>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {data.leads && data.leads.length > 0 && (
-              <>
-                <div className="section-title">Deine Leads</div>
-                {data.leads.map((lead, i) => (
-                  <div key={i} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <div style={{
-                      width: 46, height: 46, borderRadius: '50%',
-                      background: 'var(--gelb)', border: '2px solid var(--schwarz)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontFamily: 'var(--font-statement)', fontSize: 22, flexShrink: 0,
-                      color: 'var(--schwarz)',
-                    }}>
-                      {(lead.full_name || lead.email || '?')[0].toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="card-title">{lead.full_name || lead.email}</div>
-                      <a href={`mailto:${lead.email}`}
-                        style={{ fontSize: 13, color: 'var(--grau-text)', textDecoration: 'none' }}>
-                        {lead.email}
-                      </a>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-
-            {(!data.leads || data.leads.length === 0) && !details.emergency_number && (
-              <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-                <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconKontakte size={32} /></div>
-                <p className="card-sub">Kontakte werden noch eingetragen.</p>
-              </div>
-            )}
-          </div>
+          <KontakteTab details={details} leads={data.leads} />
         )}
 
-        {/* ── FEEDBACK ── */}
         {activeTab === 'feedback' && (
           <FeedbackTab festivalId={id} profileId={profile.id} />
         )}
+      </div>
+
+      {/* ── Bottom-Navigation (fest unten) ── */}
+      <div style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        background: 'var(--papier)',
+        borderTop: '1px solid rgba(29,29,27,0.14)',
+        display: 'flex',
+        zIndex: 200,
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}>
+        {tabs.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              flex: 1,
+              padding: '9px 2px 11px',
+              border: 'none',
+              background: 'transparent',
+              color: activeTab === tab.key ? 'var(--gelb)' : 'var(--schwarz)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 3,
+              fontSize: 9,
+              fontFamily: 'var(--font-heading)',
+              fontWeight: 800,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              transition: 'color 0.15s',
+            }}
+          >
+            <tab.Icon />
+            {tab.label}
+          </button>
+        ))}
       </div>
     </div>
   )
@@ -333,18 +367,42 @@ export default function FestivalPage() {
 
 // ── AblaufTab ─────────────────────────────────────────────────────────────────
 
-function AblaufTab({ role, festivalId, profileId, checklists, content }) {
+function AblaufTab({ role, festivalId, profileId, checklists, festivalName, details }) {
+  const [selectedDay, setSelectedDay] = useState(null)
+
   const isLeadOp = role === 'lead' || role === 'operator'
+
+  const ablaufTitle =
+    role === 'lead'     ? `Ablauf für Leads ${festivalName}` :
+    role === 'operator' ? 'Ablauf für Operator' :
+    role === 'catering' ? 'Ablauf für Küchencrew' :
+                          'Ablauf für Supportis'
+
+  // Drill-down-Ansicht: einzelner Tag
+  if (selectedDay) {
+    return <AblaufDayDetail day={selectedDay} onBack={() => setSelectedDay(null)} />
+  }
 
   if (!isLeadOp) {
     return (
       <div>
-        <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-          <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center' }}><IconAblauf size={36} /></div>
-          <div className="card-title" style={{ marginBottom: 6 }}>Kommt bald</div>
-          <p className="card-sub">Der Ablauf für Supportis und Catering-Crew folgt in Kürze.</p>
+        <div style={{
+          fontFamily: 'var(--font-statement)',
+          fontSize: 'var(--text-h2)',
+          lineHeight: 1.2,
+          marginBottom: 'var(--sp-5)',
+        }}>
+          {ablaufTitle}
         </div>
-        {/* Checklisten trotzdem anzeigen wenn vorhanden */}
+        <div className="card" style={{ textAlign: 'center', padding: 32 }}>
+          <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center' }}>
+            <IconAblauf size={36} />
+          </div>
+          <div className="card-title" style={{ marginBottom: 6 }}>Kommt bald</div>
+          <p className="card-sub">
+            Der Ablauf für {role === 'catering' ? 'Küchencrew' : 'Supportis'} folgt in Kürze.
+          </p>
+        </div>
         {checklists && checklists.length > 0 && (
           <>
             <div className="section-title" style={{ marginTop: 8 }}>Checklisten</div>
@@ -355,151 +413,186 @@ function AblaufTab({ role, festivalId, profileId, checklists, content }) {
     )
   }
 
+  const days = generateAblaufDays(details, role, festivalName)
+
   return (
     <div>
-      {/* Checklisten oben wenn vorhanden */}
-      {checklists && checklists.length > 0 && (
-        <>
-          <div className="section-title">Checklisten</div>
-          <ChecklistSection festivalId={festivalId} profileId={profileId} checklists={checklists} />
-          <div className="section-title" style={{ marginTop: 8 }}>Ablauf</div>
-        </>
-      )}
-
-      {/* Chronologischer Ablauf */}
-      <div style={{ position: 'relative' }}>
-        {/* Vertikale Linie */}
-        <div style={{
-          position: 'absolute',
-          left: 18,
-          top: 10,
-          bottom: 10,
-          width: 2,
-          background: 'var(--grau)',
-          zIndex: 0,
-        }} />
-
-        {ABLAUF_LEAD.map((item, idx) => (
-          <AblaufItem
-            key={item.id}
-            item={item}
-            isLast={idx === ABLAUF_LEAD.length - 1}
-            content={content?.find(c => c.slug === item.slug)}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function AblaufItem({ item, isLast, content }) {
-  const [expanded, setExpanded] = useState(false)
-  const hasContent = content?.body || content?.file_url
-
-  return (
-    <div style={{ position: 'relative', paddingLeft: 44, marginBottom: isLast ? 0 : 10 }}>
-      {/* Schritt-Dot */}
       <div style={{
-        position: 'absolute',
-        left: 10,
-        top: 14,
-        width: 18,
-        height: 18,
-        borderRadius: '50%',
-        background: 'var(--gelb)',
-        border: '2px solid var(--schwarz)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 8,
-        fontWeight: 900,
-        fontFamily: 'var(--font-heading)',
-        zIndex: 1,
-        flexShrink: 0,
+        fontFamily: 'var(--font-statement)',
+        fontSize: 'var(--text-h2)',
+        lineHeight: 1.2,
+        marginBottom: 'var(--sp-5)',
       }}>
-        {item.step}
+        {ablaufTitle}
       </div>
 
-      {/* Card */}
-      <div
-        className="card"
-        style={{ cursor: hasContent ? 'pointer' : 'default', marginBottom: 0 }}
-        onClick={() => hasContent && setExpanded(e => !e)}
-      >
-        {/* Zeit-Badge */}
-        <div style={{
-          display: 'inline-block',
-          background: 'var(--gelb)',
-          color: 'var(--schwarz)',
-          fontSize: 10,
-          fontWeight: 800,
-          fontFamily: 'var(--font-heading)',
-          letterSpacing: '0.04em',
-          padding: '2px 8px',
-          borderRadius: 3,
-          border: '1px solid rgba(0,0,0,0.12)',
-          marginBottom: 6,
-        }}>
-          {item.time}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <div className="card-title" style={{ marginBottom: 0 }}>{item.title}</div>
-          {hasContent && (
-            <span style={{ color: 'var(--grau-text)', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-              <svg role="presentation" focusable="false" width="8" height="6" viewBox="0 0 8 6"
-                style={{
-                  display: 'block',
-                  transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)',
-                  transition: 'transform 0.2s ease',
-                }}>
-                <path d="m1 1.5 3 3 3-3" fill="none" stroke="currentColor" strokeWidth="1.5"/>
-              </svg>
-            </span>
-          )}
-          {!hasContent && (
-            <span style={{
-              fontSize: 9, fontWeight: 700, color: 'var(--grau-text)',
-              border: '1px solid var(--grau)', borderRadius: 3,
-              padding: '1px 5px', flexShrink: 0, whiteSpace: 'nowrap',
+      {days.map((day, idx) => (
+        <button
+          key={idx}
+          onClick={() => setSelectedDay(day)}
+          style={{
+            width: '100%',
+            background: 'var(--weiss)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--rounded)',
+            padding: '13px var(--sp-4)',
+            marginBottom: 8,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            textAlign: 'left',
+            boxShadow: 'var(--shadow-sm)',
+          }}
+        >
+          {/* Zeitpunkt + Datum */}
+          <div style={{ flex: '0 0 100px' }}>
+            <div style={{
+              fontSize: 11,
+              fontWeight: 800,
+              fontFamily: 'var(--font-heading)',
+              color: 'var(--schwarz)',
+              letterSpacing: '0.02em',
             }}>
-              folgt
-            </span>
-          )}
-        </div>
-
-        {/* Ausgeklappter Inhalt */}
-        {expanded && hasContent && (
-          <div style={{
-            marginTop: 10,
-            paddingTop: 10,
-            borderTop: '1px solid var(--border)',
-          }}>
-            {content.body && (
-              <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', color: 'var(--schwarz)' }}>
-                {content.body}
+              {day.label}
+            </div>
+            {day.date && (
+              <div style={{ fontSize: 11, color: 'var(--grau-text)', marginTop: 2 }}>
+                {formatDateShort(day.date)}
               </div>
             )}
-            {content.file_url && (
-              <a href={content.file_url} target="_blank" rel="noopener noreferrer"
-                className="button button--secondary"
-                style={{ marginTop: 10, textDecoration: 'none', display: 'inline-block' }}
-                onClick={e => e.stopPropagation()}
-              >
-                📄 Dokument öffnen
-              </a>
-            )}
           </div>
-        )}
+
+          {/* Trennlinie */}
+          <div style={{ width: 1, height: 30, background: 'var(--border)', flexShrink: 0 }} />
+
+          {/* To-Do */}
+          <div style={{
+            flex: 1,
+            fontWeight: 700,
+            fontSize: 'var(--text-sm)',
+            color: 'var(--schwarz)',
+            fontFamily: 'var(--font-heading)',
+          }}>
+            {day.todo}
+          </div>
+
+          {/* Pfeil */}
+          <span style={{ color: 'var(--grau-text)', fontSize: 16, flexShrink: 0 }}>→</span>
+        </button>
+      ))}
+
+      {/* Checklisten am Ende */}
+      {checklists && checklists.length > 0 && (
+        <>
+          <div className="section-title" style={{ marginTop: 8 }}>Checklisten</div>
+          <ChecklistSection festivalId={festivalId} profileId={profileId} checklists={checklists} />
+        </>
+      )}
+    </div>
+  )
+}
+
+// ── Tages-Detailansicht ───────────────────────────────────────────────────────
+
+function AblaufDayDetail({ day, onBack }) {
+  return (
+    <div>
+      {/* Zurück + Titel */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 'var(--sp-5)' }}>
+        <button
+          onClick={onBack}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 20,
+            fontWeight: 700,
+            color: 'var(--schwarz)',
+            padding: 0,
+            lineHeight: 1,
+            flexShrink: 0,
+          }}
+        >
+          ←
+        </button>
+        <div>
+          <div style={{
+            fontSize: 10,
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            color: 'var(--grau-text)',
+            fontFamily: 'var(--font-heading)',
+          }}>
+            {day.label}{day.date ? ` · ${formatDateShort(day.date)}` : ''}
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-statement)',
+            fontSize: 'var(--text-lg)',
+            color: 'var(--schwarz)',
+            marginTop: 2,
+            lineHeight: 1.2,
+          }}>
+            {day.todo}
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        {day.content.map((item, i) => {
+          if (item.section) {
+            return (
+              <div key={i} style={{
+                fontWeight: 800,
+                fontSize: 10,
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                color: 'var(--grau-text)',
+                fontFamily: 'var(--font-heading)',
+                marginTop: i > 0 ? 18 : 0,
+                marginBottom: 10,
+              }}>
+                {item.text}
+              </div>
+            )
+          }
+          return (
+            <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
+              <span style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: 'var(--gelb)',
+                border: '1.5px solid var(--schwarz)',
+                marginTop: 5,
+                flexShrink: 0,
+              }} />
+              <div style={{ fontSize: 14, lineHeight: 1.65, color: 'var(--schwarz)' }}>
+                {item.text}
+                {item.extra && (
+                  <div style={{ marginTop: 4 }}>
+                    <a
+                      href={`mailto:${item.extra.email}`}
+                      style={{ fontSize: 13, color: 'var(--grau-text)', wordBreak: 'break-all' }}
+                    >
+                      {item.extra.label}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
 }
 
-// ── ChecklistSection (aus ChecklistTab herausgelöst) ──────────────────────────
+// ── ChecklistSection ──────────────────────────────────────────────────────────
 
 function ChecklistSection({ festivalId, profileId, checklists }) {
-  const [items, setItems] = useState({})
+  const [items, setItems]   = useState({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -544,9 +637,9 @@ function ChecklistSection({ festivalId, profileId, checklists }) {
   return (
     <div>
       {checklists.map(cl => {
-        const clItems = items[cl.id] || []
+        const clItems  = items[cl.id] || []
         const doneCount = clItems.filter(i => i.is_checked).length
-        const pct = clItems.length ? Math.round((doneCount / clItems.length) * 100) : 0
+        const pct       = clItems.length ? Math.round((doneCount / clItems.length) * 100) : 0
 
         return (
           <div key={cl.id} className="card">
@@ -586,24 +679,87 @@ function ChecklistSection({ festivalId, profileId, checklists }) {
   )
 }
 
+// ── KontakteTab ───────────────────────────────────────────────────────────────
+
+function KontakteTab({ details, leads }) {
+  return (
+    <div>
+      {(details.emergency_number || details.notfall) && (
+        <>
+          <div className="section-title">Notfall</div>
+          <div style={{
+            background: 'var(--rot)',
+            border: '2px solid var(--rot)',
+            borderRadius: 'var(--radius)',
+            padding: '16px',
+            boxShadow: '4px 4px 0 rgba(0,0,0,0.3)',
+            marginBottom: 14,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+          }}>
+            <IconKontakte size={32} />
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--on-dark-sub)', marginBottom: 4 }}>
+                Notfallnummer
+              </div>
+              <a href={`tel:${details.emergency_number || details.notfall}`}
+                style={{ fontSize: 24, fontWeight: 900, color: 'var(--weiss)', textDecoration: 'none', fontFamily: 'var(--font-statement)', letterSpacing: '0.05em' }}>
+                {details.emergency_number || details.notfall}
+              </a>
+            </div>
+          </div>
+        </>
+      )}
+
+      {leads && leads.length > 0 && (
+        <>
+          <div className="section-title">Deine Leads</div>
+          {leads.map((lead, i) => (
+            <div key={i} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{
+                width: 46, height: 46, borderRadius: '50%',
+                background: 'var(--gelb)', border: '2px solid var(--schwarz)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'var(--font-statement)', fontSize: 22, flexShrink: 0,
+                color: 'var(--schwarz)',
+              }}>
+                {(lead.full_name || lead.email || '?')[0].toUpperCase()}
+              </div>
+              <div>
+                <div className="card-title">{lead.full_name || lead.email}</div>
+                <a href={`mailto:${lead.email}`}
+                  style={{ fontSize: 13, color: 'var(--grau-text)', textDecoration: 'none' }}>
+                  {lead.email}
+                </a>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+
+      {(!leads || leads.length === 0) && !details.emergency_number && (
+        <div className="card" style={{ textAlign: 'center', padding: 32 }}>
+          <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconKontakte size={32} /></div>
+          <p className="card-sub">Kontakte werden noch eingetragen.</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── InfosTab ──────────────────────────────────────────────────────────────────
 
 function InfosTab({ details, role, content }) {
   const isLeadOp        = role === 'lead' || role === 'operator'
   const isKitchenVisible = role === 'catering' || role === 'operator' || role === 'lead'
 
-  const lbl = {
-    fontSize: 11, fontWeight: 800, textTransform: 'uppercase',
-    letterSpacing: '0.08em', color: 'var(--grau-text)', marginBottom: 3,
-  }
+  const lbl = { fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grau-text)', marginBottom: 3 }
   const val = { fontSize: 14, fontWeight: 600 }
   const valMulti = { fontSize: 14, fontWeight: 600, whiteSpace: 'pre-wrap', lineHeight: 1.6 }
-  const linkStyle = {
-    fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', textDecoration: 'underline',
-  }
+  const linkStyle = { fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', textDecoration: 'underline' }
   const ghost = { fontSize: 14, fontWeight: 600, color: 'var(--grau-text)', fontStyle: 'italic' }
 
-  // Betrieb-Sektion nur anzeigen wenn mindestens ein Feld befüllt ist
   const hasBetrieb = details.shift_table_link || details.goldeimer_hours ||
     details.goldeimer_prices || details.festival_money_info ||
     (isLeadOp && details.festival_actions) ||
@@ -612,8 +768,6 @@ function InfosTab({ details, role, content }) {
 
   return (
     <div>
-
-      {/* ── Deine Zeiten ── */}
       <div className="section-title">Deine Zeiten</div>
       <div className="card">
         <ul className="info-list">
@@ -634,30 +788,21 @@ function InfosTab({ details, role, content }) {
           {details.festival_town && (
             <li>
               <span className="info-icon"><IconPin size={22}/></span>
-              <div>
-                <div style={lbl}>Ort</div>
-                <div style={val}>{details.festival_town}</div>
-              </div>
+              <div><div style={lbl}>Ort</div><div style={val}>{details.festival_town}</div></div>
             </li>
           )}
           {details.festival_address && (
             <li>
               <span className="info-icon"><IconPin size={22}/></span>
-              <div>
-                <div style={lbl}>Anschrift</div>
-                <div style={valMulti}>{details.festival_address}</div>
-              </div>
+              <div><div style={lbl}>Anschrift</div><div style={valMulti}>{details.festival_address}</div></div>
             </li>
           )}
         </ul>
       </div>
 
-      {/* ── Festival ── */}
       <div className="section-title">Festival</div>
       <div className="card">
         <ul className="info-list">
-
-          {/* Lageplan: immer anzeigen — "Folgt" als Platzhalter wenn leer */}
           <li>
             <span className="info-icon"><IconPin size={22}/></span>
             <div>
@@ -668,17 +813,12 @@ function InfosTab({ details, role, content }) {
               }
             </div>
           </li>
-
           {details.need_total && (
             <li>
               <span className="info-icon"><IconKontakte size={22}/></span>
-              <div>
-                <div style={lbl}>Crew-Größe</div>
-                <div style={val}>{details.need_total} Personen</div>
-              </div>
+              <div><div style={lbl}>Crew-Größe</div><div style={val}>{details.need_total} Personen</div></div>
             </li>
           )}
-
           {isLeadOp && details.link_crew_list && (
             <li>
               <span className="info-icon"><IconStift size={22}/></span>
@@ -688,17 +828,14 @@ function InfosTab({ details, role, content }) {
               </div>
             </li>
           )}
-
         </ul>
       </div>
 
-      {/* ── Betrieb ── */}
       {hasBetrieb && (
         <>
           <div className="section-title">Betrieb</div>
           <div className="card">
             <ul className="info-list">
-
               {details.shift_table_link && (
                 <li>
                   <span className="info-icon"><IconKalender size={22}/></span>
@@ -708,47 +845,30 @@ function InfosTab({ details, role, content }) {
                   </div>
                 </li>
               )}
-
               {details.goldeimer_hours && (
                 <li>
                   <span className="info-icon"><IconAblauf size={22}/></span>
-                  <div>
-                    <div style={lbl}>Goldeimer Öffnungszeiten</div>
-                    <div style={valMulti}>{details.goldeimer_hours}</div>
-                  </div>
+                  <div><div style={lbl}>Goldeimer Öffnungszeiten</div><div style={valMulti}>{details.goldeimer_hours}</div></div>
                 </li>
               )}
-
               {details.goldeimer_prices && (
                 <li>
                   <span className="info-icon"><IconStar size={22}/></span>
-                  <div>
-                    <div style={lbl}>Preise</div>
-                    <div style={valMulti}>{details.goldeimer_prices}</div>
-                  </div>
+                  <div><div style={lbl}>Preise</div><div style={valMulti}>{details.goldeimer_prices}</div></div>
                 </li>
               )}
-
               {details.festival_money_info && (
                 <li>
                   <span className="info-icon"><IconOrderbird size={22}/></span>
-                  <div>
-                    <div style={lbl}>Kassensystem</div>
-                    <div style={valMulti}>{details.festival_money_info}</div>
-                  </div>
+                  <div><div style={lbl}>Kassensystem</div><div style={valMulti}>{details.festival_money_info}</div></div>
                 </li>
               )}
-
               {isLeadOp && details.festival_actions && (
                 <li>
                   <span className="info-icon"><IconStar size={22}/></span>
-                  <div>
-                    <div style={lbl}>Aktionen</div>
-                    <div style={valMulti}>{details.festival_actions}</div>
-                  </div>
+                  <div><div style={lbl}>Aktionen</div><div style={valMulti}>{details.festival_actions}</div></div>
                 </li>
               )}
-
               {isKitchenVisible && details.kitchen_crew_list && (
                 <li>
                   <span className="info-icon"><IconStar size={22}/></span>
@@ -758,23 +878,17 @@ function InfosTab({ details, role, content }) {
                   </div>
                 </li>
               )}
-
               {isLeadOp && details.logistic_info && (
                 <li>
                   <span className="info-icon"><IconTransport size={22}/></span>
-                  <div>
-                    <div style={lbl}>Logistik-Infos</div>
-                    <div style={valMulti}>{details.logistic_info}</div>
-                  </div>
+                  <div><div style={lbl}>Logistik-Infos</div><div style={valMulti}>{details.logistic_info}</div></div>
                 </li>
               )}
-
             </ul>
           </div>
         </>
       )}
 
-      {/* ── Sonstiges ── */}
       {details.festival_sonstiges && (
         <>
           <div className="section-title">Sonstiges</div>
@@ -786,7 +900,6 @@ function InfosTab({ details, role, content }) {
         </>
       )}
 
-      {/* ── Dokumente (aus content-Tabelle) ── */}
       {content && content.length > 0 && (
         <>
           <div className="section-title">Dokumente</div>
@@ -808,7 +921,6 @@ function InfosTab({ details, role, content }) {
           ))}
         </>
       )}
-
     </div>
   )
 }
@@ -816,9 +928,9 @@ function InfosTab({ details, role, content }) {
 // ── FeedbackTab ───────────────────────────────────────────────────────────────
 
 function FeedbackTab({ festivalId, profileId }) {
-  const [text, setText] = useState('')
-  const [type, setType] = useState('feedback')
-  const [sent, setSent] = useState(false)
+  const [text, setText]     = useState('')
+  const [type, setType]     = useState('feedback')
+  const [sent, setSent]     = useState(false)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e) {
@@ -880,17 +992,17 @@ function FeedbackTab({ festivalId, profileId }) {
 
 function getAnreise(details, role) {
   if (role === 'supporti_plus') return details.start_setup
-  if (role === 'supporti') return details.start_supp
+  if (role === 'supporti')      return details.start_supp
   if (role === 'lead' || role === 'operator') return details.start_leadop
-  if (role === 'catering') return details.start_kitchen
+  if (role === 'catering')      return details.start_kitchen
   return null
 }
 
 function getAbreise(details, role) {
   if (role === 'supporti_plus') return details.end_takedown
-  if (role === 'supporti') return details.end_supp
+  if (role === 'supporti')      return details.end_supp
   if (role === 'lead' || role === 'operator') return details.end_leadop
-  if (role === 'catering') return details.end_kitchen
+  if (role === 'catering')      return details.end_kitchen
   return null
 }
 
@@ -900,6 +1012,17 @@ function parseDeDate(str) {
   if (!match) return null
   const [, day, month, year] = match
   return new Date(+year, +month - 1, +day)
+}
+
+function toDeDate(d) {
+  return `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getFullYear()}`
+}
+
+function formatDateShort(dateStr) {
+  if (!dateStr) return ''
+  const d = parseDeDate(dateStr)
+  if (!d) return dateStr
+  return d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
 function formatDate(dateStr) {
