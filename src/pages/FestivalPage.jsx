@@ -188,7 +188,7 @@ export default function FestivalPage() {
 
   async function loadFestivalInfo() {
     setFetchError(false); setAuthError(false); setNotFound(false)
-    const cacheKey = `festival_v2_${id}`
+    const cacheKey = `festival_${id}`
     const cached = cacheGet(cacheKey)
     if (cached) { setData(cached); setLoading(false) }
 
@@ -196,7 +196,6 @@ export default function FestivalPage() {
       const { data: rpcData, error, isAuthError } = await fetchWithTimeout(
         supabase.rpc('get_my_festival_info', { p_festival_id: id })
       )
-      console.log('[FestivalPage] RPC result:', { rpcData, error, isAuthError })
       if (!error && rpcData) {
         setData(rpcData)
         cacheSet(cacheKey, rpcData, 48 * 60 * 60 * 1000)
