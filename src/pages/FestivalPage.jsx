@@ -383,7 +383,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
   const isLeadOp = role === 'lead' || role === 'operator'
 
   const ablaufTitle =
-    role === 'lead'     ? `Ablauf für Leads ${festivalName}` :
+    role === 'lead'     ? 'Ablauf für Leads' :
     role === 'operator' ? 'Ablauf für Operator' :
     role === 'catering' ? 'Ablauf für Küchencrew' :
                           'Ablauf für Supportis'
