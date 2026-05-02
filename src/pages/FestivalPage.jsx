@@ -245,7 +245,7 @@ export default function FestivalPage() {
   ]
 
   return (
-    <div style={{ background: 'var(--schwarz)', minHeight: '100dvh' }}>
+    <div style={{ background: 'var(--papier)', minHeight: '100dvh' }}>
       {/* ── Logo-Header (cremefarben) ── */}
       <div className="header">
         {/* Auf der Tages-Unterseite: zurück zur Tagesliste; sonst: zurück zur Startseite */}
