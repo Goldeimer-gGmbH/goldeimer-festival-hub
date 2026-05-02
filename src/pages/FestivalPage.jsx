@@ -177,8 +177,12 @@ export default function FestivalPage() {
 
   const activeTab = searchParams.get('tab') || 'ablauf'
   function setActiveTab(tab) {
+    setSelectedDay(null)   // Drill-down schließen beim Tab-Wechsel
     setSearchParams(tab === 'ablauf' ? {} : { tab }, { replace: true })
   }
+
+  // Ablauf-Drill-down-State: hier oben damit der Header-Pfeil darauf zugreifen kann
+  const [selectedDay, setSelectedDay] = useState(null)
 
   useEffect(() => { loadFestivalInfo() }, [id])
 
@@ -244,14 +248,20 @@ export default function FestivalPage() {
     <div>
       {/* ── Logo-Header (cremefarben) ── */}
       <div className="header">
-        <Link
-          to="/"
-          style={{ textDecoration: 'none', fontSize: 20, color: 'var(--schwarz)', fontWeight: 700, lineHeight: 1 }}
-        >
-          ←
-        </Link>
+        {/* Auf der Tages-Unterseite: zurück zur Tagesliste; sonst: zurück zur Startseite */}
+        {selectedDay ? (
+          <button
+            onClick={() => setSelectedDay(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
+          >
+            ←
+          </button>
+        ) : (
+          <Link to="/" style={{ textDecoration: 'none', fontSize: 20, color: 'var(--schwarz)', fontWeight: 700, lineHeight: 1 }}>
+            ←
+          </Link>
+        )}
         <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
-        {/* Spacer für symmetrisches Layout */}
         <span style={{ width: 26 }} />
       </div>
 
@@ -308,6 +318,8 @@ export default function FestivalPage() {
             content={data.content}
             festivalName={festivalName}
             details={details}
+            selectedDay={selectedDay}
+            setSelectedDay={setSelectedDay}
           />
         )}
 
@@ -377,9 +389,7 @@ export default function FestivalPage() {
 
 // ── AblaufTab ─────────────────────────────────────────────────────────────────
 
-function AblaufTab({ role, festivalId, profileId, checklists, festivalName, details }) {
-  const [selectedDay, setSelectedDay] = useState(null)
-
+function AblaufTab({ role, festivalId, profileId, checklists, festivalName, details, selectedDay, setSelectedDay }) {
   const isLeadOp = role === 'lead' || role === 'operator'
 
   const ablaufTitle =
@@ -388,9 +398,9 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
     role === 'catering' ? 'Ablauf für Küchencrew' :
                           'Ablauf für Supportis'
 
-  // Drill-down-Ansicht: einzelner Tag
+  // Drill-down-Ansicht: einzelner Tag (Pfeil ist im Header der Seite)
   if (selectedDay) {
-    return <AblaufDayDetail day={selectedDay} onBack={() => setSelectedDay(null)} />
+    return <AblaufDayDetail day={selectedDay} />
   }
 
   if (!isLeadOp) {
@@ -505,47 +515,29 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
 
 // ── Tages-Detailansicht ───────────────────────────────────────────────────────
 
-function AblaufDayDetail({ day, onBack }) {
+function AblaufDayDetail({ day }) {
   return (
     <div>
-      {/* Zurück + Titel */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 'var(--sp-5)' }}>
-        <button
-          onClick={onBack}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: 20,
-            fontWeight: 700,
-            color: 'var(--schwarz)',
-            padding: 0,
-            lineHeight: 1,
-            flexShrink: 0,
-          }}
-        >
-          ←
-        </button>
-        <div>
-          <div style={{
-            fontSize: 10,
-            fontWeight: 800,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color: 'var(--grau-text)',
-            fontFamily: 'var(--font-heading)',
-          }}>
-            {day.label}{day.date ? ` · ${formatDateShort(day.date)}` : ''}
-          </div>
-          <div style={{
-            fontFamily: 'var(--font-statement)',
-            fontSize: 'var(--text-lg)',
-            color: 'var(--schwarz)',
-            marginTop: 2,
-            lineHeight: 1.2,
-          }}>
-            {day.todo}
-          </div>
+      {/* Titel (Pfeil ist im Seiten-Header) */}
+      <div style={{ marginBottom: 'var(--sp-5)' }}>
+        <div style={{
+          fontSize: 10,
+          fontWeight: 800,
+          textTransform: 'uppercase',
+          letterSpacing: '0.08em',
+          color: 'var(--grau-text)',
+          fontFamily: 'var(--font-heading)',
+          marginBottom: 4,
+        }}>
+          {day.label}{day.date ? ` · ${formatDateShort(day.date)}` : ''}
+        </div>
+        <div style={{
+          fontFamily: 'var(--font-statement)',
+          fontSize: 'var(--text-h2)',
+          color: 'var(--schwarz)',
+          lineHeight: 1.2,
+        }}>
+          {day.todo}
         </div>
       </div>
 
