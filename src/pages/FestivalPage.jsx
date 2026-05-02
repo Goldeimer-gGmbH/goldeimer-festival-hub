@@ -192,19 +192,25 @@ export default function FestivalPage() {
     const cached = cacheGet(cacheKey)
     if (cached) { setData(cached); setLoading(false) }
 
-    const { data: rpcData, error, isAuthError } = await fetchWithTimeout(
-      supabase.rpc('get_my_festival_info', { p_festival_id: id })
-    )
-    if (!error && rpcData) {
-      setData(rpcData)
-      cacheSet(cacheKey, rpcData, 48 * 60 * 60 * 1000)
-    } else if (error) {
-      if (isAuthError) setAuthError(true)
-      else if (!cached) setFetchError(true)
-    } else if (!rpcData && !cached) {
-      setNotFound(true)
+    try {
+      const { data: rpcData, error, isAuthError } = await fetchWithTimeout(
+        supabase.rpc('get_my_festival_info', { p_festival_id: id })
+      )
+      console.log('[FestivalPage] RPC result:', { rpcData, error, isAuthError })
+      if (!error && rpcData) {
+        setData(rpcData)
+        cacheSet(cacheKey, rpcData, 48 * 60 * 60 * 1000)
+      } else if (error) {
+        if (isAuthError) setAuthError(true)
+        else if (!cached) setFetchError(true)
+      } else if (!rpcData && !cached) {
+        setNotFound(true)
+      }
+    } catch {
+      if (!cached) setFetchError(true)
+    } finally {
+      if (!cached) setLoading(false)
     }
-    if (!cached) setLoading(false)
   }
 
   if (loading) return <div className="loading">Lädt Festival-Infos...</div>
