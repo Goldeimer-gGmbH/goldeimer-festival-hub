@@ -245,7 +245,7 @@ export default function FestivalPage() {
   ]
 
   return (
-    <div>
+    <div style={{ background: 'var(--schwarz)', minHeight: '100dvh' }}>
       {/* ── Logo-Header (cremefarben) ── */}
       <div className="header">
         {/* Auf der Tages-Unterseite: zurück zur Tagesliste; sonst: zurück zur Startseite */}
@@ -307,6 +307,7 @@ export default function FestivalPage() {
         style={{
           paddingTop: 16,
           paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 16px))',
+          minHeight: 'auto',   /* kein min-height: 100vh – verhindert den langen Leerraum */
         }}
       >
         {activeTab === 'ablauf' && (
