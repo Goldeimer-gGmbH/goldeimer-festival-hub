@@ -188,7 +188,7 @@ export default function FestivalPage() {
 
   async function loadFestivalInfo() {
     setFetchError(false); setAuthError(false); setNotFound(false)
-    const cacheKey = `festival_${id}`
+    const cacheKey = `festival_v2_${id}`
     const cached = cacheGet(cacheKey)
     if (cached) { setData(cached); setLoading(false) }
 
