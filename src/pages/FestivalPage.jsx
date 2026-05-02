@@ -242,11 +242,14 @@ export default function FestivalPage() {
 
   return (
     <div>
-      {/* ── Logo-Header (schwarz) ── */}
-      <div
-        className="header"
-        style={{ background: 'var(--schwarz)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}
-      >
+      {/* ── Logo-Header (cremefarben) ── */}
+      <div className="header">
+        <Link
+          to="/"
+          style={{ textDecoration: 'none', fontSize: 20, color: 'var(--schwarz)', fontWeight: 700, lineHeight: 1 }}
+        >
+          ←
+        </Link>
         <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
         {/* Spacer für symmetrisches Layout */}
         <span style={{ width: 26 }} />
