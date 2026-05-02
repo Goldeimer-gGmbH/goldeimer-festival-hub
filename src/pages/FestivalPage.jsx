@@ -307,7 +307,8 @@ export default function FestivalPage() {
         style={{
           paddingTop: 16,
           paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 16px))',
-          minHeight: 'auto',   /* kein min-height: 100vh – verhindert den langen Leerraum */
+          minHeight: 'auto',
+          background: 'var(--papier)',
         }}
       >
         {activeTab === 'ablauf' && (
