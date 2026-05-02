@@ -330,7 +330,7 @@ export default function FestivalPage() {
         )}
 
         {activeTab === 'kontakte' && (
-          <KontakteTab details={details} leads={data.leads} />
+          <KontakteTab details={details} contacts={data.contacts} role={role} />
         )}
 
         {activeTab === 'feedback' && (
@@ -685,64 +685,153 @@ function ChecklistSection({ festivalId, profileId, checklists }) {
 
 // ── KontakteTab ───────────────────────────────────────────────────────────────
 
-function KontakteTab({ details, leads }) {
+const ROLLE_LABEL_KONTAKT = { lead: 'Lead', operator: 'Operator' }
+
+// Telefonnummer aus einem Freitext extrahieren und als klickbaren Link rendern.
+// Alles andere wird als normaler Text angezeigt.
+function PhoneText({ text }) {
+  if (!text) return null
+  // Matcht gängige Nummernformate: +49..., 0..., mit Leerzeichen/Bindestrichen
+  const phoneRegex = /(\+?[\d][\d\s\-/]{6,}[\d])/g
+  const parts = []
+  let last = 0
+  let match
+  while ((match = phoneRegex.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index))
+    const raw = match[1].replace(/[\s\-/]/g, '')
+    parts.push(
+      <a key={match.index} href={`tel:${raw}`}
+        style={{ color: 'var(--schwarz)', fontWeight: 700, textDecoration: 'underline' }}>
+        {match[1]}
+      </a>
+    )
+    last = match.index + match[0].length
+  }
+  if (last < text.length) parts.push(text.slice(last))
+  return <span>{parts}</span>
+}
+
+function ContactCard({ label, value, icon }) {
+  if (!value) return null
+  return (
+    <div className="card" style={{ marginBottom: 8 }}>
+      <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grau-text)', fontFamily: 'var(--font-heading)', marginBottom: 6 }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 14, lineHeight: 1.65, color: 'var(--schwarz)', whiteSpace: 'pre-wrap' }}>
+        <PhoneText text={value} />
+      </div>
+    </div>
+  )
+}
+
+function KontakteTab({ details, contacts, role }) {
+  const isLeadOp = role === 'lead' || role === 'operator'
+
+  const hasAnyContent = details.telegram_link || (contacts && contacts.length > 0) ||
+    (isLeadOp && details.production_mgmt) || (isLeadOp && details.urin_pump) ||
+    details.awareness_team || (isLeadOp && details.vca_asp)
+
   return (
     <div>
-      {(details.emergency_number || details.notfall) && (
+      {/* Telegramgruppe – alle Rollen */}
+      {details.telegram_link && (
         <>
-          <div className="section-title">Notfall</div>
-          <div style={{
-            background: 'var(--rot)',
-            border: '2px solid var(--rot)',
-            borderRadius: 'var(--radius)',
-            padding: '16px',
-            boxShadow: '4px 4px 0 rgba(0,0,0,0.3)',
-            marginBottom: 14,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 14,
-          }}>
-            <IconKontakte size={32} />
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--on-dark-sub)', marginBottom: 4 }}>
-                Notfallnummer
+          <div className="section-title">Telegramgruppe</div>
+          <div className="card" style={{ marginBottom: 8 }}>
+            <a
+              href={details.telegram_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'var(--schwarz)' }}
+            >
+              <span style={{ fontSize: 24 }}>✈️</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>Zur Telegram-Gruppe</div>
+                <div style={{ fontSize: 12, color: 'var(--grau-text)', marginTop: 2 }}>Link öffnen ↗</div>
               </div>
-              <a href={`tel:${details.emergency_number || details.notfall}`}
-                style={{ fontSize: 24, fontWeight: 900, color: 'var(--weiss)', textDecoration: 'none', fontFamily: 'var(--font-statement)', letterSpacing: '0.05em' }}>
-                {details.emergency_number || details.notfall}
-              </a>
-            </div>
+            </a>
           </div>
         </>
       )}
 
-      {leads && leads.length > 0 && (
+      {/* Kontaktpersonen (Leads + Operators) – alle Rollen */}
+      {contacts && contacts.length > 0 && (
         <>
-          <div className="section-title">Deine Leads</div>
-          {leads.map((lead, i) => (
-            <div key={i} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div className="section-title">Kontaktpersonen</div>
+          {contacts.map((c, i) => (
+            <div key={i} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 8 }}>
               <div style={{
-                width: 46, height: 46, borderRadius: '50%',
+                width: 44, height: 44, borderRadius: '50%',
                 background: 'var(--gelb)', border: '2px solid var(--schwarz)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: 'var(--font-statement)', fontSize: 22, flexShrink: 0,
+                fontFamily: 'var(--font-statement)', fontSize: 20, flexShrink: 0,
                 color: 'var(--schwarz)',
               }}>
-                {(lead.full_name || lead.email || '?')[0].toUpperCase()}
+                {(c.full_name || c.email || '?')[0].toUpperCase()}
               </div>
-              <div>
-                <div className="card-title">{lead.full_name || lead.email}</div>
-                <a href={`mailto:${lead.email}`}
-                  style={{ fontSize: 13, color: 'var(--grau-text)', textDecoration: 'none' }}>
-                  {lead.email}
-                </a>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <div className="card-title" style={{ margin: 0 }}>{c.full_name || c.email}</div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
+                    background: 'var(--gruen)', color: 'var(--weiss)',
+                    padding: '2px 7px', borderRadius: 4,
+                  }}>
+                    {ROLLE_LABEL_KONTAKT[c.role] || c.role}
+                  </span>
+                </div>
+                {c.phone && (
+                  <a href={`tel:${c.phone.replace(/[\s\-/]/g, '')}`}
+                    style={{ fontSize: 13, fontWeight: 700, color: 'var(--schwarz)', textDecoration: 'underline', display: 'block', marginTop: 3 }}>
+                    {c.phone}
+                  </a>
+                )}
+                {!c.phone && c.email && (
+                  <a href={`mailto:${c.email}`}
+                    style={{ fontSize: 12, color: 'var(--grau-text)', textDecoration: 'none', display: 'block', marginTop: 2 }}>
+                    {c.email}
+                  </a>
+                )}
               </div>
             </div>
           ))}
         </>
       )}
 
-      {(!leads || leads.length === 0) && !details.emergency_number && (
+      {/* Produktionsleitung – nur Leads + Operator */}
+      {isLeadOp && details.production_mgmt && (
+        <>
+          <div className="section-title">Produktionsleitung</div>
+          <ContactCard value={details.production_mgmt} />
+        </>
+      )}
+
+      {/* Urinabpumpung – nur Leads + Operator */}
+      {isLeadOp && details.urin_pump && (
+        <>
+          <div className="section-title">Urinabpumpung</div>
+          <ContactCard value={details.urin_pump} />
+        </>
+      )}
+
+      {/* Awareness-Team – alle Rollen */}
+      {details.awareness_team && (
+        <>
+          <div className="section-title">Awareness-Team</div>
+          <ContactCard value={details.awareness_team} />
+        </>
+      )}
+
+      {/* VcA-ASP – nur Leads + Operator */}
+      {isLeadOp && details.vca_asp && (
+        <>
+          <div className="section-title">VcA-ASP</div>
+          <ContactCard value={details.vca_asp} />
+        </>
+      )}
+
+      {!hasAnyContent && (
         <div className="card" style={{ textAlign: 'center', padding: 32 }}>
           <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconKontakte size={32} /></div>
           <p className="card-sub">Kontakte werden noch eingetragen.</p>
