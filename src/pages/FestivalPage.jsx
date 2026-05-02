@@ -322,44 +322,51 @@ export default function FestivalPage() {
       </div>
 
       {/* ── Bottom-Navigation (fest unten) ── */}
+      {/* Äußere Box: schwarzer Hintergrund über volle Breite */}
       <div style={{
         position: 'fixed',
         bottom: 0,
         left: 0,
         right: 0,
-        background: 'var(--papier)',
-        borderTop: '1px solid rgba(29,29,27,0.14)',
-        display: 'flex',
+        background: 'var(--schwarz)',
+        borderTop: '1px solid rgba(255,255,255,0.1)',
         zIndex: 200,
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}>
-        {tabs.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            style={{
-              flex: 1,
-              padding: '9px 2px 11px',
-              border: 'none',
-              background: 'transparent',
-              color: activeTab === tab.key ? 'var(--gelb)' : 'var(--schwarz)',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 3,
-              fontSize: 9,
-              fontFamily: 'var(--font-heading)',
-              fontWeight: 800,
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-              transition: 'color 0.15s',
-            }}
-          >
-            <tab.Icon />
-            {tab.label}
-          </button>
-        ))}
+        {/* Innere Box: Buttons auf max. 480px zentriert — wie der Seiten-Content */}
+        <div style={{
+          display: 'flex',
+          maxWidth: 480,
+          margin: '0 auto',
+        }}>
+          {tabs.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                flex: 1,
+                padding: '9px 2px 11px',
+                border: 'none',
+                background: 'transparent',
+                color: activeTab === tab.key ? 'var(--gelb)' : 'var(--papier)',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 3,
+                fontSize: 9,
+                fontFamily: 'var(--font-heading)',
+                fontWeight: 800,
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                transition: 'color 0.15s',
+              }}
+            >
+              <tab.Icon />
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )
