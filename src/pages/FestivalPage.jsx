@@ -717,45 +717,66 @@ function PhoneText({ text }) {
 }
 
 // Parst Freitext in einzelne Personen-Karten.
-// Personen werden durch Leerzeilen getrennt. Telefonnummern werden
-// aus jeder Zeile extrahiert — auch wenn Name und Nummer auf einer Zeile stehen.
+// Neue Person beginnt wenn:
+//   (a) eine reine Namenszeile nach Telefonnummern kommt, ODER
+//   (b) eine Zeile Name+Nummer enthält UND wir bereits eine Nummer haben
+//       (= jede "Name + Nummer auf einer Zeile" ist immer eine eigene Person)
+// So können mehrere Nummern zu einer Person (reiner Nummernblock) trotzdem
+// in einer Karte landen.
 function PersonBlocks({ value }) {
   if (!value) return null
   const phoneRegex = /(\+?[\d][\d\s\-/]{6,}[\d])/
-  const blocks = value.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean)
+
+  const lines = value.split('\n').map(l => l.trim()).filter(Boolean)
+  const persons = []
+  let current = { nameLines: [], phones: [] }
+
+  lines.forEach(line => {
+    const match = line.match(phoneRegex)
+    if (match) {
+      const before = line.slice(0, match.index).trim()
+      // Hat die Zeile einen Namen VOR der Nummer UND wir haben schon eine Nummer
+      // → das ist eine neue Person (z.B. "Mona Lisa +49..." nach "Shia LaBoef +49...")
+      if (before && current.phones.length > 0) {
+        persons.push(current)
+        current = { nameLines: [], phones: [] }
+      }
+      if (before) current.nameLines.push(before)
+      current.phones.push(match[1])
+    } else {
+      // Reine Namenszeile — nach Nummern startet immer eine neue Person
+      if (current.phones.length > 0) {
+        persons.push(current)
+        current = { nameLines: [], phones: [] }
+      }
+      current.nameLines.push(line)
+    }
+  })
+  if (current.nameLines.length > 0 || current.phones.length > 0) {
+    persons.push(current)
+  }
 
   return (
     <>
-      {blocks.map((block, i) => {
-        const lines = block.split('\n').map(l => l.trim()).filter(Boolean)
-        const nameParts = []
-        const phones = []
-
-        lines.forEach(line => {
-          const match = line.match(phoneRegex)
-          if (match) {
-            // Text vor der Nummer → Name; die Nummer → Link
-            const before = line.slice(0, match.index).trim()
-            if (before) nameParts.push(before)
-            phones.push(match[1])
-          } else {
-            nameParts.push(line)
-          }
-        })
-
-        const name = nameParts.join(' ')
-
+      {persons.map((person, i) => {
+        const name = person.nameLines.join(' ')
         return (
           <div key={i} className="card" style={{ marginBottom: 8 }}>
             {name && (
-              <div className="card-title" style={{ margin: 0, marginBottom: phones.length ? 6 : 0 }}>
+              <div className="card-title" style={{ margin: 0, marginBottom: person.phones.length ? 8 : 0 }}>
                 {name}
               </div>
             )}
-            {phones.map((phone, j) => (
+            {person.phones.map((phone, j) => (
               <a key={j} href={`tel:${phone.replace(/[\s\-/]/g, '')}`}
-                style={{ fontSize: 13, fontWeight: 700, color: 'var(--schwarz)', textDecoration: 'underline', display: 'block' }}>
-                {phone}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: 'var(--schwarz)', color: 'var(--weiss)',
+                  padding: '8px 14px', borderRadius: 8,
+                  fontSize: 13, fontWeight: 700, textDecoration: 'none',
+                  marginRight: 6, marginTop: 4,
+                }}>
+                📞 {phone}
               </a>
             ))}
           </div>
@@ -800,7 +821,7 @@ function KontakteTab({ details, contacts, role, festivalName }) {
           <div className="section-title">Lead- und Operator-Team</div>
           {contacts.map((c, i) => (
             <div key={i} className="card" style={{ marginBottom: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: c.phone ? 6 : 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: (c.phone || c.email) ? 10 : 0 }}>
                 <div className="card-title" style={{ margin: 0 }}>{c.full_name || c.email}</div>
                 <span style={{
                   fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
@@ -810,18 +831,31 @@ function KontakteTab({ details, contacts, role, festivalName }) {
                   {ROLLE_LABEL_KONTAKT[c.role] || c.role}
                 </span>
               </div>
-              {c.phone && (
-                <a href={`tel:${c.phone.replace(/[\s\-/]/g, '')}`}
-                  style={{ fontSize: 13, fontWeight: 700, color: 'var(--schwarz)', textDecoration: 'underline', display: 'block' }}>
-                  {c.phone}
-                </a>
-              )}
-              {!c.phone && c.email && (
-                <a href={`mailto:${c.email}`}
-                  style={{ fontSize: 12, color: 'var(--grau-text)', textDecoration: 'none', display: 'block', marginTop: 2 }}>
-                  {c.email}
-                </a>
-              )}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {c.phone && (
+                  <a href={`tel:${c.phone.replace(/[\s\-/]/g, '')}`}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      background: 'var(--schwarz)', color: 'var(--weiss)',
+                      padding: '8px 14px', borderRadius: 8,
+                      fontSize: 13, fontWeight: 700, textDecoration: 'none',
+                    }}>
+                    📞 {c.phone}
+                  </a>
+                )}
+                {c.email && (
+                  <a href={`mailto:${c.email}`}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      background: 'var(--papier)', color: 'var(--schwarz)',
+                      border: '1.5px solid var(--border)',
+                      padding: '8px 14px', borderRadius: 8,
+                      fontSize: 13, fontWeight: 700, textDecoration: 'none',
+                    }}>
+                    ✉️ {c.email}
+                  </a>
+                )}
+              </div>
             </div>
           ))}
         </>
