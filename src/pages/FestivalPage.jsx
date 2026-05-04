@@ -335,7 +335,7 @@ export default function FestivalPage() {
         )}
 
         {activeTab === 'kontakte' && (
-          <KontakteTab details={details} contacts={data.contacts} role={role} />
+          <KontakteTab details={details} contacts={data.contacts} role={role} festivalName={festivalName} />
         )}
 
         {activeTab === 'feedback' && (
@@ -716,21 +716,50 @@ function PhoneText({ text }) {
   return <span>{parts}</span>
 }
 
-function ContactCard({ label, value, icon }) {
+// Parst Freitext in einzelne Personen-Karten.
+// Personen werden durch Leerzeilen getrennt. Jede Zeile mit Telefonnummer
+// wird als anklickbarer tel:-Link gerendert, der Rest als Name.
+function PersonBlocks({ value }) {
   if (!value) return null
+  const phoneRegex = /(\+?[\d][\d\s\-/]{6,}[\d])/
+  const blocks = value.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean)
+
   return (
-    <div className="card" style={{ marginBottom: 8 }}>
-      <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grau-text)', fontFamily: 'var(--font-heading)', marginBottom: 6 }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 14, lineHeight: 1.65, color: 'var(--schwarz)', whiteSpace: 'pre-wrap' }}>
-        <PhoneText text={value} />
-      </div>
-    </div>
+    <>
+      {blocks.map((block, i) => {
+        const lines = block.split('\n').map(l => l.trim()).filter(Boolean)
+        const nameLines = lines.filter(l => !phoneRegex.test(l))
+        const phoneLines = lines.filter(l => phoneRegex.test(l))
+        const name = nameLines.join(' ')
+
+        return (
+          <div key={i} className="card" style={{ marginBottom: 8 }}>
+            {name && (
+              <div className="card-title" style={{ margin: 0, marginBottom: phoneLines.length ? 6 : 0 }}>
+                {name}
+              </div>
+            )}
+            {phoneLines.map((phone, j) => {
+              const m = phone.match(/(\+?[\d][\d\s\-/]{6,}[\d])/)
+              const raw = m ? m[1].replace(/[\s\-/]/g, '') : phone
+              return (
+                <a key={j} href={`tel:${raw}`}
+                  style={{ fontSize: 13, fontWeight: 700, color: 'var(--schwarz)', textDecoration: 'underline', display: 'block' }}>
+                  {phone}
+                </a>
+              )
+            })}
+            {!name && !phoneLines.length && (
+              <div style={{ fontSize: 14, color: 'var(--schwarz)', whiteSpace: 'pre-wrap' }}>{block}</div>
+            )}
+          </div>
+        )
+      })}
+    </>
   )
 }
 
-function KontakteTab({ details, contacts, role }) {
+function KontakteTab({ details, contacts, role, festivalName }) {
   const isLeadOp = role === 'lead' || role === 'operator'
 
   const hasAnyContent = details.telegram_link || (contacts && contacts.length > 0) ||
@@ -748,9 +777,9 @@ function KontakteTab({ details, contacts, role }) {
               href={details.telegram_link}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ fontWeight: 700, fontSize: 14, color: 'var(--schwarz)', textDecoration: 'underline', wordBreak: 'break-all' }}
+              style={{ fontWeight: 700, fontSize: 14, color: 'var(--schwarz)', textDecoration: 'underline' }}
             >
-              {details.telegram_link} ↗
+              Telegram-Gruppe zum {festivalName} ↗
             </a>
           </div>
         </>
@@ -759,7 +788,7 @@ function KontakteTab({ details, contacts, role }) {
       {/* Kontaktpersonen (Leads + Operators) – alle Rollen */}
       {contacts && contacts.length > 0 && (
         <>
-          <div className="section-title">Kontaktpersonen</div>
+          <div className="section-title">Lead- und Operator-Team</div>
           {contacts.map((c, i) => (
             <div key={i} className="card" style={{ marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: c.phone ? 6 : 0 }}>
@@ -793,7 +822,7 @@ function KontakteTab({ details, contacts, role }) {
       {isLeadOp && details.production_mgmt && (
         <>
           <div className="section-title">Produktionsleitung</div>
-          <ContactCard value={details.production_mgmt} />
+          <PersonBlocks value={details.production_mgmt} />
         </>
       )}
 
@@ -801,7 +830,7 @@ function KontakteTab({ details, contacts, role }) {
       {isLeadOp && details.urin_pump && (
         <>
           <div className="section-title">Urinabpumpung</div>
-          <ContactCard value={details.urin_pump} />
+          <PersonBlocks value={details.urin_pump} />
         </>
       )}
 
@@ -809,7 +838,7 @@ function KontakteTab({ details, contacts, role }) {
       {details.awareness_team && (
         <>
           <div className="section-title">Awareness-Team</div>
-          <ContactCard value={details.awareness_team} />
+          <PersonBlocks value={details.awareness_team} />
         </>
       )}
 
@@ -817,7 +846,7 @@ function KontakteTab({ details, contacts, role }) {
       {isLeadOp && details.vca_asp && (
         <>
           <div className="section-title">VcA-ASP</div>
-          <ContactCard value={details.vca_asp} />
+          <PersonBlocks value={details.vca_asp} />
         </>
       )}
 
