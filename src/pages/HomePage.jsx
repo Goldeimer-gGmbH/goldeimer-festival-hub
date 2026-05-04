@@ -158,7 +158,7 @@ export default function HomePage() {
   })
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
       <div className="header">
         <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
         <Link to="/profil" style={{ textDecoration: 'none', color: 'var(--schwarz)', display: 'flex', alignItems: 'center' }}>
@@ -314,9 +314,10 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Footer – Full-Bleed */}
+        {/* Footer – Full-Bleed, schiebt sich ans Ende der Seite */}
         <div style={{
-          marginTop: 'var(--sp-10)',
+          marginTop: 'auto',
+          paddingTop: 'var(--sp-10)',
           width: '100vw',
           marginLeft: 'calc(-50vw + 50%)',
         }}>
