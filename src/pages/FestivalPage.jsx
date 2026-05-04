@@ -748,13 +748,9 @@ function KontakteTab({ details, contacts, role }) {
               href={details.telegram_link}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'var(--schwarz)' }}
+              style={{ fontWeight: 700, fontSize: 14, color: 'var(--schwarz)', textDecoration: 'underline', wordBreak: 'break-all' }}
             >
-              <span style={{ fontSize: 24 }}>✈️</span>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>Zur Telegram-Gruppe</div>
-                <div style={{ fontSize: 12, color: 'var(--grau-text)', marginTop: 2 }}>Link öffnen ↗</div>
-              </div>
+              {details.telegram_link} ↗
             </a>
           </div>
         </>
@@ -765,40 +761,29 @@ function KontakteTab({ details, contacts, role }) {
         <>
           <div className="section-title">Kontaktpersonen</div>
           {contacts.map((c, i) => (
-            <div key={i} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 8 }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: '50%',
-                background: 'var(--gelb)', border: '2px solid var(--schwarz)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: 'var(--font-statement)', fontSize: 20, flexShrink: 0,
-                color: 'var(--schwarz)',
-              }}>
-                {(c.full_name || c.email || '?')[0].toUpperCase()}
+            <div key={i} className="card" style={{ marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: c.phone ? 6 : 0 }}>
+                <div className="card-title" style={{ margin: 0 }}>{c.full_name || c.email}</div>
+                <span style={{
+                  fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
+                  background: 'var(--gruen)', color: 'var(--weiss)',
+                  padding: '2px 7px', borderRadius: 4,
+                }}>
+                  {ROLLE_LABEL_KONTAKT[c.role] || c.role}
+                </span>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <div className="card-title" style={{ margin: 0 }}>{c.full_name || c.email}</div>
-                  <span style={{
-                    fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
-                    background: 'var(--gruen)', color: 'var(--weiss)',
-                    padding: '2px 7px', borderRadius: 4,
-                  }}>
-                    {ROLLE_LABEL_KONTAKT[c.role] || c.role}
-                  </span>
-                </div>
-                {c.phone && (
-                  <a href={`tel:${c.phone.replace(/[\s\-/]/g, '')}`}
-                    style={{ fontSize: 13, fontWeight: 700, color: 'var(--schwarz)', textDecoration: 'underline', display: 'block', marginTop: 3 }}>
-                    {c.phone}
-                  </a>
-                )}
-                {!c.phone && c.email && (
-                  <a href={`mailto:${c.email}`}
-                    style={{ fontSize: 12, color: 'var(--grau-text)', textDecoration: 'none', display: 'block', marginTop: 2 }}>
-                    {c.email}
-                  </a>
-                )}
-              </div>
+              {c.phone && (
+                <a href={`tel:${c.phone.replace(/[\s\-/]/g, '')}`}
+                  style={{ fontSize: 13, fontWeight: 700, color: 'var(--schwarz)', textDecoration: 'underline', display: 'block' }}>
+                  {c.phone}
+                </a>
+              )}
+              {!c.phone && c.email && (
+                <a href={`mailto:${c.email}`}
+                  style={{ fontSize: 12, color: 'var(--grau-text)', textDecoration: 'none', display: 'block', marginTop: 2 }}>
+                  {c.email}
+                </a>
+              )}
             </div>
           ))}
         </>
