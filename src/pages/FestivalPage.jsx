@@ -178,14 +178,17 @@ export default function FestivalPage() {
   const activeTab = searchParams.get('tab') || 'ablauf'
   function setActiveTab(tab) {
     setSelectedDay(null)    // Drill-downs schließen beim Tab-Wechsel
-    setShowCrewList(false)
     setSearchParams(tab === 'ablauf' ? {} : { tab }, { replace: true })
   }
 
   // Ablauf-Drill-down-State: hier oben damit der Header-Pfeil darauf zugreifen kann
   const [selectedDay, setSelectedDay] = useState(null)
-  // Crew-Listen-Drill-down: analog zu selectedDay
-  const [showCrewList, setShowCrewList] = useState(false)
+  // Crew-Listen-Drill-down: in URL persistiert damit Reload die Ansicht nicht verliert
+  const showCrewList = searchParams.get('view') === 'crew'
+  function setShowCrewList(val) {
+    if (val) setSearchParams({ tab: 'infos', view: 'crew' }, { replace: true })
+    else setSearchParams({ tab: 'infos' }, { replace: true })
+  }
 
   useEffect(() => { loadFestivalInfo() }, [id])
 

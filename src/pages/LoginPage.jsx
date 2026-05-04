@@ -50,6 +50,20 @@ export default function LoginPage() {
     return () => clearTimeout(timerRef.current)
   }, [cooldown])
 
+  // PWA-Fix: Wenn Bildschirm wieder aktiv wird, Restzeit neu aus localStorage lesen.
+  // setTimeout wird auf Mobile im Hintergrund gedrosselt — dadurch läuft der
+  // angezeigte Countdown langsamer als die echte Zeit. Beim Zurückkehren
+  // sofort korrigieren statt den falschen Wert weiterlaufen zu lassen.
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        setCooldown(getStoredCooldown())
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [])
+
   function startCooldown(seconds) {
     saveCooldown(seconds)
     setCooldown(seconds)
