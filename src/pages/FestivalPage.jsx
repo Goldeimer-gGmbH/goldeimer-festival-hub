@@ -177,12 +177,15 @@ export default function FestivalPage() {
 
   const activeTab = searchParams.get('tab') || 'ablauf'
   function setActiveTab(tab) {
-    setSelectedDay(null)   // Drill-down schließen beim Tab-Wechsel
+    setSelectedDay(null)    // Drill-downs schließen beim Tab-Wechsel
+    setShowCrewList(false)
     setSearchParams(tab === 'ablauf' ? {} : { tab }, { replace: true })
   }
 
   // Ablauf-Drill-down-State: hier oben damit der Header-Pfeil darauf zugreifen kann
   const [selectedDay, setSelectedDay] = useState(null)
+  // Crew-Listen-Drill-down: analog zu selectedDay
+  const [showCrewList, setShowCrewList] = useState(false)
 
   useEffect(() => { loadFestivalInfo() }, [id])
 
@@ -254,9 +257,9 @@ export default function FestivalPage() {
       {/* ── Logo-Header (cremefarben) ── */}
       <div className="header">
         {/* Auf der Tages-Unterseite: zurück zur Tagesliste; sonst: zurück zur Startseite */}
-        {selectedDay ? (
+        {(selectedDay || showCrewList) ? (
           <button
-            onClick={() => setSelectedDay(null)}
+            onClick={() => { setSelectedDay(null); setShowCrewList(false) }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
           >
             ←
@@ -330,8 +333,11 @@ export default function FestivalPage() {
           />
         )}
 
-        {activeTab === 'infos' && (
-          <InfosTab details={details} role={role} content={data.content} />
+        {activeTab === 'infos' && !showCrewList && (
+          <InfosTab details={details} role={role} content={data.content} onShowCrewList={() => setShowCrewList(true)} />
+        )}
+        {activeTab === 'infos' && showCrewList && (
+          <CrewListView festivalId={id} festivalName={festivalName} />
         )}
 
         {activeTab === 'kontakte' && (
@@ -903,9 +909,115 @@ function KontakteTab({ details, contacts, role, festivalName }) {
   )
 }
 
+// ── CrewListView ──────────────────────────────────────────────────────────────
+
+const ROLLE_BADGE_COLOR = {
+  lead:         { bg: 'var(--gelb)',       color: 'var(--schwarz)' },
+  operator:     { bg: 'var(--gruen)',      color: 'var(--weiss)'   },
+  supporti_plus:{ bg: 'var(--schwarz)',    color: 'var(--weiss)'   },
+  supporti:     { bg: 'var(--grau)',       color: 'var(--schwarz)' },
+  catering:     { bg: '#e07b39',           color: 'var(--weiss)'   },
+}
+
+const STATUS_LABEL = {
+  zugesagt:     'Zugesagt',
+  akkreditiert: 'Akkreditiert',
+  teilgenommen: 'Dabei gewesen',
+}
+
+const ROLLE_ORDER = ['lead', 'operator', 'supporti_plus', 'supporti', 'catering']
+
+function CrewListView({ festivalId, festivalName }) {
+  const [crew, setCrew]       = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState(false)
+
+  useEffect(() => { loadCrew() }, [festivalId])
+
+  async function loadCrew() {
+    const { data, error } = await supabase
+      .from('assignments')
+      .select('role, status, profile:profiles(full_name, email)')
+      .eq('festival_id', festivalId)
+      .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
+      .order('role')
+    if (error) { setError(true); setLoading(false); return }
+    setCrew(data || [])
+    setLoading(false)
+  }
+
+  // Nach Rolle gruppieren
+  const grouped = {}
+  crew.forEach(a => {
+    if (!grouped[a.role]) grouped[a.role] = []
+    grouped[a.role].push(a)
+  })
+
+  return (
+    <div>
+      <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 4 }}>
+        Crew-Liste
+      </div>
+      <div style={{ fontSize: 13, color: 'var(--grau-text)', marginBottom: 'var(--sp-5)' }}>
+        {festivalName} · {crew.length} Personen
+      </div>
+
+      {loading && <div className="loading">Lädt...</div>}
+      {error && <p style={{ color: 'var(--grau-text)', fontSize: 14 }}>Fehler beim Laden der Liste.</p>}
+
+      {ROLLE_ORDER.map(role => {
+        const members = grouped[role]
+        if (!members) return null
+        const badge = ROLLE_BADGE_COLOR[role] || { bg: 'var(--grau)', color: 'var(--schwarz)' }
+        return (
+          <div key={role}>
+            <div className="section-title">{ROLLE_LABEL[role] || role} ({members.length})</div>
+            {members.map((m, i) => (
+              <div key={i} className="card" style={{ marginBottom: 8 }}>
+                {/* Name + Rolle-Badge */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                  <div className="card-title" style={{ margin: 0 }}>
+                    {m.profile?.full_name || '—'}
+                  </div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
+                    background: badge.bg, color: badge.color,
+                    padding: '2px 7px', borderRadius: 4,
+                  }}>
+                    {ROLLE_LABEL[role] || role}
+                  </span>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, color: 'var(--grau-text)',
+                    border: '1px solid var(--border)', padding: '2px 6px', borderRadius: 4,
+                  }}>
+                    {STATUS_LABEL[m.status] || m.status}
+                  </span>
+                </div>
+                {/* E-Mail-Button */}
+                {m.profile?.email && (
+                  <a href={`mailto:${m.profile.email}`}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      background: 'var(--papier)', color: 'var(--schwarz)',
+                      border: '1.5px solid var(--border)',
+                      padding: '7px 13px', borderRadius: 8,
+                      fontSize: 13, fontWeight: 700, textDecoration: 'none',
+                    }}>
+                    ✉️ {m.profile.email}
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── InfosTab ──────────────────────────────────────────────────────────────────
 
-function InfosTab({ details, role, content }) {
+function InfosTab({ details, role, content, onShowCrewList }) {
   const isLeadOp        = role === 'lead' || role === 'operator'
   const isKitchenVisible = role === 'catering' || role === 'operator' || role === 'lead'
 
@@ -977,12 +1089,15 @@ function InfosTab({ details, role, content }) {
               <div><div style={lbl}>Crew-Größe</div><div style={val}>{details.need_total} Personen</div></div>
             </li>
           )}
-          {isLeadOp && details.link_crew_list && (
+          {isLeadOp && (
             <li>
               <span className="info-icon"><IconStift size={22}/></span>
               <div>
                 <div style={lbl}>Crew-Liste</div>
-                <a href={details.link_crew_list} target="_blank" rel="noopener noreferrer" style={linkStyle}>Liste öffnen ↗</a>
+                <button onClick={onShowCrewList}
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', ...linkStyle }}>
+                  Liste öffnen ↗
+                </button>
               </div>
             </li>
           )}
