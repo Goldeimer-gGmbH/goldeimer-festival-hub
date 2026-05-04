@@ -256,7 +256,7 @@ export default function FestivalPage() {
   ]
 
   return (
-    <div style={{ background: 'var(--papier)', minHeight: '100dvh' }}>
+    <div style={{ background: 'var(--schwarz)', minHeight: '100dvh' }}>
       {/* ── Logo-Header (cremefarben) ── */}
       <div className="header">
         {/* Auf der Tages-Unterseite: zurück zur Tagesliste; sonst: zurück zur Startseite */}
@@ -933,14 +933,18 @@ const ROLLE_ORDER = ['lead', 'operator', 'supporti_plus', 'supporti', 'catering'
 function CrewListView({ festivalId, festivalName }) {
   const [crew, setCrew]       = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => { loadCrew() }, [festivalId])
 
   async function loadCrew() {
     const { data, error } = await supabase
       .rpc('get_festival_crew', { p_festival_id: festivalId })
-    if (error) { setError(true); setLoading(false); return }
+    if (error) {
+      setErrorMsg(`${error.code || ''}: ${error.message || JSON.stringify(error)}`)
+      setLoading(false)
+      return
+    }
     setCrew(data || [])
     setLoading(false)
   }
@@ -962,7 +966,11 @@ function CrewListView({ festivalId, festivalName }) {
       </div>
 
       {loading && <div className="loading">Lädt...</div>}
-      {error && <p style={{ color: 'var(--grau-text)', fontSize: 14 }}>Fehler beim Laden der Liste.</p>}
+      {errorMsg && (
+        <div style={{ background: '#FFF0ED', border: '1px solid var(--rot)', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: 'var(--rot)' }}>
+          ⚠ {errorMsg}
+        </div>
+      )}
 
       {ROLLE_ORDER.map(role => {
         const members = grouped[role]
