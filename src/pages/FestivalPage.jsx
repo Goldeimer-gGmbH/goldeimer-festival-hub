@@ -717,8 +717,8 @@ function PhoneText({ text }) {
 }
 
 // Parst Freitext in einzelne Personen-Karten.
-// Personen werden durch Leerzeilen getrennt. Jede Zeile mit Telefonnummer
-// wird als anklickbarer tel:-Link gerendert, der Rest als Name.
+// Personen werden durch Leerzeilen getrennt. Telefonnummern werden
+// aus jeder Zeile extrahiert — auch wenn Name und Nummer auf einer Zeile stehen.
 function PersonBlocks({ value }) {
   if (!value) return null
   const phoneRegex = /(\+?[\d][\d\s\-/]{6,}[\d])/
@@ -728,30 +728,36 @@ function PersonBlocks({ value }) {
     <>
       {blocks.map((block, i) => {
         const lines = block.split('\n').map(l => l.trim()).filter(Boolean)
-        const nameLines = lines.filter(l => !phoneRegex.test(l))
-        const phoneLines = lines.filter(l => phoneRegex.test(l))
-        const name = nameLines.join(' ')
+        const nameParts = []
+        const phones = []
+
+        lines.forEach(line => {
+          const match = line.match(phoneRegex)
+          if (match) {
+            // Text vor der Nummer → Name; die Nummer → Link
+            const before = line.slice(0, match.index).trim()
+            if (before) nameParts.push(before)
+            phones.push(match[1])
+          } else {
+            nameParts.push(line)
+          }
+        })
+
+        const name = nameParts.join(' ')
 
         return (
           <div key={i} className="card" style={{ marginBottom: 8 }}>
             {name && (
-              <div className="card-title" style={{ margin: 0, marginBottom: phoneLines.length ? 6 : 0 }}>
+              <div className="card-title" style={{ margin: 0, marginBottom: phones.length ? 6 : 0 }}>
                 {name}
               </div>
             )}
-            {phoneLines.map((phone, j) => {
-              const m = phone.match(/(\+?[\d][\d\s\-/]{6,}[\d])/)
-              const raw = m ? m[1].replace(/[\s\-/]/g, '') : phone
-              return (
-                <a key={j} href={`tel:${raw}`}
-                  style={{ fontSize: 13, fontWeight: 700, color: 'var(--schwarz)', textDecoration: 'underline', display: 'block' }}>
-                  {phone}
-                </a>
-              )
-            })}
-            {!name && !phoneLines.length && (
-              <div style={{ fontSize: 14, color: 'var(--schwarz)', whiteSpace: 'pre-wrap' }}>{block}</div>
-            )}
+            {phones.map((phone, j) => (
+              <a key={j} href={`tel:${phone.replace(/[\s\-/]/g, '')}`}
+                style={{ fontSize: 13, fontWeight: 700, color: 'var(--schwarz)', textDecoration: 'underline', display: 'block' }}>
+                {phone}
+              </a>
+            ))}
           </div>
         )
       })}
