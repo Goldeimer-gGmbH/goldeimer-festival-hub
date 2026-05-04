@@ -256,7 +256,7 @@ export default function FestivalPage() {
   ]
 
   return (
-    <div style={{ background: 'var(--schwarz)', minHeight: '100dvh' }}>
+    <div style={{ background: 'var(--papier)', minHeight: '100dvh' }}>
       {/* ── Logo-Header (cremefarben) ── */}
       <div className="header">
         {/* Auf der Tages-Unterseite: zurück zur Tagesliste; sonst: zurück zur Startseite */}
@@ -938,14 +938,20 @@ function CrewListView({ festivalId, festivalName }) {
   useEffect(() => { loadCrew() }, [festivalId])
 
   async function loadCrew() {
-    const { data, error } = await supabase
-      .rpc('get_festival_crew', { p_festival_id: festivalId })
-    if (error) {
-      setErrorMsg(`${error.code || ''}: ${error.message || JSON.stringify(error)}`)
-      setLoading(false)
-      return
+    try {
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout nach 10s')), 10000)
+      )
+      const query = supabase.rpc('get_festival_crew', { p_festival_id: festivalId })
+      const { data, error } = await Promise.race([query, timeout])
+      if (error) {
+        setErrorMsg(`${error.code || ''}: ${error.message || JSON.stringify(error)}`)
+      } else {
+        setCrew(data || [])
+      }
+    } catch (e) {
+      setErrorMsg(e.message || 'Unbekannter Fehler')
     }
-    setCrew(data || [])
     setLoading(false)
   }
 

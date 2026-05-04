@@ -101,8 +101,9 @@
 
 /* ─── Base ──────────────────────────────────────────────────── */
 html {
-  /* Außerhalb des 480px-Body (Desktop) Papier-Hintergrund – kein weißer Rahmen */
-  background: var(--papier);
+  /* Schwarz damit Safe-Area-Inset unten (hinter Bottom-Nav) schwarz erscheint.
+     Desktop-Seiten außerhalb 480px: body hat eigenen Hintergrund. */
+  background: var(--schwarz);
 }
 
 body {
