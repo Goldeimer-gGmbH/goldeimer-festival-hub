@@ -810,7 +810,7 @@ function KontakteTab({ details, contacts, role, festivalName }) {
           <div className="section-title">Telegramgruppe</div>
           <div className="card" style={{ marginBottom: 8 }}>
             <a
-              href={details.telegram_link}
+              href={details.telegram_link.startsWith('http') ? details.telegram_link : `https://${details.telegram_link}`}
               target="_blank"
               rel="noopener noreferrer"
               style={{ fontWeight: 700, fontSize: 14, color: 'var(--schwarz)', textDecoration: 'underline' }}
