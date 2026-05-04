@@ -936,17 +936,13 @@ function CrewListView({ festivalId, festivalName }) {
 
   async function loadCrew() {
     const { data, error } = await supabase
-      .from('assignments')
-      .select('role, status, profile:profiles(full_name, email)')
-      .eq('festival_id', festivalId)
-      .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
-      .order('role')
+      .rpc('get_festival_crew', { p_festival_id: festivalId })
     if (error) { setError(true); setLoading(false); return }
     setCrew(data || [])
     setLoading(false)
   }
 
-  // Nach Rolle gruppieren
+  // Nach Rolle gruppieren (RPC gibt flache Objekte: { full_name, email, role, status })
   const grouped = {}
   crew.forEach(a => {
     if (!grouped[a.role]) grouped[a.role] = []
@@ -977,7 +973,7 @@ function CrewListView({ festivalId, festivalName }) {
                 {/* Name + Rolle-Badge */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
                   <div className="card-title" style={{ margin: 0 }}>
-                    {m.profile?.full_name || '—'}
+                    {m.full_name || '—'}
                   </div>
                   <span style={{
                     fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
@@ -994,8 +990,8 @@ function CrewListView({ festivalId, festivalName }) {
                   </span>
                 </div>
                 {/* E-Mail-Button */}
-                {m.profile?.email && (
-                  <a href={`mailto:${m.profile.email}`}
+                {m.email && (
+                  <a href={`mailto:${m.email}`}
                     style={{
                       display: 'inline-flex', alignItems: 'center', gap: 6,
                       background: 'var(--papier)', color: 'var(--schwarz)',
@@ -1003,7 +999,7 @@ function CrewListView({ festivalId, festivalName }) {
                       padding: '7px 13px', borderRadius: 8,
                       fontSize: 13, fontWeight: 700, textDecoration: 'none',
                     }}>
-                    ✉️ {m.profile.email}
+                    ✉️ {m.email}
                   </a>
                 )}
               </div>
