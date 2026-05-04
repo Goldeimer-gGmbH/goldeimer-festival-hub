@@ -768,6 +768,9 @@ function KontakteTab({ details, contacts, role, festivalName }) {
 
   return (
     <div>
+      <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 'var(--sp-5)' }}>
+        Kontakte
+      </div>
       {/* Telegramgruppe – alle Rollen */}
       {details.telegram_link && (
         <>
@@ -880,6 +883,9 @@ function InfosTab({ details, role, content }) {
 
   return (
     <div>
+      <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 'var(--sp-5)' }}>
+        Infos
+      </div>
       <div className="section-title">Deine Zeiten</div>
       <div className="card">
         <ul className="info-list">
@@ -1072,6 +1078,9 @@ function FeedbackTab({ festivalId, profileId }) {
 
   return (
     <div>
+      <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 'var(--sp-5)' }}>
+        Feedback
+      </div>
       <div className="card">
         <p style={{ fontSize: 14, color: 'var(--grau-text)', marginBottom: 16, lineHeight: 1.6 }}>
           Etwas lief nicht gut? Hast du einen Verbesserungsvorschlag? Sag es uns!
