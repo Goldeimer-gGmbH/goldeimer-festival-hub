@@ -267,9 +267,10 @@ export default function FestivalPage() {
     <div style={{ background: 'var(--papier)', minHeight: '100dvh' }}>
       {/* ── Logo-Header (cremefarben) ── */}
       <div className="header">
-        {/* Immer navigate(-1): Browser-History ist durch URL-basierte Zustände korrekt */}
+        {/* Sub-Views (Crew-Liste, Tag-Detail): einen Schritt zurück.
+            Sonst: direkt zur Startseite — Tab-Klicks sollen kein History-Labyrinth erzeugen. */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => (showCrewList || selectedDayIdx >= 0) ? navigate(-1) : navigate('/')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
         >←</button>
         <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
@@ -940,19 +941,14 @@ function CrewListView({ festivalId, festivalName }) {
   useEffect(() => { loadCrew() }, [festivalId])
 
   async function loadCrew() {
-    try {
-      const timeout = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout nach 10s')), 10000)
-      )
-      const query = supabase.rpc('get_festival_crew', { p_festival_id: festivalId })
-      const { data, error } = await Promise.race([query, timeout])
-      if (error) {
-        setErrorMsg(`${error.code || ''}: ${error.message || JSON.stringify(error)}`)
-      } else {
-        setCrew(data || [])
-      }
-    } catch (e) {
-      setErrorMsg(e.message || 'Unbekannter Fehler')
+    const { data, error } = await fetchWithTimeout(
+      supabase.rpc('get_festival_crew', { p_festival_id: festivalId }),
+      12000
+    )
+    if (error) {
+      setErrorMsg(`${error.code ? error.code + ': ' : ''}${error.message || JSON.stringify(error)}`)
+    } else {
+      setCrew(data || [])
     }
     setLoading(false)
   }
