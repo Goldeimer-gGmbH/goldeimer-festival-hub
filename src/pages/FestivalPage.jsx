@@ -202,7 +202,7 @@ export default function FestivalPage() {
 
   async function loadFestivalInfo() {
     setFetchError(false); setAuthError(false); setNotFound(false)
-    const cacheKey = `festival_${id}`
+    const cacheKey = `festival_v2_${id}`
     const cached = cacheGet(cacheKey)
     if (cached) { setData(cached); setLoading(false) }
 
@@ -341,7 +341,7 @@ export default function FestivalPage() {
           <InfosTab details={details} role={role} content={data.content} onShowCrewList={() => setShowCrewList(true)} />
         )}
         {activeTab === 'infos' && showCrewList && (
-          <CrewListView crew={data.crew || []} festivalName={festivalName} />
+          <CrewListView crew={data.crew ?? null} festivalName={festivalName} />
         )}
 
         {activeTab === 'kontakte' && (
@@ -933,10 +933,13 @@ const STATUS_LABEL = {
 
 const ROLLE_ORDER = ['lead', 'operator', 'supporti_plus', 'supporti', 'catering']
 
-function CrewListView({ crew = [], festivalName }) {
-  // Crew-Daten kommen direkt aus get_my_festival_info (kein eigener RPC-Call nötig)
+function CrewListView({ crew, festivalName }) {
+  // crew === null  → Daten noch im Laden (fresh fetch läuft)
+  // crew === []   → geladen, aber leer (kein Zugriff)
+  // crew = Array → Daten da
+  const list = crew || []
   const grouped = {}
-  crew.forEach(a => {
+  list.forEach(a => {
     if (!grouped[a.role]) grouped[a.role] = []
     grouped[a.role].push(a)
   })
@@ -947,10 +950,11 @@ function CrewListView({ crew = [], festivalName }) {
         Crew-Liste
       </div>
       <div style={{ fontSize: 13, color: 'var(--grau-text)', marginBottom: 'var(--sp-5)' }}>
-        {festivalName} · {crew.length} Personen
+        {festivalName}{list.length > 0 ? ` · ${list.length} Personen` : ''}
       </div>
 
-      {crew.length === 0 && (
+      {crew === null && <div className="loading">Lädt...</div>}
+      {crew !== null && list.length === 0 && (
         <div className="card" style={{ textAlign: 'center', padding: 24, color: 'var(--grau-text)', fontSize: 14 }}>
           Keine Crew-Daten verfügbar.
         </div>
