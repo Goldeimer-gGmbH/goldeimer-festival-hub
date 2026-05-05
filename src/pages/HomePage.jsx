@@ -158,7 +158,7 @@ export default function HomePage() {
   })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', background: 'var(--schwarz)' }}>
       <div className="header">
         <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
         <Link to="/profil" style={{ textDecoration: 'none', color: 'var(--schwarz)', display: 'flex', alignItems: 'center' }}>
@@ -190,7 +190,7 @@ export default function HomePage() {
         </svg>
       </div>
 
-      <div className="page" style={{ paddingTop: 'var(--sp-5)' }}>
+      <div className="page" style={{ paddingTop: 'var(--sp-5)', flex: 1, background: 'var(--papier)' }}>
 
         {/* Skeleton */}
         {loading && [1, 2].map(i => (
@@ -314,30 +314,25 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Footer – Full-Bleed, schiebt sich ans Ende der Seite */}
-        <div style={{
-          marginTop: 'auto',
-          paddingTop: 'var(--sp-10)',
-          width: '100vw',
-          marginLeft: 'calc(-50vw + 50%)',
-        }}>
-          {/* Welle: Papier → Schwarz */}
-          <svg viewBox="0 0 480 64" preserveAspectRatio="none"
-            style={{ display: 'block', width: '100%', height: 56, marginBottom: -2 }}>
-            <path d="M0,36 C80,8 180,56 280,24 C360,4 420,48 480,28 L480,64 L0,64 Z"
-              fill="var(--schwarz)" />
-          </svg>
-          <div style={{
-            background: 'var(--schwarz)',
-            padding: 'var(--sp-5) var(--sp-4)',
-            textAlign: 'center',
-          }}>
-            <p style={{ color: 'var(--on-dark-sub)', fontSize: 'var(--text-xs)' }}>
-              © Goldeimer gGmbH · Kacke für den guten Zweck 💛
-            </p>
-          </div>
-        </div>
+      </div>
 
+      {/* Footer – direktes Flex-Kind des äußeren Divs → schiebt sich immer ans Ende */}
+      <div style={{ width: '100vw', marginLeft: 'calc(-50vw + 50%)' }}>
+        {/* Welle: Papier → Schwarz */}
+        <svg viewBox="0 0 480 64" preserveAspectRatio="none"
+          style={{ display: 'block', width: '100%', height: 56, marginBottom: -2, background: 'var(--papier)' }}>
+          <path d="M0,36 C80,8 180,56 280,24 C360,4 420,48 480,28 L480,64 L0,64 Z"
+            fill="var(--schwarz)" />
+        </svg>
+        <div style={{
+          background: 'var(--schwarz)',
+          padding: 'var(--sp-5) var(--sp-4)',
+          textAlign: 'center',
+        }}>
+          <p style={{ color: 'var(--on-dark-sub)', fontSize: 'var(--text-xs)' }}>
+            © Goldeimer gGmbH · Kacke für den guten Zweck 💛
+          </p>
+        </div>
       </div>
     </div>
   )

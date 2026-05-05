@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { cacheGet, cacheSet } from '../lib/cache'
 import { fetchWithTimeout } from '../lib/fetchWithTimeout'
@@ -8,6 +8,7 @@ import { IconStar, IconPin, IconKalender, IconStift, IconInfos, IconKontakte } f
 const CACHE_KEY = 'infos_content'
 
 export default function InfosPage() {
+  const navigate = useNavigate()
   const cached = cacheGet(CACHE_KEY)
   const [content, setContent] = useState(cached || [])
   const [loading, setLoading] = useState(!cached)
@@ -31,14 +32,38 @@ export default function InfosPage() {
   }
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', background: 'var(--schwarz)' }}>
+      {/* Header */}
       <div className="header">
-        <Link to="/" style={{ textDecoration: 'none', fontSize: 20, color: 'var(--schwarz)', fontWeight: 700 }}>←</Link>
+        <button
+          onClick={() => navigate(-1)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
+        >←</button>
         <span className="header-logo" style={{ fontSize: '0.9rem' }}>Anleitungen & Infos</span>
         <span style={{ width: 20 }} />
       </div>
 
-      <div className="page" style={{ paddingTop: 16 }}>
+      {/* Schwarzes Banner */}
+      <div style={{ background: 'var(--schwarz)', width: '100vw', marginLeft: 'calc(-50vw + 50%)' }}>
+        <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--sp-6) var(--sp-4) 0' }}>
+          <div className="statement" style={{ fontSize: 'var(--text-h0)', color: 'var(--gelb)', lineHeight: 1 }}>
+            Anleitungen.
+          </div>
+          <p style={{ color: 'var(--on-dark-sub)', marginTop: 4, marginBottom: 0, fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+            Alles was ihr wissen müsst
+          </p>
+          <div style={{ paddingBottom: 'var(--sp-5)' }} />
+        </div>
+        {/* Welle: Schwarz → Papier */}
+        <svg viewBox="0 0 480 64" preserveAspectRatio="none"
+          style={{ display: 'block', width: '100%', height: 56, marginBottom: -2, background: 'var(--papier)' }}>
+          <path d="M0,0 L480,0 L480,32 C400,64 320,8 220,36 C140,58 60,12 0,28 Z"
+            fill="var(--schwarz)" />
+        </svg>
+      </div>
+
+      {/* Inhalt */}
+      <div style={{ flex: 1, background: 'var(--papier)', padding: 'var(--sp-5) var(--sp-4) var(--sp-10)' }}>
         {loading && <div className="loading">Lädt...</div>}
 
         {!loading && error && (
@@ -49,7 +74,7 @@ export default function InfosPage() {
           </div>
         )}
 
-        {!loading && content.length === 0 && (
+        {!loading && !error && content.length === 0 && (
           <div className="card" style={{ textAlign: 'center', padding: 32 }}>
             <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconStar size={40} /></div>
             <p className="card-sub">
@@ -84,6 +109,18 @@ export default function InfosPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Footer: Welle Papier → Schwarz */}
+      <div style={{ width: '100vw', marginLeft: 'calc(-50vw + 50%)' }}>
+        <svg viewBox="0 0 480 64" preserveAspectRatio="none"
+          style={{ display: 'block', width: '100%', height: 56, marginBottom: -2, background: 'var(--papier)' }}>
+          <path d="M0,36 C80,8 180,56 280,24 C360,4 420,48 480,28 L480,64 L0,64 Z"
+            fill="var(--schwarz)" />
+        </svg>
+        <div style={{ background: 'var(--schwarz)', padding: 'var(--sp-5) var(--sp-4)', textAlign: 'center' }}>
+          <p style={{ color: 'var(--on-dark-sub)', fontSize: 'var(--text-xs)' }}>© Goldeimer gGmbH</p>
+        </div>
       </div>
     </div>
   )
@@ -140,11 +177,11 @@ function ContentCard({ item }) {
           href={item.file_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="btn btn-secondary"
-          style={{ marginTop: 12, textDecoration: 'none' }}
+          className="button button--secondary"
+          style={{ marginTop: 12, textDecoration: 'none', display: 'inline-block' }}
           onClick={e => e.stopPropagation()}
         >
-          📄 Dokument öffnen
+          Dokument öffnen →
         </a>
       )}
     </div>

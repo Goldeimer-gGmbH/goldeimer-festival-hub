@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link, useSearchParams } from 'react-router-dom'
+import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
 import { cacheGet, cacheSet } from '../lib/cache'
@@ -168,6 +168,7 @@ function generateAblaufDays(details, role, festivalName) {
 export default function FestivalPage() {
   const { id } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   const { profile, signOut } = useAuth()
   const [data, setData]           = useState(null)
   const [loading, setLoading]     = useState(true)
@@ -176,18 +177,22 @@ export default function FestivalPage() {
   const [authError, setAuthError] = useState(false)
 
   const activeTab = searchParams.get('tab') || 'ablauf'
+  // Kein replace: push → Browser-Zurück funktioniert zwischen Tabs
   function setActiveTab(tab) {
-    setSelectedDay(null)    // Drill-downs schließen beim Tab-Wechsel
-    setSearchParams(tab === 'ablauf' ? {} : { tab }, { replace: true })
+    setSearchParams(tab === 'ablauf' ? {} : { tab })
   }
 
-  // Ablauf-Drill-down-State: hier oben damit der Header-Pfeil darauf zugreifen kann
-  const [selectedDay, setSelectedDay] = useState(null)
-  // Crew-Listen-Drill-down: in URL persistiert damit Reload die Ansicht nicht verliert
+  // Tag-Drill-down: in URL persistiert (Index), damit Browser-Zurück funktioniert
+  const selectedDayIdx = parseInt(searchParams.get('day') ?? '-1', 10)
+  function onSelectDay(idx) {
+    setSearchParams({ day: String(idx) })
+  }
+
+  // Crew-Listen-Drill-down: ebenfalls URL-basiert ohne replace
   const showCrewList = searchParams.get('view') === 'crew'
   function setShowCrewList(val) {
-    if (val) setSearchParams({ tab: 'infos', view: 'crew' }, { replace: true })
-    else setSearchParams({ tab: 'infos' }, { replace: true })
+    if (val) setSearchParams({ tab: 'infos', view: 'crew' })
+    else navigate(-1)
   }
 
   useEffect(() => { loadFestivalInfo() }, [id])
@@ -259,28 +264,11 @@ export default function FestivalPage() {
     <div style={{ background: 'var(--papier)', minHeight: '100dvh' }}>
       {/* ── Logo-Header (cremefarben) ── */}
       <div className="header">
-        {/* Drill-downs: Tag-Detail → Ablauf, Crew-Liste → Infos */}
-        {selectedDay ? (
-          <button
-            onClick={() => setSelectedDay(null)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
-          >←</button>
-        ) : showCrewList ? (
-          <button
-            onClick={() => setShowCrewList(false)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
-          >←</button>
-        ) : (activeTab === 'kontakte' || activeTab === 'feedback') ? (
-          /* Kontakte/Feedback: zurück zum Ablauf statt zur Startseite */
-          <button
-            onClick={() => setActiveTab('ablauf')}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
-          >←</button>
-        ) : (
-          <Link to="/" style={{ textDecoration: 'none', fontSize: 20, color: 'var(--schwarz)', fontWeight: 700, lineHeight: 1 }}>
-            ←
-          </Link>
-        )}
+        {/* Immer navigate(-1): Browser-History ist durch URL-basierte Zustände korrekt */}
+        <button
+          onClick={() => navigate(-1)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
+        >←</button>
         <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
         <span style={{ width: 26 }} />
       </div>
@@ -340,8 +328,8 @@ export default function FestivalPage() {
             content={data.content}
             festivalName={festivalName}
             details={details}
-            selectedDay={selectedDay}
-            setSelectedDay={setSelectedDay}
+            selectedDayIdx={selectedDayIdx}
+            onSelectDay={onSelectDay}
           />
         )}
 
@@ -414,7 +402,7 @@ export default function FestivalPage() {
 
 // ── AblaufTab ─────────────────────────────────────────────────────────────────
 
-function AblaufTab({ role, festivalId, profileId, checklists, festivalName, details, selectedDay, setSelectedDay }) {
+function AblaufTab({ role, festivalId, profileId, checklists, festivalName, details, selectedDayIdx, onSelectDay }) {
   const isLeadOp = role === 'lead' || role === 'operator'
 
   const ablaufTitle =
@@ -423,7 +411,10 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
     role === 'catering' ? 'Ablauf für Küchencrew' :
                           'Ablauf für Supportis'
 
-  // Drill-down-Ansicht: einzelner Tag (Pfeil ist im Header der Seite)
+  const days = isLeadOp ? generateAblaufDays(details, role, festivalName) : []
+  const selectedDay = selectedDayIdx >= 0 ? days[selectedDayIdx] ?? null : null
+
+  // Drill-down-Ansicht: einzelner Tag (Pfeil = navigate(-1) im Header der Seite)
   if (selectedDay) {
     return <AblaufDayDetail day={selectedDay} />
   }
@@ -458,8 +449,6 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
     )
   }
 
-  const days = generateAblaufDays(details, role, festivalName)
-
   return (
     <div>
       <div style={{
@@ -474,7 +463,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
       {days.map((day, idx) => (
         <button
           key={idx}
-          onClick={() => setSelectedDay(day)}
+          onClick={() => onSelectDay(idx)}
           style={{
             width: '100%',
             background: 'var(--weiss)',

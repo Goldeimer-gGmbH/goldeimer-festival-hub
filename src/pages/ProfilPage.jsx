@@ -6,25 +6,32 @@ export default function ProfilPage() {
   const { profile, signOut } = useAuth()
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', background: 'var(--schwarz)' }}>
+      {/* Header */}
       <div className="header">
         <Link to="/" style={{ textDecoration: 'none', fontSize: 20, color: 'var(--schwarz)', fontWeight: 700 }}>←</Link>
         <span className="header-logo" style={{ fontSize: '0.9rem' }}>Mein Profil</span>
         <span style={{ width: 20 }} />
       </div>
 
-      {/* Banner – nur Name */}
-      <div style={{
-        background: 'var(--schwarz)',
-        borderBottom: '1px solid var(--on-dark-border)',
-        padding: 'var(--sp-6) var(--sp-5) var(--sp-6)',
-      }}>
-        <div className="statement" style={{ fontSize: 'var(--text-h1)', color: 'var(--gelb)', lineHeight: 1.1 }}>
-          {profile?.full_name || 'Kein Name'}
+      {/* Schwarzes Banner mit Name */}
+      <div style={{ background: 'var(--schwarz)', width: '100vw', marginLeft: 'calc(-50vw + 50%)' }}>
+        <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--sp-6) var(--sp-4) 0' }}>
+          <div className="statement" style={{ fontSize: 'var(--text-h0)', color: 'var(--gelb)', lineHeight: 1 }}>
+            {profile?.full_name || 'Kein Name'}
+          </div>
+          <div style={{ paddingBottom: 'var(--sp-5)' }} />
         </div>
+        {/* Welle: Schwarz → Papier */}
+        <svg viewBox="0 0 480 64" preserveAspectRatio="none"
+          style={{ display: 'block', width: '100%', height: 56, marginBottom: -2, background: 'var(--papier)' }}>
+          <path d="M0,0 L480,0 L480,32 C400,64 320,8 220,36 C140,58 60,12 0,28 Z"
+            fill="var(--schwarz)" />
+        </svg>
       </div>
 
-      <div className="page" style={{ paddingTop: 'var(--sp-5)' }}>
+      {/* Inhalt */}
+      <div style={{ flex: 1, background: 'var(--papier)', padding: 'var(--sp-6) var(--sp-4) var(--sp-10)' }}>
         <div className="section-title">Meine Daten</div>
         <div className="card">
           <ul className="info-list">
@@ -67,10 +74,20 @@ export default function ProfilPage() {
             Ausloggen
           </button>
         </div>
+      </div>
 
-        <p style={{ textAlign: 'center', marginTop: 'var(--sp-6)', fontSize: 'var(--text-xs)', color: 'var(--grau-text)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          Goldeimer Festival Hub · Vol. 1
-        </p>
+      {/* Footer: Welle Papier → Schwarz */}
+      <div style={{ width: '100vw', marginLeft: 'calc(-50vw + 50%)' }}>
+        <svg viewBox="0 0 480 64" preserveAspectRatio="none"
+          style={{ display: 'block', width: '100%', height: 56, marginBottom: -2, background: 'var(--papier)' }}>
+          <path d="M0,36 C80,8 180,56 280,24 C360,4 420,48 480,28 L480,64 L0,64 Z"
+            fill="var(--schwarz)" />
+        </svg>
+        <div style={{ background: 'var(--schwarz)', padding: 'var(--sp-5) var(--sp-4)', textAlign: 'center' }}>
+          <p style={{ color: 'var(--on-dark-sub)', fontSize: 'var(--text-xs)' }}>
+            Goldeimer Festival Hub · Vol. 1
+          </p>
+        </div>
       </div>
     </div>
   )
