@@ -222,7 +222,7 @@ export default function FestivalPage() {
     } catch {
       if (!cached) setFetchError(true)
     } finally {
-      if (!cached) setLoading(false)
+      setLoading(false)  // immer aufrufen – verhindert dauerhaftes Laden
     }
   }
 
