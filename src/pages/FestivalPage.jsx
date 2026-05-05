@@ -341,7 +341,7 @@ export default function FestivalPage() {
           <InfosTab details={details} role={role} content={data.content} onShowCrewList={() => setShowCrewList(true)} />
         )}
         {activeTab === 'infos' && showCrewList && (
-          <CrewListView festivalId={id} festivalName={festivalName} />
+          <CrewListView crew={data.crew || []} festivalName={festivalName} />
         )}
 
         {activeTab === 'kontakte' && (
@@ -933,27 +933,8 @@ const STATUS_LABEL = {
 
 const ROLLE_ORDER = ['lead', 'operator', 'supporti_plus', 'supporti', 'catering']
 
-function CrewListView({ festivalId, festivalName }) {
-  const [crew, setCrew]       = useState([])
-  const [loading, setLoading] = useState(true)
-  const [errorMsg, setErrorMsg] = useState('')
-
-  useEffect(() => { loadCrew() }, [festivalId])
-
-  async function loadCrew() {
-    const { data, error } = await fetchWithTimeout(
-      supabase.rpc('get_festival_crew', { p_festival_id: festivalId }),
-      12000
-    )
-    if (error) {
-      setErrorMsg(`${error.code ? error.code + ': ' : ''}${error.message || JSON.stringify(error)}`)
-    } else {
-      setCrew(data || [])
-    }
-    setLoading(false)
-  }
-
-  // Nach Rolle gruppieren (RPC gibt flache Objekte: { full_name, email, role, status })
+function CrewListView({ crew = [], festivalName }) {
+  // Crew-Daten kommen direkt aus get_my_festival_info (kein eigener RPC-Call nötig)
   const grouped = {}
   crew.forEach(a => {
     if (!grouped[a.role]) grouped[a.role] = []
@@ -969,10 +950,9 @@ function CrewListView({ festivalId, festivalName }) {
         {festivalName} · {crew.length} Personen
       </div>
 
-      {loading && <div className="loading">Lädt...</div>}
-      {errorMsg && (
-        <div style={{ background: '#FFF0ED', border: '1px solid var(--rot)', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: 'var(--rot)' }}>
-          ⚠ {errorMsg}
+      {crew.length === 0 && (
+        <div className="card" style={{ textAlign: 'center', padding: 24, color: 'var(--grau-text)', fontSize: 14 }}>
+          Keine Crew-Daten verfügbar.
         </div>
       )}
 
