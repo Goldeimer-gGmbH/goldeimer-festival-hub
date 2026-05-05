@@ -1,15 +1,9 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../components/AuthContext'
-import { IconStar, IconBrief, IconStift } from '../components/Icons'
-
-const ROLLE_LABEL = {
-  lead: 'Lead', operator: 'Operator',
-  supporti_plus: 'Supporti+', supporti: 'Supporti', catering: 'Catering'
-}
+import { IconStar, IconBrief } from '../components/Icons'
 
 export default function ProfilPage() {
   const { profile, signOut } = useAuth()
-  const initial = (profile?.full_name || profile?.email || '?')[0].toUpperCase()
 
   return (
     <div>
@@ -19,48 +13,14 @@ export default function ProfilPage() {
         <span style={{ width: 20 }} />
       </div>
 
-      {/* ID Card Hero */}
+      {/* Banner – nur Name */}
       <div style={{
         background: 'var(--schwarz)',
         borderBottom: '1px solid var(--on-dark-border)',
-        padding: 'var(--sp-6) var(--sp-5) var(--sp-5)',
+        padding: 'var(--sp-6) var(--sp-5) var(--sp-6)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-5)' }}>
-          <div style={{
-            width: 70, height: 70, borderRadius: 'var(--rounded)',
-            background: 'var(--gelb)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'var(--font-statement)', fontSize: 36, color: 'var(--schwarz)', flexShrink: 0,
-          }}>
-            {initial}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="statement" style={{ fontSize: 'var(--text-h2)', color: 'var(--gelb)', lineHeight: 1.1 }}>
-              {(profile?.full_name || 'Kein Name')}
-            </div>
-            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--on-dark-sub)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {profile?.email}
-            </div>
-            {profile?.role && (
-              <span className={`badge badge-${profile.role}`} style={{ marginTop: 8, display: 'inline-block' }}>
-                {ROLLE_LABEL[profile.role] || profile.role}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div style={{
-          marginTop: 'var(--sp-5)',
-          background: 'rgba(255,229,0,0.06)',
-          border: '1px solid rgba(255,229,0,0.15)',
-          borderRadius: 'var(--rounded-input)',
-          padding: 'var(--sp-3) var(--sp-4)',
-          display: 'flex', alignItems: 'center', gap: 'var(--sp-2)',
-        }}>
-          <IconStar size={14} />
-          <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--on-dark-sub)', letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'var(--font-heading)' }}>
-            Goldeimer Crew — Saison 2025
-          </span>
+        <div className="statement" style={{ fontSize: 'var(--text-h1)', color: 'var(--gelb)', lineHeight: 1.1 }}>
+          {profile?.full_name || 'Kein Name'}
         </div>
       </div>
 
@@ -84,27 +44,32 @@ export default function ProfilPage() {
                 </div>
               </li>
             )}
-            <li>
-              <span className="info-icon"><IconStift size={22}/></span>
-              <div>
-                <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grau-text)', marginBottom: 3 }}>Vertragsstatus</div>
-                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>
-                  {profile?.contract_status === 'unterschrieben'
-                    ? <span className="status-ok">✓ Unterschrieben</span>
-                    : <span className="status-warn">⚠ Noch ausstehend</span>
-                  }
-                </div>
-              </div>
-            </li>
           </ul>
         </div>
 
         <div style={{ marginTop: 'var(--sp-8)' }}>
-          <button className="button button--secondary" onClick={signOut}>Ausloggen</button>
+          <button
+            onClick={signOut}
+            style={{
+              width: '100%',
+              padding: '14px var(--sp-6)',
+              background: 'var(--rot)',
+              color: 'var(--weiss)',
+              border: 'none',
+              borderRadius: 'var(--rounded-button)',
+              fontSize: 'var(--text-base)',
+              fontFamily: 'var(--font-heading)',
+              fontWeight: 800,
+              letterSpacing: '0.04em',
+              cursor: 'pointer',
+            }}
+          >
+            Ausloggen
+          </button>
         </div>
 
         <p style={{ textAlign: 'center', marginTop: 'var(--sp-6)', fontSize: 'var(--text-xs)', color: 'var(--grau-text)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          Goldeimer Festival Hub · v0.1
+          Goldeimer Festival Hub · Vol. 1
         </p>
       </div>
     </div>

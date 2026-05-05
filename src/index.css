@@ -105,6 +105,12 @@ html {
   background: var(--papier);
 }
 
+/* Auf Mobile gibt es keine Desktop-Seitenleisten — hier Schwarz für iOS-Overscroll
+   am unteren Rand (damit der Bounce-Bereich die Nav-Farbe widerspiegelt) */
+@media (max-width: 639px) {
+  html { background: var(--schwarz); }
+}
+
 body {
   background: var(--papier);
   color: var(--schwarz);

@@ -7,7 +7,7 @@ import { fetchWithTimeout } from '../lib/fetchWithTimeout'
 import {
   IconAblauf, IconInfos, IconKontakte, IconFeedback,
   IconKalender, IconTransport, IconOrderbird, IconStift, IconLupe,
-  IconStar, IconPin,
+  IconStar, IconPin, IconBrief, IconTelefon,
 } from '../components/Icons'
 
 const ROLLE_LABEL = {
@@ -259,14 +259,23 @@ export default function FestivalPage() {
     <div style={{ background: 'var(--papier)', minHeight: '100dvh' }}>
       {/* ── Logo-Header (cremefarben) ── */}
       <div className="header">
-        {/* Auf der Tages-Unterseite: zurück zur Tagesliste; sonst: zurück zur Startseite */}
-        {(selectedDay || showCrewList) ? (
+        {/* Drill-downs: Tag-Detail → Ablauf, Crew-Liste → Infos */}
+        {selectedDay ? (
           <button
-            onClick={() => { setSelectedDay(null); setShowCrewList(false) }}
+            onClick={() => setSelectedDay(null)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
-          >
-            ←
-          </button>
+          >←</button>
+        ) : showCrewList ? (
+          <button
+            onClick={() => setShowCrewList(false)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
+          >←</button>
+        ) : (activeTab === 'kontakte' || activeTab === 'feedback') ? (
+          /* Kontakte/Feedback: zurück zum Ablauf statt zur Startseite */
+          <button
+            onClick={() => setActiveTab('ablauf')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
+          >←</button>
         ) : (
           <Link to="/" style={{ textDecoration: 'none', fontSize: 20, color: 'var(--schwarz)', fontWeight: 700, lineHeight: 1 }}>
             ←
@@ -493,7 +502,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
               {day.label}
             </div>
             {day.date && (
-              <div style={{ fontSize: 11, color: 'var(--grau-text)', marginTop: 2 }}>
+              <div style={{ fontSize: 11, color: 'var(--grau-text)', marginTop: 2, fontFamily: 'var(--font-heading)' }}>
                 {formatDateShort(day.date)}
               </div>
             )}
@@ -785,7 +794,7 @@ function PersonBlocks({ value }) {
                   fontSize: 13, fontWeight: 700, textDecoration: 'none',
                   marginRight: 6, marginTop: 4,
                 }}>
-                📞 {phone}
+                <IconTelefon size={15} /> {phone}
               </a>
             ))}
           </div>
@@ -849,11 +858,12 @@ function KontakteTab({ details, contacts, role, festivalName }) {
                       padding: '8px 14px', borderRadius: 8,
                       fontSize: 13, fontWeight: 700, textDecoration: 'none',
                     }}>
-                    📞 {c.phone}
+                    <IconTelefon size={15} /> {c.phone}
                   </a>
                 )}
                 {c.email && (
-                  <a href={`mailto:${c.email}`}
+                  <a href={`mailto:${c.email.trim()}`}
+                    onClick={e => { e.preventDefault(); window.location.href = `mailto:${c.email.trim()}` }}
                     style={{
                       display: 'inline-flex', alignItems: 'center', gap: 6,
                       background: 'var(--papier)', color: 'var(--schwarz)',
@@ -861,7 +871,7 @@ function KontakteTab({ details, contacts, role, festivalName }) {
                       padding: '8px 14px', borderRadius: 8,
                       fontSize: 13, fontWeight: 700, textDecoration: 'none',
                     }}>
-                    ✉️ {c.email}
+                    <IconBrief size={15} /> {c.email}
                   </a>
                 )}
               </div>
@@ -1008,7 +1018,8 @@ function CrewListView({ festivalId, festivalName }) {
                 </div>
                 {/* E-Mail-Button */}
                 {m.email && (
-                  <a href={`mailto:${m.email}`}
+                  <a href={`mailto:${m.email.trim()}`}
+                    onClick={e => { e.preventDefault(); window.location.href = `mailto:${m.email.trim()}` }}
                     style={{
                       display: 'inline-flex', alignItems: 'center', gap: 6,
                       background: 'var(--papier)', color: 'var(--schwarz)',
@@ -1016,7 +1027,7 @@ function CrewListView({ festivalId, festivalName }) {
                       padding: '7px 13px', borderRadius: 8,
                       fontSize: 13, fontWeight: 700, textDecoration: 'none',
                     }}>
-                    ✉️ {m.email}
+                    <IconBrief size={15} /> {m.email}
                   </a>
                 )}
               </div>
@@ -1031,27 +1042,28 @@ function CrewListView({ festivalId, festivalName }) {
 // ── InfosTab ──────────────────────────────────────────────────────────────────
 
 function InfosTab({ details, role, content, onShowCrewList }) {
-  const isLeadOp        = role === 'lead' || role === 'operator'
+  const isLeadOp         = role === 'lead' || role === 'operator'
   const isKitchenVisible = role === 'catering' || role === 'operator' || role === 'lead'
 
-  const lbl = { fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grau-text)', marginBottom: 3 }
-  const val = { fontSize: 14, fontWeight: 600 }
+  const lbl      = { fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grau-text)', marginBottom: 3 }
+  const val      = { fontSize: 14, fontWeight: 600 }
   const valMulti = { fontSize: 14, fontWeight: 600, whiteSpace: 'pre-wrap', lineHeight: 1.6 }
-  const linkStyle = { fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', textDecoration: 'underline' }
-  const ghost = { fontSize: 14, fontWeight: 600, color: 'var(--grau-text)', fontStyle: 'italic' }
+  const linkStyle = { fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', textDecoration: 'none' }
+  const ghost    = { fontSize: 14, fontWeight: 600, color: 'var(--grau-text)', fontStyle: 'italic' }
 
-  const hasBetrieb = details.shift_table_link || details.goldeimer_hours ||
-    details.goldeimer_prices || details.festival_money_info ||
-    (isLeadOp && details.festival_actions) ||
-    (isKitchenVisible && details.kitchen_crew_list) ||
-    (isLeadOp && details.logistic_info)
+  // Goldeimer-Toiletten: zeige Sektion wenn mindestens ein Feld befüllt
+  const hasToiletten = details.shift_table_link || details.goldeimer_hours ||
+    details.goldeimer_prices || details.festival_actions ||
+    (isKitchenVisible && (details.festival_money_info || details.kitchen_crew_list))
 
   return (
     <div>
       <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 'var(--sp-5)' }}>
         Infos
       </div>
-      <div className="section-title">Deine Zeiten</div>
+
+      {/* ── Festival-Infos ── */}
+      <div className="section-title">Festival-Infos</div>
       <div className="card">
         <ul className="info-list">
           <li>
@@ -1068,34 +1080,29 @@ function InfosTab({ details, role, content, onShowCrewList }) {
               <div style={val}>{getAbreise(details, role) || 'Wird noch bekannt gegeben'}</div>
             </div>
           </li>
-          {details.festival_town && (
-            <li>
-              <span className="info-icon"><IconPin size={22}/></span>
-              <div><div style={lbl}>Ort</div><div style={val}>{details.festival_town}</div></div>
-            </li>
-          )}
           {details.festival_address && (
             <li>
               <span className="info-icon"><IconPin size={22}/></span>
               <div><div style={lbl}>Anschrift</div><div style={valMulti}>{details.festival_address}</div></div>
             </li>
           )}
-        </ul>
-      </div>
-
-      <div className="section-title">Festival</div>
-      <div className="card">
-        <ul className="info-list">
           <li>
             <span className="info-icon"><IconPin size={22}/></span>
             <div>
               <div style={lbl}>Lageplan</div>
               {details.festival_lageplan
-                ? <a href={details.festival_lageplan} target="_blank" rel="noopener noreferrer" style={linkStyle}>Karte öffnen ↗</a>
+                ? <a href={details.festival_lageplan} target="_blank" rel="noopener noreferrer" style={linkStyle}>Karte öffnen →</a>
                 : <div style={ghost}>Folgt</div>
               }
             </div>
           </li>
+        </ul>
+      </div>
+
+      {/* ── Crew ── */}
+      <div className="section-title">Crew</div>
+      <div className="card">
+        <ul className="info-list">
           {details.need_total && (
             <li>
               <span className="info-icon"><IconKontakte size={22}/></span>
@@ -1109,17 +1116,24 @@ function InfosTab({ details, role, content, onShowCrewList }) {
                 <div style={lbl}>Crew-Liste</div>
                 <button onClick={onShowCrewList}
                   style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', ...linkStyle }}>
-                  Liste öffnen ↗
+                  Liste öffnen →
                 </button>
               </div>
+            </li>
+          )}
+          {!details.need_total && !isLeadOp && (
+            <li>
+              <span className="info-icon"><IconKontakte size={22}/></span>
+              <div style={ghost}>Noch keine Crew-Infos</div>
             </li>
           )}
         </ul>
       </div>
 
-      {hasBetrieb && (
+      {/* ── Goldeimer-Toiletten ── */}
+      {hasToiletten && (
         <>
-          <div className="section-title">Betrieb</div>
+          <div className="section-title">Goldeimer-Toiletten</div>
           <div className="card">
             <ul className="info-list">
               {details.shift_table_link && (
@@ -1127,14 +1141,14 @@ function InfosTab({ details, role, content, onShowCrewList }) {
                   <span className="info-icon"><IconKalender size={22}/></span>
                   <div>
                     <div style={lbl}>Schichtplan</div>
-                    <a href={details.shift_table_link} target="_blank" rel="noopener noreferrer" style={linkStyle}>Plan öffnen ↗</a>
+                    <a href={details.shift_table_link} target="_blank" rel="noopener noreferrer" style={linkStyle}>Plan öffnen →</a>
                   </div>
                 </li>
               )}
               {details.goldeimer_hours && (
                 <li>
                   <span className="info-icon"><IconAblauf size={22}/></span>
-                  <div><div style={lbl}>Goldeimer Öffnungszeiten</div><div style={valMulti}>{details.goldeimer_hours}</div></div>
+                  <div><div style={lbl}>Öffnungszeiten</div><div style={valMulti}>{details.goldeimer_hours}</div></div>
                 </li>
               )}
               {details.goldeimer_prices && (
@@ -1143,16 +1157,16 @@ function InfosTab({ details, role, content, onShowCrewList }) {
                   <div><div style={lbl}>Preise</div><div style={valMulti}>{details.goldeimer_prices}</div></div>
                 </li>
               )}
-              {details.festival_money_info && (
+              {details.festival_actions && (
+                <li>
+                  <span className="info-icon"><IconStar size={22}/></span>
+                  <div><div style={lbl}>Besondere Aktionen</div><div style={valMulti}>{details.festival_actions}</div></div>
+                </li>
+              )}
+              {isKitchenVisible && details.festival_money_info && (
                 <li>
                   <span className="info-icon"><IconOrderbird size={22}/></span>
                   <div><div style={lbl}>Kassensystem</div><div style={valMulti}>{details.festival_money_info}</div></div>
-                </li>
-              )}
-              {isLeadOp && details.festival_actions && (
-                <li>
-                  <span className="info-icon"><IconStar size={22}/></span>
-                  <div><div style={lbl}>Aktionen</div><div style={valMulti}>{details.festival_actions}</div></div>
                 </li>
               )}
               {isKitchenVisible && details.kitchen_crew_list && (
@@ -1160,14 +1174,8 @@ function InfosTab({ details, role, content, onShowCrewList }) {
                   <span className="info-icon"><IconStar size={22}/></span>
                   <div>
                     <div style={lbl}>Küche</div>
-                    <a href={details.kitchen_crew_list} target="_blank" rel="noopener noreferrer" style={linkStyle}>Liste öffnen ↗</a>
+                    <a href={details.kitchen_crew_list} target="_blank" rel="noopener noreferrer" style={linkStyle}>Liste öffnen →</a>
                   </div>
-                </li>
-              )}
-              {isLeadOp && details.logistic_info && (
-                <li>
-                  <span className="info-icon"><IconTransport size={22}/></span>
-                  <div><div style={lbl}>Logistik-Infos</div><div style={valMulti}>{details.logistic_info}</div></div>
                 </li>
               )}
             </ul>
@@ -1175,6 +1183,22 @@ function InfosTab({ details, role, content, onShowCrewList }) {
         </>
       )}
 
+      {/* ── Logistik (nur L & O) ── */}
+      {isLeadOp && details.logistic_info && (
+        <>
+          <div className="section-title">Logistik</div>
+          <div className="card">
+            <ul className="info-list">
+              <li>
+                <span className="info-icon"><IconTransport size={22}/></span>
+                <div><div style={lbl}>Logistik-Infos</div><div style={valMulti}>{details.logistic_info}</div></div>
+              </li>
+            </ul>
+          </div>
+        </>
+      )}
+
+      {/* ── Sonstiges ── */}
       {details.festival_sonstiges && (
         <>
           <div className="section-title">Sonstiges</div>
@@ -1186,6 +1210,7 @@ function InfosTab({ details, role, content, onShowCrewList }) {
         </>
       )}
 
+      {/* ── Dokumente ── */}
       {content && content.length > 0 && (
         <>
           <div className="section-title">Dokumente</div>
@@ -1200,7 +1225,7 @@ function InfosTab({ details, role, content, onShowCrewList }) {
               {c.file_url && (
                 <a href={c.file_url} target="_blank" rel="noopener noreferrer"
                   className="button button--secondary" style={{ marginTop: 12, textDecoration: 'none' }}>
-                  📄 Dokument öffnen
+                  Dokument öffnen →
                 </a>
               )}
             </div>

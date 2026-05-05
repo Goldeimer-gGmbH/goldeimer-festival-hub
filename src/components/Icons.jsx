@@ -118,6 +118,15 @@ export function IconBrief({ size = 64 }) {
 
 // ── Neue Icons ────────────────────────────────────────────────────────────────
 
+/** Telefon-Hörer – für Telefon-Chip-Buttons */
+export function IconTelefon({ size = 22 }) {
+  return (
+    <svg role="presentation" focusable="false" width={size} height={size} viewBox="0 0 28 28" style={{ display: 'block' }} fill="currentColor">
+      <path d="M8.5,4.5c-.5-.1-.9,0-1.2.4L5.6,6.7c-.7.7-.9,1.7-.6,2.6,1.1,4.5,5.8,9.2,10.3,10.3.9.2,1.9,0,2.6-.6l1.8-1.7c.3-.3.5-.8.3-1.2l-2.1-2.9c-.2-.3-.6-.5-1-.3l-2.3.8c-.4.1-.8,0-1.1-.3-.9-1-1.6-2.2-2-3.5-.1-.4.1-.8.4-1l2-1.6c.3-.2.5-.6.3-1L9.5,4.8c-.2-.2-.6-.3-1-.3Z"/>
+    </svg>
+  )
+}
+
 /** Stern – universeller Fallback wenn kein passendes Icon vorhanden */
 export function IconStar({ size = 22 }) {
   return (
