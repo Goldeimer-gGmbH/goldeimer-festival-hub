@@ -134,6 +134,11 @@ a {
   text-decoration: none;
 }
 
+/* Buttons erben Schriftart vom Elternelement (Browser-Default überschreiben) */
+button {
+  font: inherit;
+}
+
 /* ─── Typografie ────────────────────────────────────────────── */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
@@ -505,9 +510,6 @@ h1, h2, h3, h4, h5, h6 {
   padding: var(--sp-3) 0;
   border-bottom: 1px solid var(--border);
   font-size: var(--text-sm);
-  display: flex;
-  align-items: flex-start;
-  gap: var(--sp-3);
 }
 
 .info-list li:last-child { border-bottom: none; }

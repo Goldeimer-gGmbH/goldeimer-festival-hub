@@ -180,6 +180,7 @@ export default function FestivalPage() {
   // Kein replace: push → Browser-Zurück funktioniert zwischen Tabs
   function setActiveTab(tab) {
     setSearchParams(tab === 'ablauf' ? {} : { tab })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   // Tag-Drill-down: in URL persistiert (Index), damit Browser-Zurück funktioniert
@@ -191,8 +192,10 @@ export default function FestivalPage() {
   // Crew-Listen-Drill-down: ebenfalls URL-basiert ohne replace
   const showCrewList = searchParams.get('view') === 'crew'
   function setShowCrewList(val) {
-    if (val) setSearchParams({ tab: 'infos', view: 'crew' })
-    else navigate(-1)
+    if (val) {
+      setSearchParams({ tab: 'infos', view: 'crew' })
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else navigate(-1)
   }
 
   useEffect(() => { loadFestivalInfo() }, [id])
@@ -1035,9 +1038,9 @@ function InfosTab({ details, role, content, onShowCrewList }) {
   const isKitchenVisible = role === 'catering' || role === 'operator' || role === 'lead'
 
   const lbl      = { fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', marginBottom: 4 }
-  const val      = { fontSize: 14, fontWeight: 600 }
-  const valMulti = { fontSize: 14, fontWeight: 600, whiteSpace: 'pre-wrap', lineHeight: 1.6 }
-  const linkStyle = { fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', textDecoration: 'none' }
+  const val      = { fontSize: 14, fontWeight: 400, color: 'var(--schwarz)' }
+  const valMulti = { fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--schwarz)' }
+  const linkStyle = { fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', textDecoration: 'none' }
   const ghost    = { fontSize: 14, fontWeight: 600, color: 'var(--grau-text)', fontStyle: 'italic' }
 
   // Goldeimer-Toiletten: zeige Sektion wenn mindestens ein Feld befüllt
