@@ -1034,7 +1034,7 @@ function InfosTab({ details, role, content, onShowCrewList }) {
   const isLeadOp         = role === 'lead' || role === 'operator'
   const isKitchenVisible = role === 'catering' || role === 'operator' || role === 'lead'
 
-  const lbl      = { fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grau-text)', marginBottom: 3 }
+  const lbl      = { fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', marginBottom: 4 }
   const val      = { fontSize: 14, fontWeight: 600 }
   const valMulti = { fontSize: 14, fontWeight: 600, whiteSpace: 'pre-wrap', lineHeight: 1.6 }
   const linkStyle = { fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', textDecoration: 'none' }
@@ -1056,14 +1056,12 @@ function InfosTab({ details, role, content, onShowCrewList }) {
       <div className="card">
         <ul className="info-list">
           <li>
-            <span className="info-icon"><IconKalender size={22}/></span>
             <div>
               <div style={lbl}>Anreise</div>
               <div style={val}>{getAnreise(details, role) || 'Wird noch bekannt gegeben'}</div>
             </div>
           </li>
           <li>
-            <span className="info-icon"><IconKalender size={22}/></span>
             <div>
               <div style={lbl}>Abreise</div>
               <div style={val}>{getAbreise(details, role) || 'Wird noch bekannt gegeben'}</div>
@@ -1071,12 +1069,10 @@ function InfosTab({ details, role, content, onShowCrewList }) {
           </li>
           {details.festival_address && (
             <li>
-              <span className="info-icon"><IconPin size={22}/></span>
               <div><div style={lbl}>Anschrift</div><div style={valMulti}>{details.festival_address}</div></div>
             </li>
           )}
           <li>
-            <span className="info-icon"><IconPin size={22}/></span>
             <div>
               <div style={lbl}>Lageplan</div>
               {details.festival_lageplan
@@ -1094,13 +1090,11 @@ function InfosTab({ details, role, content, onShowCrewList }) {
         <ul className="info-list">
           {details.need_total && (
             <li>
-              <span className="info-icon"><IconKontakte size={22}/></span>
               <div><div style={lbl}>Crew-Größe</div><div style={val}>{details.need_total} Personen</div></div>
             </li>
           )}
           {isLeadOp && (
             <li>
-              <span className="info-icon"><IconStift size={22}/></span>
               <div>
                 <div style={lbl}>Crew-Liste</div>
                 <button onClick={onShowCrewList}
@@ -1112,7 +1106,6 @@ function InfosTab({ details, role, content, onShowCrewList }) {
           )}
           {!details.need_total && !isLeadOp && (
             <li>
-              <span className="info-icon"><IconKontakte size={22}/></span>
               <div style={ghost}>Noch keine Crew-Infos</div>
             </li>
           )}
@@ -1127,7 +1120,6 @@ function InfosTab({ details, role, content, onShowCrewList }) {
             <ul className="info-list">
               {details.shift_table_link && (
                 <li>
-                  <span className="info-icon"><IconKalender size={22}/></span>
                   <div>
                     <div style={lbl}>Schichtplan</div>
                     <a href={details.shift_table_link} target="_blank" rel="noopener noreferrer" style={linkStyle}>Plan öffnen →</a>
@@ -1136,31 +1128,26 @@ function InfosTab({ details, role, content, onShowCrewList }) {
               )}
               {details.goldeimer_hours && (
                 <li>
-                  <span className="info-icon"><IconAblauf size={22}/></span>
                   <div><div style={lbl}>Öffnungszeiten</div><div style={valMulti}>{details.goldeimer_hours}</div></div>
                 </li>
               )}
               {details.goldeimer_prices && (
                 <li>
-                  <span className="info-icon"><IconStar size={22}/></span>
                   <div><div style={lbl}>Preise</div><div style={valMulti}>{details.goldeimer_prices}</div></div>
                 </li>
               )}
               {details.festival_actions && (
                 <li>
-                  <span className="info-icon"><IconStar size={22}/></span>
                   <div><div style={lbl}>Besondere Aktionen</div><div style={valMulti}>{details.festival_actions}</div></div>
                 </li>
               )}
               {isKitchenVisible && details.festival_money_info && (
                 <li>
-                  <span className="info-icon"><IconOrderbird size={22}/></span>
                   <div><div style={lbl}>Kassensystem</div><div style={valMulti}>{details.festival_money_info}</div></div>
                 </li>
               )}
               {isKitchenVisible && details.kitchen_crew_list && (
                 <li>
-                  <span className="info-icon"><IconStar size={22}/></span>
                   <div>
                     <div style={lbl}>Küche</div>
                     <a href={details.kitchen_crew_list} target="_blank" rel="noopener noreferrer" style={linkStyle}>Liste öffnen →</a>
@@ -1179,7 +1166,6 @@ function InfosTab({ details, role, content, onShowCrewList }) {
           <div className="card">
             <ul className="info-list">
               <li>
-                <span className="info-icon"><IconTransport size={22}/></span>
                 <div><div style={lbl}>Logistik-Infos</div><div style={valMulti}>{details.logistic_info}</div></div>
               </li>
             </ul>

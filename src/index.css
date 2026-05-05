@@ -109,6 +109,7 @@ html {
    am unteren Rand (damit der Bounce-Bereich die Nav-Farbe widerspiegelt) */
 @media (max-width: 639px) {
   html { background: var(--schwarz); }
+  body { background: var(--schwarz); }
 }
 
 body {
@@ -164,6 +165,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ─── Header ────────────────────────────────────────────────── */
 .header {
+  height: var(--header-height);
   background: var(--papier);
   display: flex;
   align-items: center;
@@ -176,6 +178,7 @@ h1, h2, h3, h4, h5, h6 {
   border-bottom: 1px solid var(--border);
   /* Inhalt (Logo, Icons) bleibt auf max 480px zentriert — wie der Body */
   padding: var(--sp-4) max(var(--sp-4), calc(50% - 240px));
+  box-sizing: border-box;
 }
 
 .header h1 {
