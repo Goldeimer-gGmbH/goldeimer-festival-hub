@@ -39,6 +39,8 @@ export default function LoginPage() {
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
   const [isRateLimit, setIsRateLimit] = useState(false)
+  const [pwMode, setPwMode]     = useState(false)
+  const [password, setPassword] = useState('')
   // Beim Laden: noch laufenden Countdown aus localStorage wiederherstellen
   const [cooldown, setCooldown] = useState(() => getStoredCooldown())
   const timerRef = useRef(null)
@@ -67,6 +69,22 @@ export default function LoginPage() {
   function startCooldown(seconds) {
     saveCooldown(seconds)
     setCooldown(seconds)
+  }
+
+  async function handlePasswordLogin(e) {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      })
+      if (error) setError(`Fehler: ${error.message}`)
+    } catch {
+      setError('Verbindungsfehler.')
+    }
+    setLoading(false)
   }
 
   async function handleSubmit(e) {
@@ -272,6 +290,31 @@ export default function LoginPage() {
               : 'Login-Link anfordern →'}
         </button>
       </form>
+      {/* ── Temporärer Passwort-Login (nur für Notfälle) ── */}
+      <div style={{ marginTop: 'var(--sp-8)', borderTop: '1px solid var(--border)', paddingTop: 'var(--sp-5)' }}>
+        <button
+          type="button"
+          onClick={() => { setPwMode(p => !p); setError('') }}
+          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 'var(--text-xs)', color: 'var(--grau-text)', textDecoration: 'underline' }}
+        >
+          {pwMode ? 'Abbrechen' : 'Temporärer Zugang'}
+        </button>
+        {pwMode && (
+          <form onSubmit={handlePasswordLogin} style={{ marginTop: 'var(--sp-3)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+            <div className="input-group" style={{ marginBottom: 0 }}>
+              <label>E-Mail</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="deine@email.de" required />
+            </div>
+            <div className="input-group" style={{ marginBottom: 0 }}>
+              <label>Passwort</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+            </div>
+            <button type="submit" disabled={loading} className="button button--secondary">
+              {loading ? 'Lädt...' : 'Einloggen →'}
+            </button>
+          </form>
+        )}
+      </div>
     </PageShell>
   )
 }

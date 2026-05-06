@@ -189,20 +189,11 @@ export default function FestivalPage() {
     setSearchParams({ day: String(idx) })
   }
 
-  // Crew-Listen-Drill-down: ebenfalls URL-basiert ohne replace
-  const showCrewList = searchParams.get('view') === 'crew'
-  function setShowCrewList(val) {
-    if (val) {
-      setSearchParams({ tab: 'infos', view: 'crew' })
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    } else navigate(-1)
-  }
-
   useEffect(() => { loadFestivalInfo() }, [id])
 
   async function loadFestivalInfo() {
     setFetchError(false); setAuthError(false); setNotFound(false)
-    const cacheKey = `festival_v2_${id}`
+    const cacheKey = `festival_${id}`
     const cached = cacheGet(cacheKey)
     if (cached) { setData(cached); setLoading(false) }
 
@@ -267,10 +258,10 @@ export default function FestivalPage() {
     <div style={{ background: 'var(--papier)', minHeight: '100dvh' }}>
       {/* ── Logo-Header (cremefarben) ── */}
       <div className="header">
-        {/* Sub-Views (Crew-Liste, Tag-Detail): einen Schritt zurück.
+        {/* Tag-Detail-View: einen Schritt zurück.
             Sonst: direkt zur Startseite — Tab-Klicks sollen kein History-Labyrinth erzeugen. */}
         <button
-          onClick={() => (showCrewList || selectedDayIdx >= 0) ? navigate(-1) : navigate('/')}
+          onClick={() => selectedDayIdx >= 0 ? navigate(-1) : navigate('/')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
         >←</button>
         <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
@@ -337,11 +328,8 @@ export default function FestivalPage() {
           />
         )}
 
-        {activeTab === 'infos' && !showCrewList && (
-          <InfosTab details={details} role={role} content={data.content} onShowCrewList={() => setShowCrewList(true)} />
-        )}
-        {activeTab === 'infos' && showCrewList && (
-          <CrewListView crew={data.crew ?? null} festivalName={festivalName} />
+        {activeTab === 'infos' && (
+          <InfosTab details={details} role={role} content={data.content} />
         )}
 
         {activeTab === 'kontakte' && (
@@ -915,105 +903,9 @@ function KontakteTab({ details, contacts, role, festivalName }) {
   )
 }
 
-// ── CrewListView ──────────────────────────────────────────────────────────────
-
-const ROLLE_BADGE_COLOR = {
-  lead:         { bg: 'var(--gelb)',       color: 'var(--schwarz)' },
-  operator:     { bg: 'var(--gruen)',      color: 'var(--weiss)'   },
-  supporti_plus:{ bg: 'var(--schwarz)',    color: 'var(--weiss)'   },
-  supporti:     { bg: 'var(--grau)',       color: 'var(--schwarz)' },
-  catering:     { bg: '#e07b39',           color: 'var(--weiss)'   },
-}
-
-const STATUS_LABEL = {
-  zugesagt:     'Zugesagt',
-  akkreditiert: 'Akkreditiert',
-  teilgenommen: 'Dabei gewesen',
-}
-
-const ROLLE_ORDER = ['lead', 'operator', 'supporti_plus', 'supporti', 'catering']
-
-function CrewListView({ crew, festivalName }) {
-  // crew === null  → Daten noch im Laden (fresh fetch läuft)
-  // crew === []   → geladen, aber leer (kein Zugriff)
-  // crew = Array → Daten da
-  const list = crew || []
-  const grouped = {}
-  list.forEach(a => {
-    if (!grouped[a.role]) grouped[a.role] = []
-    grouped[a.role].push(a)
-  })
-
-  return (
-    <div>
-      <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 4 }}>
-        Crew-Liste
-      </div>
-      <div style={{ fontSize: 13, color: 'var(--grau-text)', marginBottom: 'var(--sp-5)' }}>
-        {festivalName}{list.length > 0 ? ` · ${list.length} Personen` : ''}
-      </div>
-
-      {crew === null && <div className="loading">Lädt...</div>}
-      {crew !== null && list.length === 0 && (
-        <div className="card" style={{ textAlign: 'center', padding: 24, color: 'var(--grau-text)', fontSize: 14 }}>
-          Keine Crew-Daten verfügbar.
-        </div>
-      )}
-
-      {ROLLE_ORDER.map(role => {
-        const members = grouped[role]
-        if (!members) return null
-        const badge = ROLLE_BADGE_COLOR[role] || { bg: 'var(--grau)', color: 'var(--schwarz)' }
-        return (
-          <div key={role}>
-            <div className="section-title">{ROLLE_LABEL[role] || role} ({members.length})</div>
-            {members.map((m, i) => (
-              <div key={i} className="card" style={{ marginBottom: 8 }}>
-                {/* Name + Rolle-Badge */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-                  <div className="card-title" style={{ margin: 0 }}>
-                    {m.full_name || '—'}
-                  </div>
-                  <span style={{
-                    fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
-                    background: badge.bg, color: badge.color,
-                    padding: '2px 7px', borderRadius: 4,
-                  }}>
-                    {ROLLE_LABEL[role] || role}
-                  </span>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, color: 'var(--grau-text)',
-                    border: '1px solid var(--border)', padding: '2px 6px', borderRadius: 4,
-                  }}>
-                    {STATUS_LABEL[m.status] || m.status}
-                  </span>
-                </div>
-                {/* E-Mail-Button */}
-                {m.email && (
-                  <a href={`mailto:${m.email.trim()}`}
-                    onClick={e => { e.preventDefault(); window.location.href = `mailto:${m.email.trim()}` }}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      background: 'var(--papier)', color: 'var(--schwarz)',
-                      border: '1.5px solid var(--border)',
-                      padding: '7px 13px', borderRadius: 8,
-                      fontSize: 13, fontWeight: 700, textDecoration: 'none',
-                    }}>
-                    <IconBrief size={15} /> {m.email}
-                  </a>
-                )}
-              </div>
-            ))}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 // ── InfosTab ──────────────────────────────────────────────────────────────────
 
-function InfosTab({ details, role, content, onShowCrewList }) {
+function InfosTab({ details, role, content }) {
   const isLeadOp         = role === 'lead' || role === 'operator'
   const isKitchenVisible = role === 'catering' || role === 'operator' || role === 'lead'
 
@@ -1068,32 +960,18 @@ function InfosTab({ details, role, content, onShowCrewList }) {
       </div>
 
       {/* ── Crew ── */}
-      <div className="section-title">Crew</div>
-      <div className="card">
-        <ul className="info-list">
-          {details.need_total && (
-            <li>
-              <div><div style={lbl}>Crew-Größe</div><div style={val}>{details.need_total} Personen</div></div>
-            </li>
-          )}
-          {isLeadOp && (
-            <li>
-              <div>
-                <div style={lbl}>Crew-Liste</div>
-                <button onClick={onShowCrewList}
-                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', ...linkStyle }}>
-                  Liste öffnen →
-                </button>
-              </div>
-            </li>
-          )}
-          {!details.need_total && !isLeadOp && (
-            <li>
-              <div style={ghost}>Noch keine Crew-Infos</div>
-            </li>
-          )}
-        </ul>
-      </div>
+      {details.need_total && (
+        <>
+          <div className="section-title">Crew</div>
+          <div className="card">
+            <ul className="info-list">
+              <li>
+                <div><div style={lbl}>Crew-Größe</div><div style={val}>{details.need_total} Personen</div></div>
+              </li>
+            </ul>
+          </div>
+        </>
+      )}
 
       {/* ── Goldeimer-Toiletten ── */}
       {hasToiletten && (
