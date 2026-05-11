@@ -329,7 +329,7 @@ export default function FestivalPage() {
         )}
 
         {activeTab === 'infos' && (
-          <InfosTab details={details} role={role} content={data.content} />
+          <InfosTab details={details} role={role} content={data.content} festivalId={id} />
         )}
 
         {activeTab === 'kontakte' && (
@@ -903,9 +903,93 @@ function KontakteTab({ details, contacts, role, festivalName }) {
   )
 }
 
+// ── CrewListSection ───────────────────────────────────────────────────────────
+
+const ROLLE_ORDER = ['lead', 'operator', 'supporti_plus', 'supporti', 'catering']
+
+function CrewListSection({ festivalId }) {
+  const [open, setOpen]       = useState(false)
+  const [crew, setCrew]       = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState(false)
+
+  async function load() {
+    // Bereits geladen → nur auf-/zuklappen
+    if (crew !== null) { setOpen(o => !o); return }
+    setLoading(true)
+    setError(false)
+    try {
+      const { data, error } = await supabase
+        .from('festival_assignments')
+        .select('role, status, profiles(full_name)')
+        .eq('festival_id', festivalId)
+        .neq('status', 'withdrawn')
+        .order('role')
+      if (!error && data) {
+        const sorted = [...data].sort(
+          (a, b) => ROLLE_ORDER.indexOf(a.role) - ROLLE_ORDER.indexOf(b.role)
+        )
+        setCrew(sorted)
+        setOpen(true)
+      } else {
+        setError(true)
+      }
+    } catch {
+      setError(true)
+    }
+    setLoading(false)
+  }
+
+  return (
+    <div>
+      <button
+        onClick={load}
+        disabled={loading}
+        className="button button--secondary"
+        style={{ width: '100%', marginBottom: open ? 8 : 0 }}
+      >
+        {loading ? 'Lädt...' : open ? 'Crew-Liste schließen ↑' : 'Crew-Liste anzeigen →'}
+      </button>
+
+      {error && (
+        <p style={{ fontSize: 13, color: 'var(--rot)', marginTop: 8 }}>
+          Liste konnte nicht geladen werden.
+        </p>
+      )}
+
+      {open && crew && (
+        <div className="card">
+          {crew.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--grau-text)' }}>Keine Crew-Mitglieder gefunden.</p>
+          ) : crew.map((a, i) => (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              paddingBottom: i < crew.length - 1 ? 10 : 0,
+              marginBottom: i < crew.length - 1 ? 10 : 0,
+              borderBottom: i < crew.length - 1 ? '1px solid var(--border)' : 'none',
+            }}>
+              <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--schwarz)' }}>
+                {a.profiles?.full_name || '—'}
+              </div>
+              <span style={{
+                fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
+                background: 'var(--papier)', color: 'var(--schwarz)',
+                border: '1.5px solid var(--border)',
+                padding: '2px 7px', borderRadius: 4, flexShrink: 0,
+              }}>
+                {ROLLE_LABEL[a.role] || a.role}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── InfosTab ──────────────────────────────────────────────────────────────────
 
-function InfosTab({ details, role, content }) {
+function InfosTab({ details, role, content, festivalId }) {
   const isLeadOp         = role === 'lead' || role === 'operator'
   const isKitchenVisible = role === 'catering' || role === 'operator' || role === 'lead'
 
@@ -960,18 +1044,17 @@ function InfosTab({ details, role, content }) {
       </div>
 
       {/* ── Crew ── */}
+      <div className="section-title">Crew</div>
       {details.need_total && (
-        <>
-          <div className="section-title">Crew</div>
-          <div className="card">
-            <ul className="info-list">
-              <li>
-                <div><div style={lbl}>Crew-Größe</div><div style={val}>{details.need_total} Personen</div></div>
-              </li>
-            </ul>
-          </div>
-        </>
+        <div className="card" style={{ marginBottom: 8 }}>
+          <ul className="info-list">
+            <li>
+              <div><div style={lbl}>Crew-Größe</div><div style={val}>{details.need_total} Personen</div></div>
+            </li>
+          </ul>
+        </div>
       )}
+      <CrewListSection festivalId={festivalId} />
 
       {/* ── Goldeimer-Toiletten ── */}
       {hasToiletten && (
