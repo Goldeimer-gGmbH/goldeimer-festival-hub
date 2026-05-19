@@ -225,9 +225,19 @@ export function AuthProvider({ children }) {
   }
 
   async function signOut() {
+    // Zuerst lokal alles clearen — nicht auf den Server warten.
+    // Server-Call kann bei abgelaufener Session hängen und den Button "einfrieren".
     cacheClearAll()
     localStorage.removeItem('gfh_last_profile')
-    await supabase.auth.signOut()
+    // Supabase Auth-Tokens direkt aus localStorage löschen (sofort, kein API-Call nötig)
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('sb-'))
+      .forEach(k => localStorage.removeItem(k))
+    setUser(null)
+    setProfile(null)
+    profileRef.current = null
+    // Server-seitig revoken — fire & forget, kein await
+    supabase.auth.signOut().catch(() => {})
   }
 
   return (

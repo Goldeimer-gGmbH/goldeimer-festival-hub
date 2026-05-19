@@ -116,6 +116,7 @@ export default function HomePage() {
   useEffect(() => { loadAssignments() }, [])
 
   async function loadAssignments() {
+    if (!profile?.id) { setLoading(false); return }
     setFetchError(false)
     setAuthError(false)
     const cached = cacheGet(cacheKey)
