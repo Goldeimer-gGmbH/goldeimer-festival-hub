@@ -193,7 +193,7 @@ export default function FestivalPage() {
 
   async function loadFestivalInfo() {
     setFetchError(false); setAuthError(false); setNotFound(false)
-    const cacheKey = `festival_${id}`
+    const cacheKey = `festival_v2_${id}`
     const cached = cacheGet(cacheKey)
     if (cached) { setData(cached); setLoading(false) }
 
@@ -329,7 +329,7 @@ export default function FestivalPage() {
         )}
 
         {activeTab === 'infos' && (
-          <InfosTab details={details} role={role} content={data.content} festivalId={id} crew={data.crew ?? []} />
+          <InfosTab details={details} role={role} content={data.content} festivalId={id} crew={data.crew} />
         )}
 
         {activeTab === 'kontakte' && (
@@ -958,10 +958,11 @@ function InfosTab({ details, role, content, festivalId, crew }) {
   const isLeadOp         = role === 'lead' || role === 'operator'
   const isKitchenVisible = role === 'catering' || role === 'operator' || role === 'lead'
 
-  // crew kommt bereits aus data.crew (mitgeliefert vom Festival-Info-RPC)
-  const sortedCrew = [...(crew ?? [])].sort(
-    (a, b) => ROLLE_ORDER.indexOf(a.role) - ROLLE_ORDER.indexOf(b.role)
-  )
+  // crew ist undefined solange der frische RPC noch läuft (Cache hat kein crew-Feld)
+  const crewLoaded = Array.isArray(crew)
+  const sortedCrew = crewLoaded
+    ? [...crew].sort((a, b) => ROLLE_ORDER.indexOf(a.role) - ROLLE_ORDER.indexOf(b.role))
+    : []
 
   const lbl      = { fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', marginBottom: 4 }
   const val      = { fontSize: 14, fontWeight: 400, color: 'var(--schwarz)' }
@@ -1020,7 +1021,7 @@ function InfosTab({ details, role, content, festivalId, crew }) {
           <li>
             <div>
               <div style={lbl}>Crew-Größe</div>
-              <div style={val}>{sortedCrew.length} Personen</div>
+              <div style={val}>{crewLoaded ? `${sortedCrew.length} Personen` : '...'}</div>
             </div>
           </li>
         </ul>
