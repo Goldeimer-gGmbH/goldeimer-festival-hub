@@ -329,7 +329,7 @@ export default function FestivalPage() {
         )}
 
         {activeTab === 'infos' && (
-          <InfosTab details={details} role={role} content={data.content} festivalId={id} />
+          <InfosTab details={details} role={role} content={data.content} festivalId={id} crew={data.crew ?? []} />
         )}
 
         {activeTab === 'kontakte' && (
@@ -908,17 +908,9 @@ function KontakteTab({ details, contacts, role, festivalName }) {
 const ROLLE_ORDER = ['lead', 'operator', 'supporti_plus', 'supporti', 'catering']
 
 // Zeigt die bereits geladene Crew-Liste als aufklappbaren Block.
-// Daten werden vom InfosTab gehalten (dort schon für die Zählung gebraucht).
-function CrewListSection({ crew, crewLoading }) {
+// Daten kommen aus dem Festival-Info-RPC — kein eigener Fetch.
+function CrewListSection({ crew }) {
   const [open, setOpen] = useState(false)
-
-  if (crewLoading) {
-    return (
-      <button disabled className="button button--secondary" style={{ width: '100%' }}>
-        Lädt...
-      </button>
-    )
-  }
 
   return (
     <div>
@@ -962,29 +954,14 @@ function CrewListSection({ crew, crewLoading }) {
 
 // ── InfosTab ──────────────────────────────────────────────────────────────────
 
-function InfosTab({ details, role, content, festivalId }) {
+function InfosTab({ details, role, content, festivalId, crew }) {
   const isLeadOp         = role === 'lead' || role === 'operator'
   const isKitchenVisible = role === 'catering' || role === 'operator' || role === 'lead'
 
-  // Crew-Daten für Anzahl + Liste — einmal laden, an CrewListSection weitergeben
-  const [crew, setCrew]             = useState(null)
-  const [crewLoading, setCrewLoading] = useState(true)
-
-  useEffect(() => {
-    supabase.rpc('get_festival_crew', { p_festival_id: festivalId })
-      .then(({ data, error }) => {
-        if (!error && Array.isArray(data)) {
-          const sorted = [...data].sort(
-            (a, b) => ROLLE_ORDER.indexOf(a.role) - ROLLE_ORDER.indexOf(b.role)
-          )
-          setCrew(sorted)
-        } else {
-          setCrew([])
-        }
-      })
-      .catch(() => setCrew([]))
-      .finally(() => setCrewLoading(false))
-  }, [festivalId])
+  // crew kommt bereits aus data.crew (mitgeliefert vom Festival-Info-RPC)
+  const sortedCrew = [...(crew ?? [])].sort(
+    (a, b) => ROLLE_ORDER.indexOf(a.role) - ROLLE_ORDER.indexOf(b.role)
+  )
 
   const lbl      = { fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', marginBottom: 4 }
   const val      = { fontSize: 14, fontWeight: 400, color: 'var(--schwarz)' }
@@ -1043,14 +1020,12 @@ function InfosTab({ details, role, content, festivalId }) {
           <li>
             <div>
               <div style={lbl}>Crew-Größe</div>
-              <div style={val}>
-                {crewLoading ? '...' : `${crew?.length ?? 0} Personen`}
-              </div>
+              <div style={val}>{sortedCrew.length} Personen</div>
             </div>
           </li>
         </ul>
       </div>
-      <CrewListSection crew={crew} crewLoading={crewLoading} />
+      <CrewListSection crew={sortedCrew} />
 
       {/* ── Goldeimer-Toiletten ── */}
       {hasToiletten && (
