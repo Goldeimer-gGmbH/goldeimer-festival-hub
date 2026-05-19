@@ -193,7 +193,7 @@ export default function FestivalPage() {
 
   async function loadFestivalInfo() {
     setFetchError(false); setAuthError(false); setNotFound(false)
-    const cacheKey = `festival_v2_${id}`
+    const cacheKey = `festival_v3_${id}`
     const cached = cacheGet(cacheKey)
     if (cached) { setData(cached); setLoading(false) }
 
@@ -928,22 +928,36 @@ function CrewListSection({ crew }) {
             <p style={{ fontSize: 13, color: 'var(--grau-text)' }}>Keine Crew-Mitglieder gefunden.</p>
           ) : crew.map((a, i) => (
             <div key={i} style={{
-              display: 'flex', alignItems: 'center', gap: 10,
               paddingBottom: i < crew.length - 1 ? 10 : 0,
               marginBottom: i < crew.length - 1 ? 10 : 0,
               borderBottom: i < crew.length - 1 ? '1px solid var(--border)' : 'none',
             }}>
-              <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--schwarz)' }}>
-                {a.full_name || '—'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--schwarz)' }}>
+                  {a.full_name || '—'}
+                </div>
+                <span style={{
+                  fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
+                  background: 'var(--papier)', color: 'var(--schwarz)',
+                  border: '1.5px solid var(--border)',
+                  padding: '2px 7px', borderRadius: 4, flexShrink: 0,
+                }}>
+                  {ROLLE_LABEL[a.role] || a.role}
+                </span>
               </div>
-              <span style={{
-                fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
-                background: 'var(--papier)', color: 'var(--schwarz)',
-                border: '1.5px solid var(--border)',
-                padding: '2px 7px', borderRadius: 4, flexShrink: 0,
-              }}>
-                {ROLLE_LABEL[a.role] || a.role}
-              </span>
+              {a.phone && (
+                <a
+                  href={`tel:${a.phone.replace(/[\s\-/]/g, '')}`}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    marginTop: 4,
+                    fontSize: 13, fontWeight: 600, color: 'var(--grau-text)',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <IconTelefon size={13} /> {a.phone}
+                </a>
+              )}
             </div>
           ))}
         </div>
@@ -1014,19 +1028,23 @@ function InfosTab({ details, role, content, festivalId, crew }) {
         </ul>
       </div>
 
-      {/* ── Crew ── */}
-      <div className="section-title">Crew</div>
-      <div className="card" style={{ marginBottom: 8 }}>
-        <ul className="info-list">
-          <li>
-            <div>
-              <div style={lbl}>Crew-Größe</div>
-              <div style={val}>{crewLoaded ? `${sortedCrew.length} Personen` : '...'}</div>
-            </div>
-          </li>
-        </ul>
-      </div>
-      <CrewListSection crew={sortedCrew} />
+      {/* ── Crew (nur für Leads + Operators) ── */}
+      {isLeadOp && (
+        <>
+          <div className="section-title">Crew</div>
+          <div className="card" style={{ marginBottom: 8 }}>
+            <ul className="info-list">
+              <li>
+                <div>
+                  <div style={lbl}>Crew-Größe</div>
+                  <div style={val}>{crewLoaded ? `${sortedCrew.length} Personen` : '...'}</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <CrewListSection crew={sortedCrew} />
+        </>
+      )}
 
       {/* ── Goldeimer-Toiletten ── */}
       {hasToiletten && (
