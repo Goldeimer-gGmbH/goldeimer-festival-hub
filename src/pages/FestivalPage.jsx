@@ -217,7 +217,7 @@ export default function FestivalPage() {
     }
   }
 
-  if (loading) return <div className="loading">Lädt Festival-Infos...</div>
+  if (loading || !profile) return <div className="loading">Lädt Festival-Infos...</div>
   if (authError) return (
     <div className="page" style={{ paddingTop: 'var(--sp-8)', textAlign: 'center' }}>
       <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconStar size={36} /></div>
@@ -920,12 +920,8 @@ function CrewListSection({ festivalId }) {
     setError(false)
     try {
       const { data, error } = await supabase
-        .from('festival_assignments')
-        .select('role, status, profiles(full_name)')
-        .eq('festival_id', festivalId)
-        .neq('status', 'withdrawn')
-        .order('role')
-      if (!error && data) {
+        .rpc('get_festival_crew', { p_festival_id: festivalId })
+      if (!error && Array.isArray(data)) {
         const sorted = [...data].sort(
           (a, b) => ROLLE_ORDER.indexOf(a.role) - ROLLE_ORDER.indexOf(b.role)
         )
@@ -969,7 +965,7 @@ function CrewListSection({ festivalId }) {
               borderBottom: i < crew.length - 1 ? '1px solid var(--border)' : 'none',
             }}>
               <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--schwarz)' }}>
-                {a.profiles?.full_name || '—'}
+                {a.full_name || '—'}
               </div>
               <span style={{
                 fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
