@@ -329,11 +329,11 @@ export default function FestivalPage() {
         )}
 
         {activeTab === 'infos' && (
-          <InfosTab details={details} role={role} content={data.content} festivalId={id} crew={data.crew} />
+          <InfosTab details={details} role={role} content={data.content} festivalId={id} />
         )}
 
         {activeTab === 'kontakte' && (
-          <KontakteTab details={details} contacts={data.contacts} role={role} festivalName={festivalName} />
+          <KontakteTab details={details} role={role} festivalName={festivalName} crew={data.crew} />
         )}
 
         {activeTab === 'feedback' && (
@@ -785,18 +785,30 @@ function PersonBlocks({ value }) {
   )
 }
 
-function KontakteTab({ details, contacts, role, festivalName }) {
+function KontakteTab({ details, role, festivalName, crew }) {
   const isLeadOp = role === 'lead' || role === 'operator'
 
-  const hasAnyContent = details.telegram_link || (contacts && contacts.length > 0) ||
+  const crewLoaded = Array.isArray(crew)
+  const sortedCrew = crewLoaded
+    ? [...crew].sort((a, b) => ROLLE_ORDER.indexOf(a.role) - ROLLE_ORDER.indexOf(b.role))
+    : []
+
+  const lbl      = { fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', marginBottom: 4 }
+  const val      = { fontSize: 14, fontWeight: 400, color: 'var(--schwarz)' }
+  const valMulti = { fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--schwarz)' }
+
+  const hasSpecialContacts =
     (isLeadOp && details.production_mgmt) || (isLeadOp && details.urin_pump) ||
     (isLeadOp && details.job_safety) || details.awareness_team || (isLeadOp && details.vca_asp)
+
+  const hasAnyContent = details.telegram_link || hasSpecialContacts || isLeadOp
 
   return (
     <div>
       <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 'var(--sp-5)' }}>
         Kontakte
       </div>
+
       {/* Telegramgruppe – alle Rollen */}
       {details.telegram_link && (
         <>
@@ -814,90 +826,72 @@ function KontakteTab({ details, contacts, role, festivalName }) {
         </>
       )}
 
-      {/* Kontaktpersonen (Leads + Operators) – alle Rollen */}
-      {contacts && contacts.length > 0 && (
+      {/* Spezial-Kontakte – alle in einem Kasten */}
+      {hasSpecialContacts && (
         <>
-          <div className="section-title">Lead- und Operator-Team</div>
-          {contacts.map((c, i) => (
-            <div key={i} className="card" style={{ marginBottom: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: (c.phone || c.email) ? 10 : 0 }}>
-                <div className="card-title" style={{ margin: 0 }}>{c.full_name || c.email}</div>
-                <span style={{
-                  fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
-                  background: 'var(--gruen)', color: 'var(--weiss)',
-                  padding: '2px 7px', borderRadius: 4,
-                }}>
-                  {ROLLE_LABEL_KONTAKT[c.role] || c.role}
-                </span>
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {c.phone && (
-                  <a href={`tel:${c.phone.replace(/[\s\-/]/g, '')}`}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      background: 'var(--schwarz)', color: 'var(--weiss)',
-                      padding: '8px 14px', borderRadius: 8,
-                      fontSize: 13, fontWeight: 700, textDecoration: 'none',
-                    }}>
-                    <IconTelefon size={15} /> {c.phone}
-                  </a>
-                )}
-                {c.email && (
-                  <a href={`mailto:${c.email.trim()}`}
-                    onClick={e => { e.preventDefault(); window.location.href = `mailto:${c.email.trim()}` }}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      background: 'var(--papier)', color: 'var(--schwarz)',
-                      border: '1.5px solid var(--border)',
-                      padding: '8px 14px', borderRadius: 8,
-                      fontSize: 13, fontWeight: 700, textDecoration: 'none',
-                    }}>
-                    <IconBrief size={15} /> {c.email}
-                  </a>
-                )}
-              </div>
-            </div>
-          ))}
+          <div className="section-title">Spezial-Kontakte</div>
+          <div className="card">
+            <ul className="info-list">
+              {isLeadOp && details.production_mgmt && (
+                <li>
+                  <div>
+                    <div style={lbl}>Produktionsleitung</div>
+                    <div style={valMulti}><PhoneText text={details.production_mgmt} /></div>
+                  </div>
+                </li>
+              )}
+              {isLeadOp && details.urin_pump && (
+                <li>
+                  <div>
+                    <div style={lbl}>Urinabpumpung</div>
+                    <div style={valMulti}><PhoneText text={details.urin_pump} /></div>
+                  </div>
+                </li>
+              )}
+              {isLeadOp && details.job_safety && (
+                <li>
+                  <div>
+                    <div style={lbl}>Arbeitssicherheit</div>
+                    <div style={valMulti}><PhoneText text={details.job_safety} /></div>
+                  </div>
+                </li>
+              )}
+              {details.awareness_team && (
+                <li>
+                  <div>
+                    <div style={lbl}>Awareness-Team</div>
+                    <div style={valMulti}><PhoneText text={details.awareness_team} /></div>
+                  </div>
+                </li>
+              )}
+              {isLeadOp && details.vca_asp && (
+                <li>
+                  <div>
+                    <div style={lbl}>VcA-ASP</div>
+                    <div style={valMulti}><PhoneText text={details.vca_asp} /></div>
+                  </div>
+                </li>
+              )}
+            </ul>
+          </div>
         </>
       )}
 
-      {/* Produktionsleitung – nur Leads + Operator */}
-      {isLeadOp && details.production_mgmt && (
+      {/* Crew – nur Leads + Operator */}
+      {isLeadOp && (
         <>
-          <div className="section-title">Produktionsleitung</div>
-          <PersonBlocks value={details.production_mgmt} />
-        </>
-      )}
-
-      {/* Urinabpumpung – nur Leads + Operator */}
-      {isLeadOp && details.urin_pump && (
-        <>
-          <div className="section-title">Urinabpumpung</div>
-          <PersonBlocks value={details.urin_pump} />
-        </>
-      )}
-
-      {/* Arbeitssicherheit – nur Leads + Operator */}
-      {isLeadOp && details.job_safety && (
-        <>
-          <div className="section-title">Arbeitssicherheit</div>
-          <PersonBlocks value={details.job_safety} />
-        </>
-      )}
-
-      {/* Awareness-Team – alle Rollen */}
-      {details.awareness_team && (
-        <>
-          <div className="section-title">Awareness-Team</div>
-          <PersonBlocks value={details.awareness_team} />
-        </>
-      )}
-
-      {/* VcA-ASP – nur Leads + Operator */}
-      {isLeadOp && details.vca_asp && (
-        <>
-          <div className="section-title">VcA-ASP</div>
-          <PersonBlocks value={details.vca_asp} />
+          <div className="section-title">Crew</div>
+          <div className="card" style={{ marginBottom: 8 }}>
+            <ul className="info-list">
+              <li>
+                <div>
+                  <div style={lbl}>Crew-Größe</div>
+                  <div style={val}>{crewLoaded ? `${sortedCrew.length} Personen` : '...'}</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <CrewListSection crew={sortedCrew} />
         </>
       )}
 
@@ -976,15 +970,9 @@ function CrewListSection({ crew }) {
 
 // ── InfosTab ──────────────────────────────────────────────────────────────────
 
-function InfosTab({ details, role, content, festivalId, crew }) {
+function InfosTab({ details, role, content, festivalId }) {
   const isLeadOp         = role === 'lead' || role === 'operator'
   const isKitchenVisible = role === 'catering' || role === 'operator' || role === 'lead'
-
-  // crew ist undefined solange der frische RPC noch läuft (Cache hat kein crew-Feld)
-  const crewLoaded = Array.isArray(crew)
-  const sortedCrew = crewLoaded
-    ? [...crew].sort((a, b) => ROLLE_ORDER.indexOf(a.role) - ROLLE_ORDER.indexOf(b.role))
-    : []
 
   const lbl      = { fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', marginBottom: 4 }
   const val      = { fontSize: 14, fontWeight: 400, color: 'var(--schwarz)' }
@@ -1060,24 +1048,6 @@ function InfosTab({ details, role, content, festivalId, crew }) {
           </li>
         </ul>
       </div>
-
-      {/* ── Crew (nur für Leads + Operators) ── */}
-      {isLeadOp && (
-        <>
-          <div className="section-title">Crew</div>
-          <div className="card" style={{ marginBottom: 8 }}>
-            <ul className="info-list">
-              <li>
-                <div>
-                  <div style={lbl}>Crew-Größe</div>
-                  <div style={val}>{crewLoaded ? `${sortedCrew.length} Personen` : '...'}</div>
-                </div>
-              </li>
-            </ul>
-          </div>
-          <CrewListSection crew={sortedCrew} />
-        </>
-      )}
 
       {/* ── Goldeimer-Toiletten ── */}
       {hasToiletten && (
