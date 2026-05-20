@@ -1008,10 +1008,10 @@ function InfosTab({ details, role, content, festivalId, crew }) {
       </div>
 
       {/* ── Besonderheiten (roter Kasten, ganz oben) ── */}
-      {details.festival_actions && (
+      {details.special_notes && (
         <div style={{
-          background: '#FFF0EE',
-          border: '2px solid #C0392B',
+          background: '#fde8e3',
+          border: '2px solid var(--rot)',
           borderRadius: 'var(--rounded)',
           padding: '14px var(--sp-4)',
           marginBottom: 'var(--sp-4)',
@@ -1019,12 +1019,12 @@ function InfosTab({ details, role, content, festivalId, crew }) {
           <div style={{
             fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-heading)',
             textTransform: 'uppercase', letterSpacing: '0.08em',
-            color: '#C0392B', marginBottom: 8,
+            color: 'var(--rot)', marginBottom: 8,
           }}>
             Besonderheiten {festivalYear}
           </div>
           <div style={{ fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.65, color: 'var(--schwarz)' }}>
-            {details.festival_actions}
+            {details.special_notes}
           </div>
         </div>
       )}
