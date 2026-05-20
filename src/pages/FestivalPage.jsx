@@ -994,7 +994,8 @@ function InfosTab({ details, role, content, festivalId, crew }) {
 
   // Goldeimer-Toiletten: zeige Sektion wenn mindestens ein Feld befüllt
   const hasToiletten = details.count_module || details.shift_table_link || details.goldeimer_hours ||
-    details.goldeimer_prices || details.festival_actions
+    details.goldeimer_prices || details.festival_actions ||
+    (isKitchenVisible && details.festival_money_info)
 
   return (
     <div>
@@ -1087,13 +1088,18 @@ function InfosTab({ details, role, content, festivalId, crew }) {
                   <div><div style={lbl}>Besondere Aktionen</div><div style={valMulti}>{details.festival_actions}</div></div>
                 </li>
               )}
+              {isKitchenVisible && details.festival_money_info && (
+                <li>
+                  <div><div style={lbl}>Kassensystem</div><div style={valMulti}>{details.festival_money_info}</div></div>
+                </li>
+              )}
             </ul>
           </div>
         </>
       )}
 
       {/* ── Küche (Leads, Operators, Catering) ── */}
-      {isKitchenVisible && (details.kitchen_op || details.kitchen_crew_list || details.festival_money_info || details.kitchen_info) && (
+      {isKitchenVisible && (details.kitchen_op || details.kitchen_crew_list || details.kitchen_info) && (
         <>
           <div className="section-title">Küche</div>
           <div className="card">
@@ -1109,11 +1115,6 @@ function InfosTab({ details, role, content, festivalId, crew }) {
                     <div style={lbl}>Küchen-Crew</div>
                     <a href={details.kitchen_crew_list} target="_blank" rel="noopener noreferrer" style={linkStyle}>Liste öffnen →</a>
                   </div>
-                </li>
-              )}
-              {details.festival_money_info && (
-                <li>
-                  <div><div style={lbl}>Kassensystem</div><div style={valMulti}>{details.festival_money_info}</div></div>
                 </li>
               )}
               {details.kitchen_info && (
