@@ -790,7 +790,7 @@ function KontakteTab({ details, contacts, role, festivalName }) {
 
   const hasAnyContent = details.telegram_link || (contacts && contacts.length > 0) ||
     (isLeadOp && details.production_mgmt) || (isLeadOp && details.urin_pump) ||
-    details.awareness_team || (isLeadOp && details.vca_asp)
+    (isLeadOp && details.job_safety) || details.awareness_team || (isLeadOp && details.vca_asp)
 
   return (
     <div>
@@ -874,6 +874,14 @@ function KontakteTab({ details, contacts, role, festivalName }) {
         <>
           <div className="section-title">Urinabpumpung</div>
           <PersonBlocks value={details.urin_pump} />
+        </>
+      )}
+
+      {/* Arbeitssicherheit – nur Leads + Operator */}
+      {isLeadOp && details.job_safety && (
+        <>
+          <div className="section-title">Arbeitssicherheit</div>
+          <PersonBlocks value={details.job_safety} />
         </>
       )}
 
@@ -985,9 +993,8 @@ function InfosTab({ details, role, content, festivalId, crew }) {
   const ghost    = { fontSize: 14, fontWeight: 600, color: 'var(--grau-text)', fontStyle: 'italic' }
 
   // Goldeimer-Toiletten: zeige Sektion wenn mindestens ein Feld befüllt
-  const hasToiletten = details.shift_table_link || details.goldeimer_hours ||
-    details.goldeimer_prices || details.festival_actions ||
-    (isKitchenVisible && (details.festival_money_info || details.kitchen_crew_list))
+  const hasToiletten = details.count_module || details.shift_table_link || details.goldeimer_hours ||
+    details.goldeimer_prices || details.festival_actions
 
   return (
     <div>
@@ -1052,6 +1059,11 @@ function InfosTab({ details, role, content, festivalId, crew }) {
           <div className="section-title">Goldeimer-Toiletten</div>
           <div className="card">
             <ul className="info-list">
+              {details.count_module && (
+                <li>
+                  <div><div style={lbl}>Anzahl Module</div><div style={val}>{details.count_module}</div></div>
+                </li>
+              )}
               {details.shift_table_link && (
                 <li>
                   <div>
@@ -1075,17 +1087,38 @@ function InfosTab({ details, role, content, festivalId, crew }) {
                   <div><div style={lbl}>Besondere Aktionen</div><div style={valMulti}>{details.festival_actions}</div></div>
                 </li>
               )}
-              {isKitchenVisible && details.festival_money_info && (
+            </ul>
+          </div>
+        </>
+      )}
+
+      {/* ── Küche (Leads, Operators, Catering) ── */}
+      {isKitchenVisible && (details.kitchen_op || details.kitchen_crew_list || details.festival_money_info || details.kitchen_info) && (
+        <>
+          <div className="section-title">Küche</div>
+          <div className="card">
+            <ul className="info-list">
+              {details.kitchen_op && (
+                <li>
+                  <div><div style={lbl}>Küche-Operator</div><div style={valMulti}>{details.kitchen_op}</div></div>
+                </li>
+              )}
+              {details.kitchen_crew_list && (
+                <li>
+                  <div>
+                    <div style={lbl}>Küchen-Crew</div>
+                    <a href={details.kitchen_crew_list} target="_blank" rel="noopener noreferrer" style={linkStyle}>Liste öffnen →</a>
+                  </div>
+                </li>
+              )}
+              {details.festival_money_info && (
                 <li>
                   <div><div style={lbl}>Kassensystem</div><div style={valMulti}>{details.festival_money_info}</div></div>
                 </li>
               )}
-              {isKitchenVisible && details.kitchen_crew_list && (
+              {details.kitchen_info && (
                 <li>
-                  <div>
-                    <div style={lbl}>Küche</div>
-                    <a href={details.kitchen_crew_list} target="_blank" rel="noopener noreferrer" style={linkStyle}>Liste öffnen →</a>
-                  </div>
+                  <div><div style={lbl}>Infos</div><div style={valMulti}>{details.kitchen_info}</div></div>
                 </li>
               )}
             </ul>
