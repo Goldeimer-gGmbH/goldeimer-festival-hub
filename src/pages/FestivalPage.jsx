@@ -1017,8 +1017,7 @@ function InfosTab({ details, role, content, festivalId, crew }) {
           marginBottom: 'var(--sp-4)',
         }}>
           <div style={{
-            fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-heading)',
-            textTransform: 'uppercase', letterSpacing: '0.08em',
+            fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)',
             color: 'var(--rot)', marginBottom: 8,
           }}>
             Besonderheiten {festivalYear}
@@ -1158,18 +1157,6 @@ function InfosTab({ details, role, content, festivalId, crew }) {
                 <div><div style={lbl}>Logistik-Infos</div><div style={valMulti}>{details.logistic_info}</div></div>
               </li>
             </ul>
-          </div>
-        </>
-      )}
-
-      {/* ── Sonstiges ── */}
-      {details.festival_sonstiges && (
-        <>
-          <div className="section-title">Sonstiges</div>
-          <div className="card">
-            <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', color: 'var(--schwarz)' }}>
-              {details.festival_sonstiges}
-            </div>
           </div>
         </>
       )}
