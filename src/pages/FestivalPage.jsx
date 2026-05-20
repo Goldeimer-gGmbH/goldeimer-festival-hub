@@ -992,16 +992,42 @@ function InfosTab({ details, role, content, festivalId, crew }) {
   const linkStyle = { fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', textDecoration: 'none' }
   const ghost    = { fontSize: 14, fontWeight: 600, color: 'var(--grau-text)', fontStyle: 'italic' }
 
+  // Jahr aus Festival-Datumfeldern ableiten (DD.MM.YYYY)
+  const festivalYear = parseDeDate(
+    details.start_supp || details.start_leadop || details.start_setup
+  )?.getFullYear() || ''
+
   // Goldeimer-Toiletten: zeige Sektion wenn mindestens ein Feld befüllt
   const hasToiletten = details.count_module || details.shift_table_link || details.goldeimer_hours ||
-    details.goldeimer_prices || details.festival_actions ||
-    (isKitchenVisible && details.festival_money_info)
+    details.goldeimer_prices || (isKitchenVisible && details.festival_money_info)
 
   return (
     <div>
       <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 'var(--sp-5)' }}>
         Infos
       </div>
+
+      {/* ── Besonderheiten (roter Kasten, ganz oben) ── */}
+      {details.festival_actions && (
+        <div style={{
+          background: '#FFF0EE',
+          border: '2px solid #C0392B',
+          borderRadius: 'var(--rounded)',
+          padding: '14px var(--sp-4)',
+          marginBottom: 'var(--sp-4)',
+        }}>
+          <div style={{
+            fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-heading)',
+            textTransform: 'uppercase', letterSpacing: '0.08em',
+            color: '#C0392B', marginBottom: 8,
+          }}>
+            Besonderheiten {festivalYear}
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.65, color: 'var(--schwarz)' }}>
+            {details.festival_actions}
+          </div>
+        </div>
+      )}
 
       {/* ── Festival-Infos ── */}
       <div className="section-title">Festival-Infos</div>
@@ -1081,11 +1107,6 @@ function InfosTab({ details, role, content, festivalId, crew }) {
               {details.goldeimer_prices && (
                 <li>
                   <div><div style={lbl}>Preise</div><div style={valMulti}>{details.goldeimer_prices}</div></div>
-                </li>
-              )}
-              {details.festival_actions && (
-                <li>
-                  <div><div style={lbl}>Besondere Aktionen</div><div style={valMulti}>{details.festival_actions}</div></div>
                 </li>
               )}
               {isKitchenVisible && details.festival_money_info && (
