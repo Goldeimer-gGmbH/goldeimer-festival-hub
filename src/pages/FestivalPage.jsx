@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
@@ -355,6 +355,7 @@ export default function FestivalPage() {
             content={data.content}
             festivalName={festivalName}
             details={details}
+            crew={data.crew}
             selectedDayIdx={selectedDayIdx}
             onSelectDay={onSelectDay}
           />
@@ -423,24 +424,26 @@ export default function FestivalPage() {
 
 // ── AblaufTab ─────────────────────────────────────────────────────────────────
 
-function AblaufTab({ role, festivalId, profileId, checklists, festivalName, details, selectedDayIdx, onSelectDay }) {
-  const isLeadOp = role === 'lead' || role === 'operator'
+function AblaufTab({ role, festivalId, profileId, checklists, festivalName, details, crew, selectedDayIdx, onSelectDay }) {
+  // Supporti bekommt noch keinen Ablauf – alle anderen Rollen schon
+  const hasAblauf = role === 'lead' || role === 'operator' || role === 'supporti_plus' || role === 'catering'
 
   const ablaufTitle =
-    role === 'lead'     ? 'Ablauf für Leads' :
-    role === 'operator' ? 'Ablauf für Operator' :
-    role === 'catering' ? 'Ablauf für Küchencrew' :
-                          'Ablauf für Supportis'
+    role === 'lead'         ? 'Ablauf für Leads' :
+    role === 'operator'     ? 'Ablauf für Operator' :
+    role === 'supporti_plus'? 'Ablauf für Supporti+' :
+    role === 'catering'     ? 'Ablauf für Küchencrew' :
+                              'Ablauf für Supportis'
 
-  const days = isLeadOp ? generateAblaufDays(details, role, festivalName) : []
+  const days = hasAblauf ? generateAblaufDays(details, role, festivalName) : []
   const selectedDay = selectedDayIdx >= 0 ? days[selectedDayIdx] ?? null : null
 
   // Drill-down-Ansicht: einzelner Tag (Pfeil = navigate(-1) im Header der Seite)
   if (selectedDay) {
-    return <AblaufDayDetail day={selectedDay} />
+    return <AblaufDayDetail day={selectedDay} crew={crew} festivalId={festivalId} festivalName={festivalName} />
   }
 
-  if (!isLeadOp) {
+  if (!hasAblauf) {
     return (
       <div>
         <div style={{
@@ -550,7 +553,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
 
 // ── Tages-Detailansicht ───────────────────────────────────────────────────────
 
-function AblaufDayDetail({ day }) {
+function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
   return (
     <div>
       {/* Titel (Pfeil ist im Seiten-Header) */}
@@ -622,6 +625,15 @@ function AblaufDayDetail({ day }) {
           )
         })}
       </div>
+
+      {/* Rückmeldungs-Formular – nur am Aufbautag */}
+      {day.type === 'aufbautag' && festivalId && (
+        <AufbauRueckmeldung
+          festivalId={festivalId}
+          festivalName={festivalName}
+          crew={crew}
+        />
+      )}
     </div>
   )
 }
@@ -1182,6 +1194,407 @@ function InfosTab({ details, role, content, festivalId }) {
           ))}
         </>
       )}
+    </div>
+  )
+}
+
+// ── AufbauRueckmeldung ────────────────────────────────────────────────────────
+
+const AUFBAU_TASKS = [
+  { id: 'packen',   label: 'Packen' },
+  { id: 'fahren',   label: 'Fahren' },
+  { id: 'ausladen', label: 'Ausladen' },
+  { id: 'aufbau',   label: 'Aufbau' },
+]
+
+// Alle Rollen, die beim Aufbau dabei sein können
+const AUFBAU_CREW_ROLES = ['lead', 'operator', 'supporti_plus', 'catering']
+
+function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
+  const { profile } = useAuth()
+
+  // Crew auf Aufbau-relevante Rollen filtern, nach Rolle sortieren
+  const aufbauCrew = (crew || [])
+    .filter(m => AUFBAU_CREW_ROLES.includes(m.role))
+    .sort((a, b) => ROLLE_ORDER.indexOf(a.role) - ROLLE_ORDER.indexOf(b.role))
+
+  // Pro Crew-Mitglied ein tasks-Array; wird aus DB wiederhergestellt
+  const [entries, setEntries]         = useState(() => aufbauCrew.map(() => ({ tasks: [] })))
+  const [extraPeople, setExtraPeople] = useState([{ name: '', tasks: [] }])
+  const [report, setReport]           = useState(null)
+  const [loadingReport, setLoadingReport] = useState(true)
+  const [submitting, setSubmitting]   = useState(false)
+  const [submitError, setSubmitError] = useState('')
+  const [saveStatus, setSaveStatus]   = useState('') // 'saving' | 'saved' | ''
+  const saveTimer = useRef(null)
+
+  useEffect(() => { loadReport() }, [festivalId])
+
+  async function loadReport() {
+    setLoadingReport(true)
+    const { data, error } = await supabase
+      .from('aufbau_reports')
+      .select('*')
+      .eq('festival_id', festivalId)
+      .maybeSingle()
+
+    if (!error && data) {
+      setReport(data)
+      // Gespeicherte Aufgaben in den lokalen State zurückschreiben
+      if (data.crew_entries?.length) {
+        setEntries(aufbauCrew.map(member => {
+          const saved = data.crew_entries.find(e => e.name === member.full_name)
+          return { tasks: saved?.tasks || [] }
+        }))
+      }
+      if (data.extra_entries?.length) {
+        setExtraPeople(data.extra_entries.map(e => ({ name: e.name, tasks: e.tasks || [] })))
+      }
+    }
+    setLoadingReport(false)
+  }
+
+  // Debounced Draft-Speicherung (1,5 s nach letzter Änderung)
+  function scheduleSave(nextEntries, nextExtra) {
+    if (report?.is_submitted) return
+    clearTimeout(saveTimer.current)
+    setSaveStatus('saving')
+    saveTimer.current = setTimeout(() => saveDraft(nextEntries, nextExtra), 1500)
+  }
+
+  async function saveDraft(curEntries, curExtra) {
+    const crewPayload = aufbauCrew.map((m, i) => ({
+      name:       m.full_name || '',
+      role:       m.role,
+      role_label: ROLLE_LABEL[m.role] || m.role,
+      tasks:      curEntries[i]?.tasks || [],
+    }))
+    const extraPayload = curExtra
+      .filter(e => e.name.trim())
+      .map(e => ({ name: e.name.trim(), tasks: e.tasks || [] }))
+
+    const { error } = await supabase
+      .from('aufbau_reports')
+      .upsert(
+        { festival_id: festivalId, crew_entries: crewPayload, extra_entries: extraPayload,
+          updated_at: new Date().toISOString() },
+        { onConflict: 'festival_id' }
+      )
+    setSaveStatus(error ? '' : 'saved')
+  }
+
+  function toggleCrewTask(memberIdx, taskId) {
+    if (report?.is_submitted) return
+    setEntries(prev => {
+      const next = prev.map((e, i) => {
+        if (i !== memberIdx) return e
+        const tasks = e.tasks.includes(taskId)
+          ? e.tasks.filter(t => t !== taskId)
+          : [...e.tasks, taskId]
+        return { ...e, tasks }
+      })
+      scheduleSave(next, extraPeople)
+      return next
+    })
+  }
+
+  function toggleExtraTask(idx, taskId) {
+    if (report?.is_submitted) return
+    setExtraPeople(prev => {
+      const next = prev.map((e, i) => {
+        if (i !== idx) return e
+        const tasks = e.tasks.includes(taskId)
+          ? e.tasks.filter(t => t !== taskId)
+          : [...e.tasks, taskId]
+        return { ...e, tasks }
+      })
+      scheduleSave(entries, next)
+      return next
+    })
+  }
+
+  function updateExtraName(idx, name) {
+    if (report?.is_submitted) return
+    setExtraPeople(prev => {
+      const next = prev.map((e, i) => i === idx ? { ...e, name } : e)
+      scheduleSave(entries, next)
+      return next
+    })
+  }
+
+  function addExtraPerson() {
+    setExtraPeople(prev => [...prev, { name: '', tasks: [] }])
+  }
+
+  function removeExtraPerson(idx) {
+    if (report?.is_submitted) return
+    setExtraPeople(prev => {
+      const next = prev.filter((_, i) => i !== idx)
+      scheduleSave(entries, next)
+      return next
+    })
+  }
+
+  async function handleSubmit() {
+    setSubmitting(true)
+    setSubmitError('')
+
+    const crewPayload = aufbauCrew.map((m, i) => ({
+      name:       m.full_name || '',
+      role:       m.role,
+      role_label: ROLLE_LABEL[m.role] || m.role,
+      tasks:      entries[i]?.tasks || [],
+    }))
+    const extraPayload = extraPeople
+      .filter(e => e.name.trim())
+      .map(e => ({ name: e.name.trim(), tasks: e.tasks || [] }))
+
+    const { data: invokeData, error: invokeErr } = await supabase.functions.invoke(
+      'submit-aufbau-report',
+      { body: { festival_id: festivalId, festival_name: festivalName,
+                crew_entries: crewPayload, extra_entries: extraPayload } }
+    )
+
+    if (invokeErr || invokeData?.error) {
+      setSubmitError(invokeData?.error || invokeErr?.message || 'Fehler beim Abschicken')
+    } else {
+      setReport(prev => ({
+        ...prev,
+        is_submitted:      true,
+        submitted_by_name: invokeData.submitted_by,
+        submitted_at:      new Date().toISOString(),
+      }))
+    }
+    setSubmitting(false)
+  }
+
+  if (loadingReport) {
+    return (
+      <div style={{ marginTop: 'var(--sp-6)', color: 'var(--grau-text)', fontSize: 13 }}>
+        Lädt Rückmeldung...
+      </div>
+    )
+  }
+
+  const isSubmitted = !!report?.is_submitted
+
+  // ── Task-Header (Spaltenüberschriften für die Checkbox-Grid) ────────────────
+  const TaskHeader = () => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+      <div style={{ flex: 1, minWidth: 0 }} />
+      {AUFBAU_TASKS.map(t => (
+        <div key={t.id} style={{
+          width: 52, textAlign: 'center', flexShrink: 0,
+          fontSize: 9, fontWeight: 800, fontFamily: 'var(--font-heading)',
+          letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--grau-text)',
+        }}>
+          {t.label}
+        </div>
+      ))}
+    </div>
+  )
+
+  // ── Eine Zeile mit Task-Checkboxen ──────────────────────────────────────────
+  const TaskRow = ({ name, sublabel, checkedTasks, onToggle, isLast }) => (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 4,
+      paddingBottom: isLast ? 0 : 10, marginBottom: isLast ? 0 : 10,
+      borderBottom: isLast ? 'none' : '1px solid var(--border)',
+    }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--schwarz)',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {name || '—'}
+        </div>
+        {sublabel && (
+          <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase',
+            letterSpacing: '0.04em', color: 'var(--grau-text)', fontFamily: 'var(--font-heading)' }}>
+            {sublabel}
+          </div>
+        )}
+      </div>
+      {AUFBAU_TASKS.map(t => {
+        const checked = checkedTasks.includes(t.id)
+        return (
+          <button key={t.id} onClick={() => onToggle && onToggle(t.id)} style={{
+            width: 52, height: 36, flexShrink: 0,
+            border: `1.5px solid ${checked ? 'var(--schwarz)' : 'var(--border)'}`,
+            borderRadius: 6,
+            background: checked ? 'var(--gelb)' : 'transparent',
+            cursor: isSubmitted ? 'default' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 14, fontWeight: 700,
+            transition: 'all 0.1s',
+          }}>
+            {checked ? '✓' : ''}
+          </button>
+        )
+      })}
+    </div>
+  )
+
+  return (
+    <div style={{ marginTop: 'var(--sp-6)' }}>
+      <div style={{
+        fontWeight: 800, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em',
+        color: 'var(--grau-text)', fontFamily: 'var(--font-heading)', marginBottom: 10,
+      }}>
+        Rückmeldung
+      </div>
+
+      <div className="card">
+        <div className="card-title" style={{ marginBottom: 6 }}>Rückmeldung Aufbau</div>
+        <p style={{ fontSize: 13, color: 'var(--grau-text)', lineHeight: 1.6, marginBottom: 'var(--sp-4)' }}>
+          Bitte gib uns am Ende des Aufbaus Rückmeldung über Anwesenheiten und Aufgabenverteilungen,
+          damit wir im Büro die richtigen Pauschalen berechnen können.
+        </p>
+
+        {/* Abgeschickt-Banner */}
+        {isSubmitted && (
+          <div style={{
+            background: '#e8f5e9', border: '1.5px solid var(--gruen)', borderRadius: 8,
+            padding: '10px 14px', marginBottom: 'var(--sp-4)',
+            fontSize: 13, color: 'var(--gruen)', fontWeight: 600, lineHeight: 1.5,
+          }}>
+            ✓ Abgeschickt von <strong>{report.submitted_by_name}</strong>
+            {report.submitted_at && (
+              <> um {new Date(report.submitted_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</>
+            )}
+          </div>
+        )}
+
+        {/* Crew-Liste */}
+        {aufbauCrew.length > 0 && (
+          <div style={{ marginBottom: 'var(--sp-4)' }}>
+            <TaskHeader />
+            {aufbauCrew.map((member, idx) => (
+              <TaskRow
+                key={idx}
+                name={member.full_name}
+                sublabel={ROLLE_LABEL[member.role]}
+                checkedTasks={entries[idx]?.tasks || []}
+                onToggle={isSubmitted ? null : taskId => toggleCrewTask(idx, taskId)}
+                isLast={idx === aufbauCrew.length - 1}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Weitere Personen – bearbeitbar (nicht submitted) */}
+        {!isSubmitted && (
+          <div style={{ marginBottom: 'var(--sp-4)' }}>
+            <div style={{
+              fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em',
+              color: 'var(--grau-text)', fontFamily: 'var(--font-heading)', marginBottom: 8,
+            }}>
+              Weitere Personen
+            </div>
+            {extraPeople.map((person, idx) => (
+              <div key={idx} style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <input
+                    type="text"
+                    value={person.name}
+                    onChange={e => updateExtraName(idx, e.target.value)}
+                    placeholder="Name eingeben"
+                    style={{
+                      flex: 1, padding: '7px 10px',
+                      border: '1.5px solid var(--border)', borderRadius: 6,
+                      fontSize: 13, fontFamily: 'var(--font-body)',
+                      background: 'var(--papier)', color: 'var(--schwarz)',
+                    }}
+                  />
+                  {extraPeople.length > 1 && (
+                    <button onClick={() => removeExtraPerson(idx)} style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: 'var(--grau-text)', fontSize: 18, padding: '2px 4px', lineHeight: 1,
+                    }}>✕</button>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {AUFBAU_TASKS.map(t => {
+                    const checked = person.tasks.includes(t.id)
+                    return (
+                      <button key={t.id} onClick={() => toggleExtraTask(idx, t.id)} style={{
+                        flex: 1, padding: '6px 4px',
+                        border: `1.5px solid ${checked ? 'var(--schwarz)' : 'var(--border)'}`,
+                        borderRadius: 6,
+                        background: checked ? 'var(--gelb)' : 'transparent',
+                        cursor: 'pointer',
+                        fontSize: 10, fontWeight: 800, fontFamily: 'var(--font-heading)',
+                        textTransform: 'uppercase', letterSpacing: '0.04em',
+                        color: checked ? 'var(--schwarz)' : 'var(--grau-text)',
+                        transition: 'all 0.1s',
+                      }}>
+                        {t.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+            <button onClick={addExtraPerson} style={{
+              background: 'none', border: '1.5px dashed var(--border)', borderRadius: 6,
+              padding: '8px 14px', cursor: 'pointer', width: '100%',
+              fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--grau-text)',
+            }}>
+              + Person hinzufügen
+            </button>
+          </div>
+        )}
+
+        {/* Weitere Personen – read-only (submitted) */}
+        {isSubmitted && extraPeople.some(e => e.name) && (
+          <div style={{ marginBottom: 'var(--sp-4)' }}>
+            <div style={{
+              fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em',
+              color: 'var(--grau-text)', fontFamily: 'var(--font-heading)', marginBottom: 8,
+            }}>
+              Weitere Personen
+            </div>
+            <TaskHeader />
+            {extraPeople.filter(e => e.name).map((person, idx, arr) => (
+              <TaskRow
+                key={idx}
+                name={person.name}
+                sublabel="Weitere"
+                checkedTasks={person.tasks}
+                onToggle={null}
+                isLast={idx === arr.length - 1}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Zwischenstand-Indikator */}
+        {!isSubmitted && saveStatus && (
+          <div style={{ fontSize: 11, color: 'var(--grau-text)', marginBottom: 8, textAlign: 'right' }}>
+            {saveStatus === 'saving' ? 'Wird gespeichert…' : '✓ Zwischenstand gespeichert'}
+          </div>
+        )}
+
+        {/* Fehler */}
+        {submitError && (
+          <div style={{
+            background: '#FFF0ED', border: '1px solid var(--rot)', borderRadius: 6,
+            padding: '10px 14px', marginBottom: 12, fontSize: 13, color: 'var(--rot)',
+          }}>
+            ⚠ {submitError}
+          </div>
+        )}
+
+        {/* Abschicken */}
+        {!isSubmitted && (
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="button"
+            style={{ width: '100%' }}
+          >
+            {submitting ? 'Wird abgeschickt…' : 'Rückmeldung abschicken →'}
+          </button>
+        )}
+      </div>
     </div>
   )
 }
