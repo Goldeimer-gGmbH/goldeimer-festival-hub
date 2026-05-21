@@ -266,13 +266,13 @@ export default function HomePage() {
         {/* Feedback */}
         {!loading && !authError && !fetchError && sorted.length > 0 && (
           <>
-            <div className="section-title" style={{ marginTop: 'var(--sp-8)' }}>Feedback</div>
+            <div className="section-title" style={{ marginTop: 'var(--sp-8)', fontSize: 'var(--text-base)' }}>Feedback</div>
             <FeedbackSection assignments={sorted} />
           </>
         )}
 
         {/* FAQ & Code of Conduct */}
-        <div className="section-title" style={{ marginTop: 'var(--sp-8)' }}>Infos</div>
+        <div className="section-title" style={{ marginTop: 'var(--sp-8)', fontSize: 'var(--text-base)' }}>Infos</div>
         <div style={{
           background: 'var(--weiss)',
           borderRadius: 'var(--rounded)',
