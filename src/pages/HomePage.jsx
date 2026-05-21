@@ -346,16 +346,38 @@ function FeedbackSection({ assignments, senderName }) {
 
     setSending(true)
     setError('')
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000)
     try {
-      const { error: fnError } = await supabase.functions.invoke('send-feedback', {
-        body: { festival, message, senderName },
-      })
-      if (fnError) throw fnError
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(
+        'https://wsdkmglkqxszyvomrfim.supabase.co/functions/v1/send-feedback',
+        {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token ?? ''}`,
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzZGttZ2xrcXhzenl2b21yZmltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNTk4NjYsImV4cCI6MjA5MTczNTg2Nn0.CkX010BgVGjJUOs7RSYHlXJSwA-0jL4iPvi4gA59dTM',
+          },
+          body: JSON.stringify({ festival, message, senderName }),
+        }
+      )
+      clearTimeout(timeout)
+      if (!res.ok) {
+        const body = await res.text().catch(() => '')
+        throw new Error(`HTTP ${res.status}: ${body}`)
+      }
       setSent(true)
       if (textRef.current) textRef.current.value = ''
       setFestivalId('')
-    } catch {
-      setError('Senden fehlgeschlagen. Bitte versuche es nochmal.')
+    } catch (e) {
+      clearTimeout(timeout)
+      if (e.name === 'AbortError') {
+        setError('Zeitüberschreitung — bitte Internetverbindung prüfen und nochmal versuchen.')
+      } else {
+        setError(`Senden fehlgeschlagen (${e.message}). Bitte nochmal versuchen.`)
+      }
     } finally {
       setSending(false)
     }
