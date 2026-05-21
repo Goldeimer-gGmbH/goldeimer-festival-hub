@@ -239,7 +239,12 @@ export default function LoginPage() {
         <div className="input-group" style={{ marginBottom: 0 }}>
           <label>E-Mail-Adresse</label>
           <input
-            type="email"
+            type="text"
+            inputMode="email"
+            autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             value={email}
             onChange={e => setEmail(e.target.value)}
             placeholder="deine@email.de"
