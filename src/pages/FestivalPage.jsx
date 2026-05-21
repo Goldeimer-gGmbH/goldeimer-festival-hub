@@ -1621,7 +1621,7 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
 // ── Hilfsfunktionen ───────────────────────────────────────────────────────────
 
 function getAnreise(details, role) {
-  if (role === 'supporti_plus') return details.start_setup
+  if (role === 'supporti_plus') return details.start_leadop
   if (role === 'supporti')      return details.start_supp
   if (role === 'lead' || role === 'operator') return details.start_leadop
   if (role === 'catering')      return details.start_kitchen
