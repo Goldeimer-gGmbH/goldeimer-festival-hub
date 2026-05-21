@@ -349,7 +349,6 @@ function FeedbackSection({ assignments, senderName }) {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 15000)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch(
         'https://wsdkmglkqxszyvomrfim.supabase.co/functions/v1/send-feedback',
         {
@@ -357,7 +356,6 @@ function FeedbackSection({ assignments, senderName }) {
           signal: controller.signal,
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token ?? ''}`,
             'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzZGttZ2xrcXhzenl2b21yZmltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNTk4NjYsImV4cCI6MjA5MTczNTg2Nn0.CkX010BgVGjJUOs7RSYHlXJSwA-0jL4iPvi4gA59dTM',
           },
           body: JSON.stringify({ festival, message, senderName }),
