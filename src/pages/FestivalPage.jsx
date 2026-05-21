@@ -1210,6 +1210,71 @@ const AUFBAU_TASKS = [
 // Alle Rollen, die beim Aufbau dabei sein können
 const AUFBAU_CREW_ROLES = ['lead', 'operator', 'supporti_plus', 'catering']
 
+// ── Außerhalb der Komponente definiert: verhindert Unmount/Remount bei Re-Render ──
+
+function AufbauTaskHeader() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+      <div style={{ flex: 1, minWidth: 0 }} />
+      {AUFBAU_TASKS.map(t => (
+        <div key={t.id} style={{
+          width: 52, textAlign: 'center', flexShrink: 0,
+          fontSize: 9, fontWeight: 800, fontFamily: 'var(--font-heading)',
+          letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--grau-text)',
+        }}>
+          {t.label}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function AufbauTaskRow({ name, sublabel, checkedTasks, onToggle, isLast, readOnly }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 4,
+      paddingBottom: isLast ? 0 : 10, marginBottom: isLast ? 0 : 10,
+      borderBottom: isLast ? 'none' : '1px solid var(--border)',
+    }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--schwarz)',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {name || '—'}
+        </div>
+        {sublabel && (
+          <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase',
+            letterSpacing: '0.04em', color: 'var(--grau-text)', fontFamily: 'var(--font-heading)' }}>
+            {sublabel}
+          </div>
+        )}
+      </div>
+      {AUFBAU_TASKS.map(t => {
+        const checked = (checkedTasks || []).includes(t.id)
+        return (
+          <button
+            key={t.id}
+            type="button"
+            onClick={e => { e.preventDefault(); !readOnly && onToggle && onToggle(t.id) }}
+            style={{
+              width: 52, height: 36, flexShrink: 0,
+              border: `1.5px solid ${checked ? 'var(--schwarz)' : 'var(--border)'}`,
+              borderRadius: 6,
+              background: checked ? 'var(--gelb)' : 'transparent',
+              cursor: readOnly ? 'default' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14, fontWeight: 700,
+              transition: 'all 0.1s',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            {checked ? '✓' : ''}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
   const { profile } = useAuth()
 
@@ -1383,67 +1448,6 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
 
   const isSubmitted = !!report?.is_submitted
 
-  // ── Task-Header (Spaltenüberschriften für die Checkbox-Grid) ────────────────
-  const TaskHeader = () => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
-      <div style={{ flex: 1, minWidth: 0 }} />
-      {AUFBAU_TASKS.map(t => (
-        <div key={t.id} style={{
-          width: 52, textAlign: 'center', flexShrink: 0,
-          fontSize: 9, fontWeight: 800, fontFamily: 'var(--font-heading)',
-          letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--grau-text)',
-        }}>
-          {t.label}
-        </div>
-      ))}
-    </div>
-  )
-
-  // ── Eine Zeile mit Task-Checkboxen ──────────────────────────────────────────
-  const TaskRow = ({ name, sublabel, checkedTasks, onToggle, isLast }) => (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 4,
-      paddingBottom: isLast ? 0 : 10, marginBottom: isLast ? 0 : 10,
-      borderBottom: isLast ? 'none' : '1px solid var(--border)',
-    }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--schwarz)',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {name || '—'}
-        </div>
-        {sublabel && (
-          <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase',
-            letterSpacing: '0.04em', color: 'var(--grau-text)', fontFamily: 'var(--font-heading)' }}>
-            {sublabel}
-          </div>
-        )}
-      </div>
-      {AUFBAU_TASKS.map(t => {
-        const checked = checkedTasks.includes(t.id)
-        return (
-          <button
-            key={t.id}
-            type="button"
-            onClick={e => { e.preventDefault(); onToggle && onToggle(t.id) }}
-            style={{
-              width: 52, height: 36, flexShrink: 0,
-              border: `1.5px solid ${checked ? 'var(--schwarz)' : 'var(--border)'}`,
-              borderRadius: 6,
-              background: checked ? 'var(--gelb)' : 'transparent',
-              cursor: isSubmitted ? 'default' : 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 14, fontWeight: 700,
-              transition: 'all 0.1s',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-          >
-            {checked ? '✓' : ''}
-          </button>
-        )
-      })}
-    </div>
-  )
-
   return (
     <div style={{ marginTop: 'var(--sp-6)' }}>
       <div style={{
@@ -1477,15 +1481,16 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
         {/* Crew-Liste */}
         {aufbauCrew.length > 0 && (
           <div style={{ marginBottom: 'var(--sp-4)' }}>
-            <TaskHeader />
+            <AufbauTaskHeader />
             {aufbauCrew.map((member, idx) => (
-              <TaskRow
+              <AufbauTaskRow
                 key={idx}
                 name={member.full_name}
                 sublabel={ROLLE_LABEL[member.role]}
                 checkedTasks={entries[idx]?.tasks || []}
-                onToggle={isSubmitted ? null : taskId => toggleCrewTask(idx, taskId)}
+                onToggle={taskId => toggleCrewTask(idx, taskId)}
                 isLast={idx === aufbauCrew.length - 1}
+                readOnly={isSubmitted}
               />
             ))}
           </div>
@@ -1571,15 +1576,15 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
             }}>
               Weitere Personen
             </div>
-            <TaskHeader />
+            <AufbauTaskHeader />
             {extraPeople.filter(e => e.name).map((person, idx, arr) => (
-              <TaskRow
+              <AufbauTaskRow
                 key={idx}
                 name={person.name}
                 sublabel="Weitere"
                 checkedTasks={person.tasks}
-                onToggle={null}
                 isLast={idx === arr.length - 1}
+                readOnly
               />
             ))}
           </div>
