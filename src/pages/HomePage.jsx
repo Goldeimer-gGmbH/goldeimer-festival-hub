@@ -385,10 +385,7 @@ function FeedbackSection({ assignments, senderName }) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: 'var(--sp-6)' }}>
         <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
-        <div className="card-title" style={{ marginBottom: 6 }}>Feedback gesendet!</div>
-        <p className="card-sub" style={{ marginBottom: 'var(--sp-4)' }}>
-          Danke – das Goldeimer-Team liest mit.
-        </p>
+        <div className="card-title" style={{ marginBottom: 'var(--sp-4)' }}>Feedback gesendet!</div>
         <button className="button button--secondary" onClick={() => setSent(false)}>
           Weiteres Feedback senden
         </button>
