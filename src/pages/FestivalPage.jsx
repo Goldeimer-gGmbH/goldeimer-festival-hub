@@ -5,7 +5,7 @@ import { useAuth } from '../components/AuthContext'
 import { cacheGet, cacheSet } from '../lib/cache'
 import { fetchWithTimeout } from '../lib/fetchWithTimeout'
 import {
-  IconAblauf, IconInfos, IconKontakte, IconFeedback,
+  IconAblauf, IconInfos, IconKontakte,
   IconKalender, IconTransport, IconOrderbird, IconStift, IconLupe,
   IconStar, IconPin, IconBrief, IconTelefon,
 } from '../components/Icons'
@@ -25,7 +25,6 @@ function isFkpFestival(name) {
 const TabIconAblauf   = () => <IconAblauf   size={20} />
 const TabIconInfos    = () => <IconInfos    size={20} />
 const TabIconKontakte = () => <IconKontakte size={20} />
-const TabIconFeedback = () => <IconFeedback size={20} />
 
 // ── Ablauf-Inhalte ────────────────────────────────────────────────────────────
 
@@ -251,7 +250,6 @@ export default function FestivalPage() {
     { key: 'ablauf',   label: 'Ablauf',    Icon: TabIconAblauf },
     { key: 'infos',    label: 'Infos',     Icon: TabIconInfos },
     { key: 'kontakte', label: 'Kontakte',  Icon: TabIconKontakte },
-    { key: 'feedback', label: 'Feedback',  Icon: TabIconFeedback },
   ]
 
   return (
@@ -336,9 +334,6 @@ export default function FestivalPage() {
           <KontakteTab details={details} role={role} festivalName={festivalName} crew={data.crew} />
         )}
 
-        {activeTab === 'feedback' && (
-          <FeedbackTab festivalId={id} profileId={profile.id} />
-        )}
       </div>
 
       {/* ── Bottom-Navigation (fest unten) ── */}
@@ -1153,72 +1148,6 @@ function InfosTab({ details, role, content, festivalId }) {
           ))}
         </>
       )}
-    </div>
-  )
-}
-
-// ── FeedbackTab ───────────────────────────────────────────────────────────────
-
-function FeedbackTab({ festivalId, profileId }) {
-  const [text, setText]     = useState('')
-  const [type, setType]     = useState('feedback')
-  const [sent, setSent]     = useState(false)
-  const [loading, setLoading] = useState(false)
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-    if (!text.trim()) return
-    setLoading(true)
-    const { error } = await supabase.from('logs').insert({
-      festival_id: festivalId, profile_id: profileId,
-      log_type: type, data: { text: text.trim() }
-    })
-    if (!error) { setSent(true); setText('') }
-    setLoading(false)
-  }
-
-  if (sent) {
-    return (
-      <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-        <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconStar size={40} /></div>
-        <div className="display" style={{ fontSize: 28, marginBottom: 8 }}>DANKE!</div>
-        <p className="card-sub">Dein Feedback wurde gespeichert und wird gelesen.</p>
-        <button className="button button--secondary" style={{ marginTop: 16 }} onClick={() => setSent(false)}>
-          Weiteres Feedback senden
-        </button>
-      </div>
-    )
-  }
-
-  return (
-    <div>
-      <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 'var(--sp-5)' }}>
-        Feedback
-      </div>
-      <div className="card">
-        <p style={{ fontSize: 14, color: 'var(--grau-text)', marginBottom: 16, lineHeight: 1.6 }}>
-          Etwas lief nicht gut? Hast du einen Verbesserungsvorschlag? Sag es uns!
-        </p>
-        <form onSubmit={handleSubmit}>
-          <div className="input-group">
-            <label>Art der Meldung</label>
-            <select value={type} onChange={e => setType(e.target.value)}>
-              <option value="feedback">Allgemeines Feedback</option>
-              <option value="schicht_report">Schicht-Report</option>
-              <option value="meldung">Wichtige Meldung</option>
-              <option value="lob">Lob 🌟</option>
-            </select>
-          </div>
-          <div className="input-group">
-            <label>Deine Nachricht</label>
-            <textarea value={text} onChange={e => setText(e.target.value)}
-              placeholder="Was ist passiert? Was hat gut / nicht gut funktioniert?" required />
-          </div>
-          <button className="button" type="submit" disabled={loading || !text.trim()}>
-            {loading ? 'Wird gesendet...' : 'Feedback senden →'}
-          </button>
-        </form>
-      </div>
     </div>
   )
 }

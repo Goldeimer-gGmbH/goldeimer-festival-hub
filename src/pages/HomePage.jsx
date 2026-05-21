@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
@@ -263,19 +263,23 @@ export default function HomePage() {
           )
         })}
 
-        {/* Infos & Anleitungen */}
-        <div className="section-title" style={{ marginTop: 'var(--sp-8)' }}>
-          {isLeadOrOp ? 'Infos für Leads & Operator' : 'Allgemeine Infos'}
-        </div>
+        {/* Feedback */}
+        {!loading && !authError && !fetchError && sorted.length > 0 && (
+          <>
+            <div className="section-title" style={{ marginTop: 'var(--sp-8)' }}>Feedback</div>
+            <FeedbackSection assignments={sorted} />
+          </>
+        )}
 
-        {/* Topic-Liste */}
+        {/* FAQ & Code of Conduct */}
+        <div className="section-title" style={{ marginTop: 'var(--sp-8)' }}>Infos</div>
         <div style={{
           background: 'var(--weiss)',
           borderRadius: 'var(--rounded)',
           overflow: 'hidden',
           boxShadow: 'var(--shadow-sm)',
         }}>
-          {topics.map((topic, i) => (
+          {ALL_TOPICS.filter(t => t.slug === 'faq' || t.slug === 'code-of-conduct').map((topic, i, arr) => (
             <Link
               key={topic.slug}
               to={`/infos?section=${topic.slug}`}
@@ -284,29 +288,14 @@ export default function HomePage() {
                 alignItems: 'center',
                 gap: 'var(--sp-3)',
                 padding: 'var(--sp-3) var(--sp-4)',
-                borderBottom: i < topics.length - 1 ? '1px solid var(--border)' : 'none',
+                borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
                 textDecoration: 'none',
                 color: 'var(--schwarz)',
               }}
             >
-              {topic.iconRaw ? (
-                <span style={{
-                  width: 36, height: 36, flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {topic.icon}
-                </span>
-              ) : (
-                <span style={{
-                  width: 36, height: 36,
-                  background: 'var(--gelb)',
-                  borderRadius: 'var(--rounded-sm)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 18, flexShrink: 0,
-                }}>
-                  {topic.icon}
-                </span>
-              )}
+              <span style={{ width: 36, height: 36, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {topic.icon}
+              </span>
               <span style={{ flex: 1, fontWeight: 600, fontSize: 'var(--text-sm)' }}>
                 {topic.title}
               </span>
@@ -338,6 +327,79 @@ export default function HomePage() {
     </div>
   )
 }
+
+// ── FeedbackSection ───────────────────────────────────────────────────────────
+
+const FEEDBACK_MAIL = 'bianka@goldeimer.de' // TODO → festival@goldeimer.de
+
+function FeedbackSection({ assignments }) {
+  const [festivalId, setFestivalId] = useState('')
+  const textRef = useRef(null)
+  const [sent, setSent] = useState(false)
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    const text = textRef.current?.value?.trim() || ''
+    const a = assignments.find(a => a.festival.id === festivalId)
+    const festivalName = a?.festival?.name || ''
+    if (!festivalId || !text) return
+
+    const subject = encodeURIComponent(`Feedback ${festivalName}`)
+    const body    = encodeURIComponent(`Festival: ${festivalName}\n\n${text}`)
+    window.open(`mailto:${FEEDBACK_MAIL}?subject=${subject}&body=${body}`)
+
+    setSent(true)
+    if (textRef.current) textRef.current.value = ''
+    setFestivalId('')
+  }
+
+  if (sent) {
+    return (
+      <div className="card" style={{ textAlign: 'center', padding: 'var(--sp-6)' }}>
+        <div style={{ fontSize: 32, marginBottom: 8 }}>✉️</div>
+        <div className="card-title" style={{ marginBottom: 6 }}>Mail-App geöffnet!</div>
+        <p className="card-sub" style={{ marginBottom: 'var(--sp-4)' }}>
+          Einfach noch auf Senden tippen – fertig.
+        </p>
+        <button className="button button--secondary" onClick={() => setSent(false)}>
+          Weiteres Feedback senden
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="card">
+      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--grau-text)', marginBottom: 'var(--sp-4)', lineHeight: 1.6 }}>
+        Läuft etwas nicht rund? Hast du einen Verbesserungsvorschlag? Her damit!
+      </p>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+        <div className="input-group" style={{ marginBottom: 0 }}>
+          <label>Festival</label>
+          <select value={festivalId} onChange={e => setFestivalId(e.target.value)} required>
+            <option value="">Festival auswählen …</option>
+            {assignments.map(a => (
+              <option key={a.id} value={a.festival.id}>{a.festival.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="input-group" style={{ marginBottom: 0 }}>
+          <label>Nachricht</label>
+          <textarea
+            ref={textRef}
+            placeholder="Was ist passiert? Was hat gut / nicht gut funktioniert?"
+            required
+          />
+        </div>
+        <button className="button" type="submit">
+          Feedback senden →
+        </button>
+      </form>
+    </div>
+  )
+}
+
+// ── Hilfsfunktionen ───────────────────────────────────────────────────────────
 
 function getRoleStart(role, details) {
   if (role === 'supporti_plus') return details.start_setup
