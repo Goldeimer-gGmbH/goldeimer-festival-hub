@@ -1421,16 +1421,22 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
       {AUFBAU_TASKS.map(t => {
         const checked = checkedTasks.includes(t.id)
         return (
-          <button key={t.id} onClick={() => onToggle && onToggle(t.id)} style={{
-            width: 52, height: 36, flexShrink: 0,
-            border: `1.5px solid ${checked ? 'var(--schwarz)' : 'var(--border)'}`,
-            borderRadius: 6,
-            background: checked ? 'var(--gelb)' : 'transparent',
-            cursor: isSubmitted ? 'default' : 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 14, fontWeight: 700,
-            transition: 'all 0.1s',
-          }}>
+          <button
+            key={t.id}
+            type="button"
+            onClick={e => { e.preventDefault(); onToggle && onToggle(t.id) }}
+            style={{
+              width: 52, height: 36, flexShrink: 0,
+              border: `1.5px solid ${checked ? 'var(--schwarz)' : 'var(--border)'}`,
+              borderRadius: 6,
+              background: checked ? 'var(--gelb)' : 'transparent',
+              cursor: isSubmitted ? 'default' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14, fontWeight: 700,
+              transition: 'all 0.1s',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
             {checked ? '✓' : ''}
           </button>
         )
@@ -1510,9 +1516,10 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
                     }}
                   />
                   {extraPeople.length > 1 && (
-                    <button onClick={() => removeExtraPerson(idx)} style={{
+                    <button type="button" onClick={e => { e.preventDefault(); removeExtraPerson(idx) }} style={{
                       background: 'none', border: 'none', cursor: 'pointer',
                       color: 'var(--grau-text)', fontSize: 18, padding: '2px 4px', lineHeight: 1,
+                      WebkitTapHighlightColor: 'transparent',
                     }}>✕</button>
                   )}
                 </div>
@@ -1520,17 +1527,23 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
                   {AUFBAU_TASKS.map(t => {
                     const checked = person.tasks.includes(t.id)
                     return (
-                      <button key={t.id} onClick={() => toggleExtraTask(idx, t.id)} style={{
-                        flex: 1, padding: '6px 4px',
-                        border: `1.5px solid ${checked ? 'var(--schwarz)' : 'var(--border)'}`,
-                        borderRadius: 6,
-                        background: checked ? 'var(--gelb)' : 'transparent',
-                        cursor: 'pointer',
-                        fontSize: 10, fontWeight: 800, fontFamily: 'var(--font-heading)',
-                        textTransform: 'uppercase', letterSpacing: '0.04em',
-                        color: checked ? 'var(--schwarz)' : 'var(--grau-text)',
-                        transition: 'all 0.1s',
-                      }}>
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={e => { e.preventDefault(); toggleExtraTask(idx, t.id) }}
+                        style={{
+                          flex: 1, padding: '6px 4px',
+                          border: `1.5px solid ${checked ? 'var(--schwarz)' : 'var(--border)'}`,
+                          borderRadius: 6,
+                          background: checked ? 'var(--gelb)' : 'transparent',
+                          cursor: 'pointer',
+                          fontSize: 10, fontWeight: 800, fontFamily: 'var(--font-heading)',
+                          textTransform: 'uppercase', letterSpacing: '0.04em',
+                          color: checked ? 'var(--schwarz)' : 'var(--grau-text)',
+                          transition: 'all 0.1s',
+                          WebkitTapHighlightColor: 'transparent',
+                        }}
+                      >
                         {t.label}
                       </button>
                     )
@@ -1538,10 +1551,11 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
                 </div>
               </div>
             ))}
-            <button onClick={addExtraPerson} style={{
+            <button type="button" onClick={e => { e.preventDefault(); addExtraPerson() }} style={{
               background: 'none', border: '1.5px dashed var(--border)', borderRadius: 6,
               padding: '8px 14px', cursor: 'pointer', width: '100%',
               fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--grau-text)',
+              WebkitTapHighlightColor: 'transparent',
             }}>
               + Person hinzufügen
             </button>
