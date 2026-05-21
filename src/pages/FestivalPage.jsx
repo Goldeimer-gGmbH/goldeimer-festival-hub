@@ -105,38 +105,72 @@ const CONTENT_LETZTER_TAG = [
 // Erzeugt die Tages-Liste dynamisch aus den Festival-Datumfeldern
 function generateAblaufDays(details, role, festivalName) {
   const days = []
-  const isLeadOp = role === 'lead' || role === 'operator'
-  if (!isLeadOp) return days
 
-  if (details.start_leadop) {
-    days.push({
-      type: 'anreisetag',
-      label: 'Anreisetag',
-      date: details.start_leadop,
-      todo: 'Vorbereitung',
-      content: buildAnreisetagContent(festivalName),
-    })
+  // ── 1. Vortage je nach Rolle ──────────────────────────────────────────────
+
+  if (role === 'lead' || role === 'operator') {
+    // Anreisetag nur für Lead/Operator
+    if (details.start_leadop) {
+      days.push({
+        type: 'anreisetag',
+        label: 'Anreisetag',
+        date: details.start_leadop,
+        todo: 'Vorbereitung',
+        content: buildAnreisetagContent(festivalName),
+      })
+    }
+    // Aufbautag für Lead/Operator
+    if (details.start_setup) {
+      days.push({
+        type: 'aufbautag',
+        label: 'Aufbautag',
+        date: details.start_setup,
+        todo: 'Aufbau',
+        content: CONTENT_AUFBAUTAG,
+      })
+    }
+  } else if (role === 'supporti_plus') {
+    // Supporti Plus ist ab Aufbautag dabei, aber nicht beim Anreisetag
+    if (details.start_setup) {
+      days.push({
+        type: 'aufbautag',
+        label: 'Aufbautag',
+        date: details.start_setup,
+        todo: 'Aufbau',
+        content: CONTENT_AUFBAUTAG,
+      })
+    }
   }
 
-  if (details.start_setup) {
-    days.push({
-      type: 'aufbautag',
-      label: 'Aufbautag',
-      date: details.start_setup,
-      todo: 'Aufbau',
-      content: CONTENT_AUFBAUTAG,
-    })
+  // ── 2. Datumsspanne je nach Rolle bestimmen ───────────────────────────────
+
+  let rangeStart, rangeEnd
+
+  if (role === 'lead' || role === 'operator' || role === 'supporti_plus') {
+    // Betrieb start_supp, Abbautag end_takedown (gewinnt wenn später als end_supp)
+    const suppStart    = parseDeDate(details.start_supp)
+    const suppEndDate  = parseDeDate(details.end_supp)
+    const takedownDate = parseDeDate(details.end_takedown)
+    rangeStart = suppStart
+    rangeEnd   = (takedownDate && (!suppEndDate || takedownDate > suppEndDate))
+      ? takedownDate
+      : suppEndDate
+  } else if (role === 'supporti') {
+    rangeStart = parseDeDate(details.start_supp)
+    rangeEnd   = parseDeDate(details.end_supp)
+  } else if (role === 'catering') {
+    rangeStart = parseDeDate(details.start_kitchen)
+    rangeEnd   = parseDeDate(details.end_kitchen)
   }
 
-  const suppStart = parseDeDate(details.start_supp)
-  const suppEnd   = parseDeDate(details.end_supp)
+  // ── 3. Betriebstage generieren ────────────────────────────────────────────
 
-  if (suppStart && suppEnd) {
-    const MS_DAY   = 24 * 60 * 60 * 1000
-    const totalDays = Math.round((suppEnd - suppStart) / MS_DAY) + 1
+  if (rangeStart && rangeEnd) {
+    const MS_DAY    = 24 * 60 * 60 * 1000
+    const totalDays = Math.round((rangeEnd - rangeStart) / MS_DAY) + 1
 
     for (let i = 0; i < totalDays; i++) {
-      const d = new Date(suppStart.getTime() + i * MS_DAY)
+      const d       = new Date(rangeStart.getTime() + i * MS_DAY)
       const dateStr = toDeDate(d)
 
       let type, label, todo, content
