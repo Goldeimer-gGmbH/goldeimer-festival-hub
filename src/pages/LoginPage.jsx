@@ -34,7 +34,9 @@ function IconBrief({ size = 64 }) {
 }
 
 export default function LoginPage() {
-  const [email, setEmail]       = useState('')
+  const emailRef                = useRef(null)
+  // Nur für den Bestätigungsscreen gespeichert (nicht bei jedem Tastendruck)
+  const [emailDisplay, setEmailDisplay] = useState('')
   const [sent, setSent]         = useState(false)
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
@@ -72,12 +74,15 @@ export default function LoginPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     if (cooldown > 0) return
+    const email = emailRef.current?.value?.trim().toLowerCase() || ''
+    if (!email) return
+    setEmailDisplay(email)
     setLoading(true)
     setError('')
     setIsRateLimit(false)
     try {
       const { error } = await supabase.auth.signInWithOtp({
-        email: email.trim().toLowerCase(),
+        email,
         options: { shouldCreateUser: false },
       })
       if (error) {
@@ -188,7 +193,7 @@ export default function LoginPage() {
             Login-Link geschickt an
           </p>
           <p style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--schwarz)', marginBottom: 'var(--sp-4)' }}>
-            {email}
+            {emailDisplay}
           </p>
           <p style={{ fontSize: 'var(--text-sm)', color: 'var(--grau-text)', lineHeight: 1.6 }}>
             Einfach auf den Link klicken – kein Passwort nötig.
@@ -239,14 +244,14 @@ export default function LoginPage() {
         <div className="input-group" style={{ marginBottom: 0 }}>
           <label>E-Mail-Adresse</label>
           <input
+            ref={emailRef}
             type="text"
             inputMode="email"
             autoComplete="email"
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
-            value={email}
-            onChange={e => setEmail(e.target.value)}
+            defaultValue=""
             placeholder="deine@email.de"
             required
             autoFocus
@@ -266,7 +271,7 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          disabled={loading || !email || cooldown > 0}
+          disabled={loading || cooldown > 0}
           className="button"
           style={{ marginTop: 'var(--sp-2)' }}
         >
