@@ -1232,26 +1232,31 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
 
   async function loadReport() {
     setLoadingReport(true)
-    const { data, error } = await supabase
-      .from('aufbau_reports')
-      .select('*')
-      .eq('festival_id', festivalId)
-      .maybeSingle()
+    try {
+      const { data, error } = await supabase
+        .from('aufbau_reports')
+        .select('*')
+        .eq('festival_id', festivalId)
+        .maybeSingle()
 
-    if (!error && data) {
-      setReport(data)
-      // Gespeicherte Aufgaben in den lokalen State zurückschreiben
-      if (data.crew_entries?.length) {
-        setEntries(aufbauCrew.map(member => {
-          const saved = data.crew_entries.find(e => e.name === member.full_name)
-          return { tasks: saved?.tasks || [] }
-        }))
+      if (!error && data) {
+        setReport(data)
+        // Gespeicherte Aufgaben in den lokalen State zurückschreiben
+        if (data.crew_entries?.length) {
+          setEntries(aufbauCrew.map(member => {
+            const saved = data.crew_entries.find(e => e.name === member.full_name)
+            return { tasks: saved?.tasks || [] }
+          }))
+        }
+        if (data.extra_entries?.length) {
+          setExtraPeople(data.extra_entries.map(e => ({ name: e.name, tasks: e.tasks || [] })))
+        }
       }
-      if (data.extra_entries?.length) {
-        setExtraPeople(data.extra_entries.map(e => ({ name: e.name, tasks: e.tasks || [] })))
-      }
+    } catch (e) {
+      console.error('loadReport error:', e)
+    } finally {
+      setLoadingReport(false)
     }
-    setLoadingReport(false)
   }
 
   // Debounced Draft-Speicherung (1,5 s nach letzter Änderung)
