@@ -267,7 +267,7 @@ export default function HomePage() {
         {!loading && !authError && !fetchError && sorted.length > 0 && (
           <>
             <div className="section-title" style={{ marginTop: 'var(--sp-8)', fontSize: 'var(--text-base)' }}>Feedback</div>
-            <FeedbackSection assignments={sorted} />
+            <FeedbackSection assignments={sorted} senderName={profile?.full_name} />
           </>
         )}
 
@@ -330,36 +330,44 @@ export default function HomePage() {
 
 // ── FeedbackSection ───────────────────────────────────────────────────────────
 
-const FEEDBACK_MAIL = 'bianka@goldeimer.de' // TODO → festival@goldeimer.de
-
-function FeedbackSection({ assignments }) {
+function FeedbackSection({ assignments, senderName }) {
   const [festivalId, setFestivalId] = useState('')
-  const textRef = useRef(null)
-  const [sent, setSent] = useState(false)
+  const textRef    = useRef(null)
+  const [sending, setSending] = useState(false)
+  const [sent, setSent]       = useState(false)
+  const [error, setError]     = useState('')
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
-    const text = textRef.current?.value?.trim() || ''
+    const message = textRef.current?.value?.trim() || ''
     const a = assignments.find(a => a.festival.id === festivalId)
-    const festivalName = a?.festival?.name || ''
-    if (!festivalId || !text) return
+    const festival = a?.festival?.name || ''
+    if (!festival || !message) return
 
-    const subject = encodeURIComponent(`Feedback ${festivalName}`)
-    const body    = encodeURIComponent(`Festival: ${festivalName}\n\n${text}`)
-    window.open(`mailto:${FEEDBACK_MAIL}?subject=${subject}&body=${body}`)
-
-    setSent(true)
-    if (textRef.current) textRef.current.value = ''
-    setFestivalId('')
+    setSending(true)
+    setError('')
+    try {
+      const { error: fnError } = await supabase.functions.invoke('send-feedback', {
+        body: { festival, message, senderName },
+      })
+      if (fnError) throw fnError
+      setSent(true)
+      if (textRef.current) textRef.current.value = ''
+      setFestivalId('')
+    } catch {
+      setError('Senden fehlgeschlagen. Bitte versuche es nochmal.')
+    } finally {
+      setSending(false)
+    }
   }
 
   if (sent) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: 'var(--sp-6)' }}>
-        <div style={{ fontSize: 32, marginBottom: 8 }}>✉️</div>
-        <div className="card-title" style={{ marginBottom: 6 }}>Mail-App geöffnet!</div>
+        <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+        <div className="card-title" style={{ marginBottom: 6 }}>Feedback gesendet!</div>
         <p className="card-sub" style={{ marginBottom: 'var(--sp-4)' }}>
-          Einfach noch auf Senden tippen – fertig.
+          Danke – das Goldeimer-Team liest mit.
         </p>
         <button className="button button--secondary" onClick={() => setSent(false)}>
           Weiteres Feedback senden
@@ -391,8 +399,18 @@ function FeedbackSection({ assignments }) {
             required
           />
         </div>
-        <button className="button" type="submit">
-          Feedback senden →
+        {error && (
+          <div style={{
+            background: '#FFF0ED', border: '1px solid var(--rot)',
+            borderRadius: 'var(--rounded-input)',
+            padding: 'var(--sp-3) var(--sp-4)',
+            fontSize: 'var(--text-sm)', color: 'var(--rot)',
+          }}>
+            ⚠ {error}
+          </div>
+        )}
+        <button className="button" type="submit" disabled={sending}>
+          {sending ? 'Wird gesendet…' : 'Feedback senden →'}
         </button>
       </form>
     </div>
