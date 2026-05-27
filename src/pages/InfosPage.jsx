@@ -635,9 +635,9 @@ export default function InfosPage() {
           onClick={() => navigate(-1)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
         >←</button>
-        <span className="header-logo" style={{ fontSize: '0.9rem' }}>
-          {section === 'faq' ? 'FAQ' : section === 'code-of-conduct' ? 'Code of Conduct' : 'Anleitungen & Infos'}
-        </span>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
+          <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
+        </Link>
         <span style={{ width: 20 }} />
       </div>
 

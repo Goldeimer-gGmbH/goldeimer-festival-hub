@@ -337,7 +337,9 @@ export default function FestivalPage() {
           onClick={() => selectedDayIdx >= 0 ? navigate(-1) : navigate('/')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
         >←</button>
-        <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
+        <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
+          <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
+        </Link>
         <span style={{ width: 26 }} />
       </div>
 

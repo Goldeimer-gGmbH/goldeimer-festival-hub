@@ -161,7 +161,9 @@ export default function HomePage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', background: 'var(--schwarz)' }}>
       <div className="header">
-        <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
+        <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
+          <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
+        </Link>
         <Link to="/profil" style={{ textDecoration: 'none', color: 'var(--schwarz)', display: 'flex', alignItems: 'center' }}>
           <img src="/icon-account.svg" alt="Profil" style={{ width: 26, height: 26 }} />
         </Link>
