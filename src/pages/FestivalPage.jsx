@@ -1360,7 +1360,6 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
   const [submitting, setSubmitting]   = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [saveStatus, setSaveStatus]   = useState('') // 'saving' | 'saved' | ''
-  const [nachtragMode, setNachtragMode] = useState(false)
   const saveTimer = useRef(null)
 
   useEffect(() => { loadReport() }, [festivalId])
@@ -1531,7 +1530,6 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
         }
         setReport(updated)
         cacheSet(reportCacheKey, updated, 48 * 60 * 60 * 1000)
-        setNachtragMode(false)
       }
     } catch (e) {
       setSubmitError(e?.message || 'Unbekannter Fehler beim Abschicken')
@@ -1549,8 +1547,7 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
   }
 
   const isSubmitted = !!report?.is_submitted
-  // Gesperrt = abgeschickt UND kein Nachtrag-Modus aktiv
-  const isLocked = isSubmitted && !nachtragMode
+  const isLocked = isSubmitted
 
   return (
     <div style={{ marginTop: 'var(--sp-6)' }}>
@@ -1567,30 +1564,6 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
           Bitte gib uns am Ende des Aufbaus Rückmeldung über Anwesenheiten und Aufgabenverteilungen,
           damit wir im Büro die richtigen Pauschalen berechnen können.
         </p>
-
-        {/* Nachtrag-Hinweis – nur wenn Nachtrag-Modus aktiv */}
-        {nachtragMode && (
-          <div style={{
-            background: '#FFF8E1', border: '1.5px solid var(--gelb)', borderRadius: 8,
-            padding: '10px 14px', marginBottom: 'var(--sp-4)',
-            fontSize: 13, color: 'var(--schwarz)', fontWeight: 600, lineHeight: 1.5,
-            display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-          }}>
-            <span>
-              ✏ Nachtrag zum Report von <strong>{report?.submitted_by_name}</strong>
-              {report?.submitted_at && (
-                <> ({new Date(report.submitted_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr)</>
-              )}
-              {(report?.submission_count || 1) > 1 && (
-                <> · Sendung {report.submission_count}</>
-              )}
-            </span>
-            <button
-              onClick={() => { setNachtragMode(false); setSubmitError('') }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--grau-text)', fontSize: 18, lineHeight: 1, padding: '0 0 0 8px', flexShrink: 0 }}
-            >✕</button>
-          </div>
-        )}
 
         {/* Crew-Liste */}
         {aufbauCrew.length > 0 && (
@@ -1724,36 +1697,22 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
         {/* Abschicken-Button (nicht gesperrt) */}
         {!isLocked && (
           <button onClick={handleSubmit} disabled={submitting} className="button" style={{ width: '100%' }}>
-            {submitting ? 'Wird abgeschickt…' : (nachtragMode ? 'Nachtrag abschicken →' : 'Rückmeldung abschicken →')}
+            {submitting ? 'Wird abgeschickt…' : 'Rückmeldung abschicken →'}
           </button>
         )}
 
-        {/* Grüne Bestätigung + Nachtrag-Button (gesperrt) */}
+        {/* Grüne Bestätigung (gesperrt, kein Nachtrag-Button) */}
         {isLocked && (
-          <>
-            <div style={{
-              background: '#e8f5e9', border: '1.5px solid var(--gruen)', borderRadius: 8,
-              padding: '10px 14px', marginBottom: 8,
-              fontSize: 13, color: 'var(--gruen)', fontWeight: 600, lineHeight: 1.5,
-            }}>
-              ✓ Abgeschickt von <strong>{report.submitted_by_name}</strong>
-              {report.submitted_at && (
-                <> um {new Date(report.submitted_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</>
-              )}
-              {(report.submission_count || 1) > 1 && (
-                <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, opacity: 0.7 }}>
-                  (Sendung {report.submission_count})
-                </span>
-              )}
-            </div>
-            <button
-              onClick={() => { setNachtragMode(true); setSubmitError('') }}
-              className="button button--secondary"
-              style={{ width: '100%' }}
-            >
-              Nachtrag senden →
-            </button>
-          </>
+          <div style={{
+            background: '#e8f5e9', border: '1.5px solid var(--gruen)', borderRadius: 8,
+            padding: '10px 14px',
+            fontSize: 13, color: 'var(--gruen)', fontWeight: 600, lineHeight: 1.5,
+          }}>
+            ✓ Abgeschickt von <strong>{report.submitted_by_name}</strong>
+            {report.submitted_at && (
+              <> um {new Date(report.submitted_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</>
+            )}
+          </div>
         )}
       </div>
     </div>
