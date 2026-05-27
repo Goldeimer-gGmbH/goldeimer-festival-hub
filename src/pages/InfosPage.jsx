@@ -152,7 +152,7 @@ const COC_CONTENT = [
   },
   {
     type: 'p',
-    text: 'Weil die Grenzen einzelner Personen sehr unterschiedlich sein können und eine Überschreitung – beabsichtigt oder nicht – nie ganz ausgeschlossen werden kann, gibt es keine zu 100% sicheren Räume, in denen alle Menschen gänzlich geschützt sind. Wir verwenden daher den Begriff „Safer Spaces" (‚sicherere Räume'), um zu zeigen, dass es immer nur Schritte in die richtige Richtung geben kann und Awareness-Arbeit ein nie endender Prozess ist.',
+    text: 'Weil die Grenzen einzelner Personen sehr unterschiedlich sein können und eine Überschreitung – beabsichtigt oder nicht – nie ganz ausgeschlossen werden kann, gibt es keine zu 100% sicheren Räume, in denen alle Menschen gänzlich geschützt sind. Wir verwenden daher den Begriff „Safer Spaces“ (‚sicherere Räume‘), um zu zeigen, dass es immer nur Schritte in die richtige Richtung geben kann und Awareness-Arbeit ein nie endender Prozess ist.',
   },
   {
     type: 'h2',
