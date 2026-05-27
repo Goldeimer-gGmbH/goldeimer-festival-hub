@@ -1453,33 +1453,38 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
     setSubmitting(true)
     setSubmitError('')
 
-    const crewPayload = aufbauCrew.map((m, i) => ({
-      name:       m.full_name || '',
-      role:       m.role,
-      role_label: ROLLE_LABEL[m.role] || m.role,
-      tasks:      entries[i]?.tasks || [],
-    }))
-    const extraPayload = extraPeople
-      .filter(e => e.name.trim())
-      .map(e => ({ name: e.name.trim(), tasks: e.tasks || [] }))
-
-    const { data: invokeData, error: invokeErr } = await supabase.functions.invoke(
-      'submit-aufbau-report',
-      { body: { festival_id: festivalId, festival_name: festivalName,
-                crew_entries: crewPayload, extra_entries: extraPayload } }
-    )
-
-    if (invokeErr || invokeData?.error) {
-      setSubmitError(invokeData?.error || invokeErr?.message || 'Fehler beim Abschicken')
-    } else {
-      setReport(prev => ({
-        ...prev,
-        is_submitted:      true,
-        submitted_by_name: invokeData.submitted_by,
-        submitted_at:      new Date().toISOString(),
+    try {
+      const crewPayload = aufbauCrew.map((m, i) => ({
+        name:       m.full_name || '',
+        role:       m.role,
+        role_label: ROLLE_LABEL[m.role] || m.role,
+        tasks:      entries[i]?.tasks || [],
       }))
+      const extraPayload = extraPeople
+        .filter(e => e.name.trim())
+        .map(e => ({ name: e.name.trim(), tasks: e.tasks || [] }))
+
+      const { data: invokeData, error: invokeErr } = await supabase.functions.invoke(
+        'submit-aufbau-report',
+        { body: { festival_id: festivalId, festival_name: festivalName,
+                  crew_entries: crewPayload, extra_entries: extraPayload } }
+      )
+
+      if (invokeErr || invokeData?.error) {
+        setSubmitError(invokeData?.error || invokeErr?.message || 'Fehler beim Abschicken')
+      } else {
+        setReport(prev => ({
+          ...prev,
+          is_submitted:      true,
+          submitted_by_name: invokeData.submitted_by,
+          submitted_at:      new Date().toISOString(),
+        }))
+      }
+    } catch (e) {
+      setSubmitError(e?.message || 'Unbekannter Fehler beim Abschicken')
+    } finally {
+      setSubmitting(false)
     }
-    setSubmitting(false)
   }
 
   if (loadingReport) {
