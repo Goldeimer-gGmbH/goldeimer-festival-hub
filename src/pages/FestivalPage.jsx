@@ -58,8 +58,20 @@ function buildAnreisetagContent(festivalName) {
 }
 
 const CONTENT_AUFBAUTAG = [
-  { text: 'Aufbau der Toiletten (der frühe Vogel! 🐦)' },
-  { text: 'Koffer für jedes Camp checken und vorbereiten' },
+  {
+    title: 'Koffer vorbereiten',
+    detail: 'Koffer für jedes Camp checken und vorbereiten.',
+  },
+  {
+    type: 'anleitung',
+    title: 'Aufbau',
+    detail: 'Baut im Team alle Camps auf.',
+  },
+  {
+    type: 'rueckmeldung',
+    title: 'Nachbereitung',
+    detail: 'Gib Rückmeldung zurück ans Büro, wer alles bei welchen Aufgaben mitgeholfen hat. Auf Basis dessen berechnen wir die Pauschalen. Achtung: Dieses Formular kannst du nur einmal ausfüllen.',
+  },
 ]
 
 const CONTENT_TAG1 = [
@@ -679,10 +691,14 @@ function SicherheitsbriefingSheet({ onClose }) {
           zIndex: 400,
         }}
       />
-      {/* Sheet */}
+      {/* Sheet — max. Smartphone-Breite, zentriert */}
       <div style={{
         position: 'fixed',
-        bottom: 0, left: 0, right: 0,
+        bottom: 0,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: 480,
         background: 'var(--weiss)',
         borderRadius: '16px 16px 0 0',
         zIndex: 401,
@@ -777,10 +793,104 @@ function SicherheitsbriefingSheet({ onClose }) {
   )
 }
 
+// ── Auf- und Abbau-Anleitung Sheet (Platzhalter, Inhalt folgt mit Bildern) ────
+
+function AnleitungSheet({ onClose }) {
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 400 }} />
+      <div style={{
+        position: 'fixed', bottom: 0,
+        left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: 480,
+        background: 'var(--weiss)', borderRadius: '16px 16px 0 0',
+        zIndex: 401, maxHeight: '88dvh',
+        display: 'flex', flexDirection: 'column',
+        boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px var(--sp-4)', borderBottom: '1px solid var(--border)', flexShrink: 0,
+        }}>
+          <div style={{ fontWeight: 800, fontSize: 'var(--text-base)', fontFamily: 'var(--font-heading)' }}>
+            Auf- & Abbau-Anleitung
+          </div>
+          <button onClick={onClose} aria-label="Schließen" style={{
+            background: 'var(--papier)', border: 'none', borderRadius: '50%',
+            width: 32, height: 32, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, color: 'var(--schwarz)', fontWeight: 700,
+          }}>✕</button>
+        </div>
+        <div style={{
+          overflowY: 'auto', padding: 'var(--sp-5)',
+          paddingBottom: 'calc(var(--sp-8) + env(safe-area-inset-bottom, 0px))',
+          fontSize: 'var(--text-sm)',
+        }}>
+          <div style={{
+            background: 'var(--papier)', border: '1px solid var(--border)',
+            borderRadius: 'var(--rounded-input)', padding: 'var(--sp-4)',
+            color: 'var(--grau-text)', lineHeight: 1.7,
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+          }}>
+            <span style={{ fontSize: 24, flexShrink: 0 }}>🔧</span>
+            <div>
+              <div style={{ fontWeight: 700, color: 'var(--schwarz)', marginBottom: 4 }}>
+                Anleitung folgt in Kürze
+              </div>
+              Die Schritt-für-Schritt-Anleitung für Auf- und Abbau wird gerade mit Bildmaterial ergänzt und ist bald hier verfügbar.
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ── Rückmeldung Aufbau Sheet ──────────────────────────────────────────────────
+
+function RueckmeldungSheet({ festivalId, festivalName, crew, onClose }) {
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 400 }} />
+      <div style={{
+        position: 'fixed', bottom: 0,
+        left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: 480,
+        background: 'var(--papier)', borderRadius: '16px 16px 0 0',
+        zIndex: 401, maxHeight: '92dvh',
+        display: 'flex', flexDirection: 'column',
+        boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px var(--sp-4)', borderBottom: '1px solid var(--border)',
+          flexShrink: 0, background: 'var(--weiss)', borderRadius: '16px 16px 0 0',
+        }}>
+          <div style={{ fontWeight: 800, fontSize: 'var(--text-base)', fontFamily: 'var(--font-heading)' }}>
+            Rückmeldung Aufbau
+          </div>
+          <button onClick={onClose} aria-label="Schließen" style={{
+            background: 'var(--papier)', border: 'none', borderRadius: '50%',
+            width: 32, height: 32, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, color: 'var(--schwarz)', fontWeight: 700,
+          }}>✕</button>
+        </div>
+        <div style={{ overflowY: 'auto', flex: 1, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+          <AufbauRueckmeldung festivalId={festivalId} festivalName={festivalName} crew={crew} inSheet />
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ── Tages-Detailansicht ───────────────────────────────────────────────────────
 
 function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
-  const [showBriefing, setShowBriefing] = useState(false)
+  const [showBriefing, setShowBriefing]     = useState(false)
+  const [showAnleitung, setShowAnleitung]   = useState(false)
+  const [showRueckmeldung, setShowRueckmeldung] = useState(false)
 
   return (
     <div>
@@ -819,6 +929,72 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
                 marginTop: i > 0 ? 18 : 0, marginBottom: 10,
               }}>
                 {item.text}
+              </div>
+            )
+          }
+          // ── Anleitung-Item (öffnet Anleitung-Sheet) ──
+          if (item.type === 'anleitung') {
+            return (
+              <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
+                <span style={{
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: 'var(--gelb)', border: '1.5px solid var(--schwarz)',
+                  marginTop: 6, flexShrink: 0,
+                }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', lineHeight: 1.4 }}>
+                    {item.title}
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2, lineHeight: 1.5 }}>
+                    {item.detail}
+                  </div>
+                  <button
+                    onClick={() => setShowAnleitung(true)}
+                    style={{
+                      marginTop: 8,
+                      background: 'var(--schwarz)', color: 'var(--gelb)',
+                      border: 'none', borderRadius: 'var(--rounded-input)',
+                      padding: '6px 14px', fontSize: 12, fontWeight: 800,
+                      fontFamily: 'var(--font-heading)', cursor: 'pointer',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    🔧 Auf- & Abbau-Anleitung öffnen
+                  </button>
+                </div>
+              </div>
+            )
+          }
+          // ── Rückmeldung-Item (öffnet Rückmeldungs-Sheet) ──
+          if (item.type === 'rueckmeldung') {
+            return (
+              <div key={i} style={{ display: 'flex', gap: 10, marginBottom: i < day.content.length - 1 ? 10 : 0, alignItems: 'flex-start' }}>
+                <span style={{
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: 'var(--gelb)', border: '1.5px solid var(--schwarz)',
+                  marginTop: 6, flexShrink: 0,
+                }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', lineHeight: 1.4 }}>
+                    {item.title}
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2, lineHeight: 1.5 }}>
+                    {item.detail}
+                  </div>
+                  <button
+                    onClick={() => setShowRueckmeldung(true)}
+                    style={{
+                      marginTop: 8,
+                      background: 'var(--gelb)', color: 'var(--schwarz)',
+                      border: '1.5px solid var(--schwarz)', borderRadius: 'var(--rounded-input)',
+                      padding: '6px 14px', fontSize: 12, fontWeight: 800,
+                      fontFamily: 'var(--font-heading)', cursor: 'pointer',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    Rückmeldung Aufbau →
+                  </button>
+                </div>
               </div>
             )
           }
@@ -909,15 +1085,15 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
         })}
       </div>
 
-      {/* Sicherheitsbriefing Bottom-Sheet */}
-      {showBriefing && <SicherheitsbriefingSheet onClose={() => setShowBriefing(false)} />}
-
-      {/* Rückmeldungs-Formular – nur am Aufbautag */}
-      {day.type === 'aufbautag' && festivalId && (
-        <AufbauRueckmeldung
+      {/* Sheets */}
+      {showBriefing    && <SicherheitsbriefingSheet onClose={() => setShowBriefing(false)} />}
+      {showAnleitung   && <AnleitungSheet onClose={() => setShowAnleitung(false)} />}
+      {showRueckmeldung && festivalId && (
+        <RueckmeldungSheet
           festivalId={festivalId}
           festivalName={festivalName}
           crew={crew}
+          onClose={() => setShowRueckmeldung(false)}
         />
       )}
     </div>
@@ -1560,7 +1736,7 @@ function AufbauTaskRow({ name, sublabel, checkedTasks, onToggle, isLast, readOnl
   )
 }
 
-function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
+function AufbauRueckmeldung({ festivalId, festivalName, crew, inSheet = false }) {
   const { profile } = useAuth()
 
   // Crew auf Aufbau-relevante Rollen filtern, nach Rolle sortieren
@@ -1795,16 +1971,18 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
   const isLocked = isSubmitted
 
   return (
-    <div style={{ marginTop: 'var(--sp-6)' }}>
-      <div style={{
-        fontWeight: 800, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em',
-        color: 'var(--grau-text)', fontFamily: 'var(--font-heading)', marginBottom: 10,
-      }}>
-        Rückmeldung
-      </div>
+    <div style={{ marginTop: inSheet ? 0 : 'var(--sp-6)' }}>
+      {!inSheet && (
+        <div style={{
+          fontWeight: 800, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em',
+          color: 'var(--grau-text)', fontFamily: 'var(--font-heading)', marginBottom: 10,
+        }}>
+          Rückmeldung
+        </div>
+      )}
 
-      <div className="card">
-        <div className="card-title" style={{ marginBottom: 6 }}>Rückmeldung Aufbau</div>
+      <div className="card" style={ inSheet ? { borderRadius: 0, boxShadow: 'none', border: 'none' } : {} }>
+        {!inSheet && <div className="card-title" style={{ marginBottom: 6 }}>Rückmeldung Aufbau</div>}
         <p style={{ fontSize: 13, color: 'var(--grau-text)', lineHeight: 1.6, marginBottom: 'var(--sp-4)' }}>
           Bitte gib uns am Ende des Aufbaus Rückmeldung über Anwesenheiten und Aufgabenverteilungen,
           damit wir im Büro die richtigen Pauschalen berechnen können.
