@@ -225,7 +225,7 @@ export default function FestivalPage() {
 
   useEffect(() => { loadFestivalInfo() }, [id])
 
-  async function loadFestivalInfo() {
+  async function loadFestivalInfo(retryCount = 0) {
     setFetchError(false); setAuthError(false); setNotFound(false); setDebugMsg('')
     const cacheKey = `festival_v3_${id}`
     const cached = cacheGet(cacheKey)
@@ -252,6 +252,13 @@ export default function FestivalPage() {
         setData(rpcData)
         cacheSet(cacheKey, rpcData, 48 * 60 * 60 * 1000)
       } else if (error) {
+        // Web-Lock-Konflikt: Supabase-intern, passiert wenn zwei Requests gleichzeitig
+        // den Auth-Token refreshen wollen. Einmal still retrien statt Fehler zeigen.
+        const isLockError = String(error.message).toLowerCase().includes('lock')
+        if (isLockError && retryCount < 1) {
+          setTimeout(() => loadFestivalInfo(retryCount + 1), 1200)
+          return
+        }
         if (isAuthError) setAuthError(true)
         else if (!validCached) {
           // Kein gültiger Cache → Fehler zeigen. Mit Cache → still ignorieren,
