@@ -1298,11 +1298,14 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
   async function loadReport() {
     setLoadingReport(true)
     try {
-      const { data, error } = await supabase
-        .from('aufbau_reports')
-        .select('*')
-        .eq('festival_id', festivalId)
-        .maybeSingle()
+      const { data, error } = await fetchWithTimeout(
+        supabase
+          .from('aufbau_reports')
+          .select('*')
+          .eq('festival_id', festivalId)
+          .maybeSingle(),
+        8000
+      )
 
       if (!error && data) {
         setReport(data)
