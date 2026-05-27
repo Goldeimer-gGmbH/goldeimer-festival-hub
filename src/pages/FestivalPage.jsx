@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
-import { cacheGet, cacheSet } from '../lib/cache'
+import { cacheGet, cacheSet, cacheClear } from '../lib/cache'
 import { fetchWithTimeout } from '../lib/fetchWithTimeout'
 import {
   IconAblauf, IconInfos, IconKontakte,
@@ -228,23 +228,38 @@ export default function FestivalPage() {
     setFetchError(false); setAuthError(false); setNotFound(false)
     const cacheKey = `festival_v3_${id}`
     const cached = cacheGet(cacheKey)
-    if (cached) { setData(cached); setLoading(false) }
+
+    // Nur gültigen Cache verwenden — Responses mit error-Key nie cachen/anzeigen.
+    // Hintergrund: Das RPC gibt bei fehlendem Assignment HTTP 200 + {error: "..."} zurück.
+    // Früher wurde das als gültige Antwort gecacht und beim nächsten Seitenaufruf
+    // direkt als Fehlerzustand angezeigt, ohne dass überhaupt ein Netzwerkrequest gemacht wurde.
+    if (cached && !cached.error) {
+      setData(cached); setLoading(false)
+    } else {
+      if (cached) cacheClear(cacheKey)  // fehlerhaften Cache sofort entfernen
+      setData(null)
+    }
 
     try {
       const { data: rpcData, error, isAuthError } = await fetchWithTimeout(
         supabase.rpc('get_my_festival_info', { p_festival_id: id })
       )
-      if (!error && rpcData) {
+      if (!error && rpcData && !rpcData.error) {
+        // Nur fehlerfreie Antworten speichern und anzeigen
         setData(rpcData)
         cacheSet(cacheKey, rpcData, 48 * 60 * 60 * 1000)
       } else if (error) {
         if (isAuthError) setAuthError(true)
-        else if (!cached) setFetchError(true)
-      } else if (!rpcData && !cached) {
+        else setFetchError(true)
+      } else if (rpcData?.error) {
+        // RPC hat application-level Fehler zurückgegeben — nicht cachen
+        setFetchError(true)
+        console.error('get_my_festival_info RPC error:', rpcData.error)
+      } else if (!rpcData) {
         setNotFound(true)
       }
     } catch {
-      if (!cached) setFetchError(true)
+      setFetchError(true)
     } finally {
       setLoading(false)  // immer aufrufen – verhindert dauerhaftes Laden
     }
@@ -270,6 +285,11 @@ export default function FestivalPage() {
     <div className="page" style={{ paddingTop: 'var(--sp-8)', textAlign: 'center' }}>
       <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconStar size={36} /></div>
       <p className="card-sub" style={{ marginBottom: 20 }}>Verbindung unterbrochen.</p>
+      {data?.error && (
+        <p style={{ fontSize: 11, color: 'var(--grau-text)', marginBottom: 16, fontFamily: 'monospace' }}>
+          [{String(data.error)}]
+        </p>
+      )}
       <button className="button" onClick={loadFestivalInfo}>Nochmal versuchen</button>
       <div style={{ marginTop: 20 }}><Link to="/">← Zurück</Link></div>
     </div>
