@@ -1464,11 +1464,19 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
         .filter(e => e.name.trim())
         .map(e => ({ name: e.name.trim(), tasks: e.tasks || [] }))
 
-      const { data: invokeData, error: invokeErr } = await supabase.functions.invoke(
-        'submit-aufbau-report',
-        { body: { festival_id: festivalId, festival_name: festivalName,
-                  crew_entries: crewPayload, extra_entries: extraPayload } }
-      )
+      // Timeout: hängt functions.invoke (kein interner Timeout), Button nie entsperren
+      const invokeWithTimeout = Promise.race([
+        supabase.functions.invoke(
+          'submit-aufbau-report',
+          { body: { festival_id: festivalId, festival_name: festivalName,
+                    crew_entries: crewPayload, extra_entries: extraPayload } }
+        ),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Zeitüberschreitung – bitte nochmal versuchen')), 15000)
+        ),
+      ])
+
+      const { data: invokeData, error: invokeErr } = await invokeWithTimeout
 
       if (invokeErr || invokeData?.error) {
         setSubmitError(invokeData?.error || invokeErr?.message || 'Fehler beim Abschicken')
@@ -1529,7 +1537,7 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
 
         {/* Crew-Liste */}
         {aufbauCrew.length > 0 && (
-          <div style={{ marginBottom: 'var(--sp-4)' }}>
+          <div style={{ marginBottom: 'var(--sp-4)', opacity: submitting ? 0.4 : 1, pointerEvents: submitting ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
             <AufbauTaskHeader />
             {aufbauCrew.map((member, idx) => (
               <AufbauTaskRow
@@ -1539,7 +1547,7 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
                 checkedTasks={entries[idx]?.tasks || []}
                 onToggle={taskId => toggleCrewTask(idx, taskId)}
                 isLast={idx === aufbauCrew.length - 1}
-                readOnly={isSubmitted}
+                readOnly={isSubmitted || submitting}
               />
             ))}
           </div>
@@ -1547,7 +1555,7 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
 
         {/* Weitere Personen – bearbeitbar (nicht submitted) */}
         {!isSubmitted && (
-          <div style={{ marginBottom: 'var(--sp-4)' }}>
+          <div style={{ marginBottom: 'var(--sp-4)', opacity: submitting ? 0.4 : 1, pointerEvents: submitting ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
             <div style={{
               fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em',
               color: 'var(--grau-text)', fontFamily: 'var(--font-heading)', marginBottom: 8,
