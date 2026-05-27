@@ -590,7 +590,10 @@ function CocPlainText() {
                     fontSize: 'var(--text-sm)', color: 'var(--grau-text)',
                     lineHeight: 1.75, fontFamily: 'monospace',
                   }}>
-                    → {link}
+                    → <a href={`https://${link}`} target="_blank" rel="noopener noreferrer"
+                        style={{ color: 'inherit', fontFamily: 'inherit', textDecoration: 'underline' }}>
+                        {link}
+                      </a>
                   </div>
                 ))}
               </div>
