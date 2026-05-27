@@ -601,16 +601,12 @@ export default function InfosPage() {
   const faqRef = useRef(null)
   const cocRef = useRef(null)
 
-  useEffect(() => { loadContent() }, [])
-
-  // Auto-scroll im Standardmodus
   useEffect(() => {
-    if (section === 'faq' || section === 'code-of-conduct') return
-    const target = section === 'faq' ? faqRef : section === 'code-of-conduct' ? cocRef : null
-    if (!target?.current) return
-    const t = setTimeout(() => target.current.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120)
-    return () => clearTimeout(t)
-  }, [location.search])
+    // Immer nach oben scrollen wenn die Seite aufgerufen wird
+    window.scrollTo(0, 0)
+    // DB-Inhalte nur laden wenn keine spezifische Sektion aufgerufen wird
+    if (!section) loadContent()
+  }, [])
 
   async function loadContent() {
     setError(false)
