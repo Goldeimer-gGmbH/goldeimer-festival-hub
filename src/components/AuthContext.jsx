@@ -212,14 +212,36 @@ export function AuthProvider({ children }) {
       }
 
       // HomePage: Assignments des Users
-      if (!cacheGet(`assignments_${profile.id}`)) {
+      let assignments = cacheGet(`assignments_${profile.id}`)
+      if (!assignments) {
         const { data } = await supabase
           .from('assignments')
           .select(`id, role, status, festival:festivals(id, name, details)`)
           .eq('profile_id', profile.id)
           .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
           .order('created_at', { ascending: true })
-        if (data) cacheSet(`assignments_${profile.id}`, data, DATA_TTL)
+        if (data) {
+          cacheSet(`assignments_${profile.id}`, data, DATA_TTL)
+          assignments = data
+        }
+      }
+
+      // FestivalPage: Daten für alle Festivals des Users vorladen.
+      // Verhindert Timeout-Fehler wenn die DB kalt ist und der User direkt eine
+      // Festival-Karte öffnet — die Daten sind dann schon im Cache.
+      if (assignments?.length) {
+        for (const a of assignments) {
+          const festivalId = a.festival?.id
+          if (!festivalId || cacheGet(`festival_v3_${festivalId}`)) continue
+          // fire & forget — kein await, blockiert nicht den Rest des Logins
+          supabase.rpc('get_my_festival_info', { p_festival_id: festivalId })
+            .then(({ data: rpcData }) => {
+              if (rpcData && !rpcData.error) {
+                cacheSet(`festival_v3_${festivalId}`, rpcData, DATA_TTL)
+              }
+            })
+            .catch(() => {}) // best-effort, Fehler ignorieren
+        }
       }
     } catch { /* Prefetch ist best-effort, Fehler ignorieren */ }
   }

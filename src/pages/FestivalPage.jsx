@@ -255,8 +255,10 @@ export default function FestivalPage() {
         // Web-Lock-Konflikt: Supabase-intern, passiert wenn zwei Requests gleichzeitig
         // den Auth-Token refreshen wollen. Einmal still retrien statt Fehler zeigen.
         const isLockError = String(error.message).toLowerCase().includes('lock')
-        if (isLockError && retryCount < 1) {
-          setTimeout(() => loadFestivalInfo(retryCount + 1), 1200)
+        // Timeout: DB-Kaltstart oder langes Netz — bis zu 2x mit 3s Pause retrien.
+        const isTimeout = error.message === 'timeout'
+        if ((isLockError || isTimeout) && retryCount < 2) {
+          setTimeout(() => loadFestivalInfo(retryCount + 1), isTimeout ? 3000 : 1200)
           return
         }
         if (isAuthError) setAuthError(true)
