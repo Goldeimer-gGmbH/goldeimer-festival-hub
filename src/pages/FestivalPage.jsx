@@ -1464,22 +1464,44 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
         .filter(e => e.name.trim())
         .map(e => ({ name: e.name.trim(), tasks: e.tasks || [] }))
 
-      // Timeout: hängt functions.invoke (kein interner Timeout), Button nie entsperren
-      const invokeWithTimeout = Promise.race([
-        supabase.functions.invoke(
-          'submit-aufbau-report',
-          { body: { festival_id: festivalId, festival_name: festivalName,
-                    crew_entries: crewPayload, extra_entries: extraPayload } }
-        ),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Zeitüberschreitung – bitte nochmal versuchen')), 15000)
-        ),
-      ])
+      // Plain fetch statt supabase.functions.invoke — invoke blockiert intern
+      // beim Session-Refresh (Web-Lock-Problem). Mit getSession() + fetch()
+      // holen wir den Token einmal explizit und machen dann direkt den Call.
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) throw new Error('Nicht eingeloggt – bitte Seite neu laden')
 
-      const { data: invokeData, error: invokeErr } = await invokeWithTimeout
+      const controller = new AbortController()
+      const timeoutId  = setTimeout(() => controller.abort(), 15000)
 
-      if (invokeErr || invokeData?.error) {
-        setSubmitError(invokeData?.error || invokeErr?.message || 'Fehler beim Abschicken')
+      let res
+      try {
+        res = await fetch(
+          'https://wsdkmglkqxszyvomrfim.supabase.co/functions/v1/submit-aufbau-report',
+          {
+            method:  'POST',
+            headers: {
+              'Content-Type':  'application/json',
+              'Authorization': `Bearer ${token}`,
+              'apikey':        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzZGttZ2xrcXhzenl2b21yZmltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNTk4NjYsImV4cCI6MjA5MTczNTg2Nn0.CkX010BgVGjJUOs7RSYHlXJSwA-0jL4iPvi4gA59dTM',
+            },
+            body:    JSON.stringify({
+              festival_id:    festivalId,
+              festival_name:  festivalName,
+              crew_entries:   crewPayload,
+              extra_entries:  extraPayload,
+            }),
+            signal: controller.signal,
+          }
+        )
+      } finally {
+        clearTimeout(timeoutId)
+      }
+
+      const invokeData = await res.json()
+
+      if (!res.ok || invokeData?.error) {
+        setSubmitError(invokeData?.error || `Fehler ${res.status}`)
       } else {
         setReport(prev => ({
           ...prev,
