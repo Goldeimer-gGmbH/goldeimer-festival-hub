@@ -234,7 +234,9 @@ export default function FestivalPage() {
     // Hintergrund: Das RPC gibt bei fehlendem Assignment HTTP 200 + {error: "..."} zurück.
     // Früher wurde das als gültige Antwort gecacht und beim nächsten Seitenaufruf
     // direkt als Fehlerzustand angezeigt, ohne dass überhaupt ein Netzwerkrequest gemacht wurde.
-    if (cached && !cached.error) {
+    // validCached = gültiger Cache ohne error-Key → kann direkt angezeigt werden
+    const validCached = cached && !cached.error
+    if (validCached) {
       setData(cached); setLoading(false)
     } else {
       if (cached) cacheClear(cacheKey)  // fehlerhaften Cache sofort entfernen
@@ -251,21 +253,27 @@ export default function FestivalPage() {
         cacheSet(cacheKey, rpcData, 48 * 60 * 60 * 1000)
       } else if (error) {
         if (isAuthError) setAuthError(true)
-        else {
+        else if (!validCached) {
+          // Kein gültiger Cache → Fehler zeigen. Mit Cache → still ignorieren,
+          // gecachte Daten bleiben sichtbar (z.B. bei Timeout im Hintergrund).
           setDebugMsg(`supabase error: ${error.message || error.status || JSON.stringify(error)}`)
           setFetchError(true)
         }
       } else if (rpcData?.error) {
-        // RPC hat application-level Fehler zurückgegeben — nicht cachen
-        setDebugMsg(`rpc: ${String(rpcData.error)}`)
-        setFetchError(true)
+        // RPC hat application-level Fehler zurückgegeben — nie cachen
+        if (!validCached) {
+          setDebugMsg(`rpc: ${String(rpcData.error)}`)
+          setFetchError(true)
+        }
         console.error('get_my_festival_info RPC error:', rpcData.error)
-      } else if (!rpcData) {
+      } else if (!rpcData && !validCached) {
         setNotFound(true)
       }
     } catch (e) {
-      setDebugMsg(`exception: ${e?.message || String(e)}`)
-      setFetchError(true)
+      if (!validCached) {
+        setDebugMsg(`exception: ${e?.message || String(e)}`)
+        setFetchError(true)
+      }
     } finally {
       setLoading(false)  // immer aufrufen – verhindert dauerhaftes Laden
     }
