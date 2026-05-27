@@ -35,11 +35,19 @@ const FAQ_GROUPS = [
       },
       {
         q: 'Wohin fließt das Geld und die Spenden?',
-        a: 'Beim Bezahlen können Besuchende "aufrunden" und z.B. mit dem Spendchen gezielt für Sanitärprojekte spenden. In diesem Jahr gehen die Spenden in unser Kompostier-Forschungsprojekt in der Lüneburger Heide sowie an das Projekt Mosan in Guatemala. Mosan betreibt am See Atitlán einen Trockenklo-Service und verwertet die Trockenkloinhalte zu Pflanzenkohle, die wiederum in der Landwirtschaft für die Aufwertung der Böden genutzt wird. Aufgrund schlechter sanitärer Infrastruktur in der Region werden Fäkalien unkontrolliert in den See geleitet und kontaminieren das Wasser – dabei sind viele tausend Menschen von der Frischwasserquelle abhängig. Mosan trägt so maßgeblich zur Verbesserung der Lebensbedingungen für Mensch und Natur bei.',
+        a: [
+          'Beim Bezahlen können Besuchende "aufrunden" und z.B. mit dem Spendchen gezielt für Sanitärprojekte spenden. In diesem Jahr gehen die Spenden in unser Kompostier-Forschungsprojekt in der Lüneburger Heide sowie an das Projekt ',
+          { text: 'Mosan', href: 'https://mosan.com/' },
+          ' in Guatemala. Mosan betreibt am See Atitlán einen Trockenklo-Service und verwertet die Trockenkloinhalte zu Pflanzenkohle, die wiederum in der Landwirtschaft für die Aufwertung der Böden genutzt wird. Aufgrund schlechter sanitärer Infrastruktur in der Region werden Fäkalien unkontrolliert in den See geleitet und kontaminieren das Wasser – dabei sind viele tausend Menschen von der Frischwasserquelle abhängig. Mosan trägt so maßgeblich zur Verbesserung der Lebensbedingungen für Mensch und Natur bei.',
+        ],
       },
       {
         q: 'Was passiert mit der Kacke?',
-        a: 'Wir retten den Wertstoff Kacke und die darin enthaltenen Nährstoffe vor der Kanalisation und geben die Trockenkloinhalte nach dem Festival in die Kompostierung. Auf unserer Kompostieranlage südlich von Hamburg wird die Kacke fachgerecht hygienisiert, kompostiert und zu nährstoffreichem Recyclingdünger. Diese Super-Erde wird dann in wissenschaftlichen Feldversuchen als Bodenverbesserer genutzt. Alles andere ist aktuell leider illegal.',
+        a: [
+          'Wir retten den Wertstoff Kacke und die darin enthaltenen Nährstoffe vor der Kanalisation und geben die Trockenkloinhalte nach dem Festival in die Kompostierung. Auf unserer Kompostieranlage südlich von Hamburg wird die Kacke fachgerecht hygienisiert, kompostiert und zu nährstoffreichem Recyclingdünger. Diese Super-Erde wird dann in wissenschaftlichen Feldversuchen als Bodenverbesserer genutzt. Alles andere ist aktuell leider illegal. Mehr dazu ',
+          { text: 'hier', href: 'https://goldeimer.de/pages/recyclinganlage' },
+          '.',
+        ],
       },
       {
         q: 'Wie kann man Goldeimer unterstützen?',
@@ -97,7 +105,12 @@ const FAQ_GROUPS = [
       },
       {
         q: 'Crew Love',
-        a: 'steht bei uns an erster Stelle. Wir wollen als Goldeimer Crew einen diskriminierungsfreien Raum schaffen, in dem sich alle respektiert und willkommen fühlen können. Darum haben wir unsere Grundsätze für einen achtsamen Umgang miteinander im Code of Conduct formuliert, den du per Mail bekommen hast. Darin steht beispielsweise, dass wir keine Diskriminierung und/oder Gewalt tolerieren, auf sensible Sprache und Musik achten, unsere T-Shirts anbehalten und wertschätzend, respektvoll, hilfsbereit und solidarisch miteinander umgehen.\n\nMehr Infos zu Goldeimer: www.goldeimer.de\nWeitere Fragen an festival@goldeimer.de',
+        a: [
+          'steht bei uns an erster Stelle. Wir wollen als Goldeimer Crew einen diskriminierungsfreien Raum schaffen, in dem sich alle respektiert und willkommen fühlen können. Darum haben wir unsere Grundsätze für einen achtsamen Umgang miteinander im Code of Conduct formuliert, den du per Mail bekommen hast. Darin steht beispielsweise, dass wir keine Diskriminierung und/oder Gewalt tolerieren, auf sensible Sprache und Musik achten, unsere T-Shirts anbehalten und wertschätzend, respektvoll, hilfsbereit und solidarisch miteinander umgehen.\n\nMehr Infos zu Goldeimer: ',
+          { text: 'www.goldeimer.de', href: 'https://www.goldeimer.de' },
+          '\nWeitere Fragen an ',
+          { text: 'festival@goldeimer.de', href: 'mailto:festival@goldeimer.de' },
+        ],
       },
     ],
   },
