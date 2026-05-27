@@ -208,6 +208,7 @@ export default function FestivalPage() {
   const [fetchError, setFetchError] = useState(false)
   const [notFound, setNotFound]   = useState(false)
   const [authError, setAuthError] = useState(false)
+  const [debugMsg, setDebugMsg]   = useState('')
 
   const activeTab = searchParams.get('tab') || 'ablauf'
   // Kein replace: push → Browser-Zurück funktioniert zwischen Tabs
@@ -225,7 +226,7 @@ export default function FestivalPage() {
   useEffect(() => { loadFestivalInfo() }, [id])
 
   async function loadFestivalInfo() {
-    setFetchError(false); setAuthError(false); setNotFound(false)
+    setFetchError(false); setAuthError(false); setNotFound(false); setDebugMsg('')
     const cacheKey = `festival_v3_${id}`
     const cached = cacheGet(cacheKey)
 
@@ -250,15 +251,20 @@ export default function FestivalPage() {
         cacheSet(cacheKey, rpcData, 48 * 60 * 60 * 1000)
       } else if (error) {
         if (isAuthError) setAuthError(true)
-        else setFetchError(true)
+        else {
+          setDebugMsg(`supabase error: ${error.message || error.status || JSON.stringify(error)}`)
+          setFetchError(true)
+        }
       } else if (rpcData?.error) {
         // RPC hat application-level Fehler zurückgegeben — nicht cachen
+        setDebugMsg(`rpc: ${String(rpcData.error)}`)
         setFetchError(true)
         console.error('get_my_festival_info RPC error:', rpcData.error)
       } else if (!rpcData) {
         setNotFound(true)
       }
-    } catch {
+    } catch (e) {
+      setDebugMsg(`exception: ${e?.message || String(e)}`)
       setFetchError(true)
     } finally {
       setLoading(false)  // immer aufrufen – verhindert dauerhaftes Laden
@@ -285,9 +291,9 @@ export default function FestivalPage() {
     <div className="page" style={{ paddingTop: 'var(--sp-8)', textAlign: 'center' }}>
       <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconStar size={36} /></div>
       <p className="card-sub" style={{ marginBottom: 20 }}>Verbindung unterbrochen.</p>
-      {data?.error && (
+      {(debugMsg || data?.error) && (
         <p style={{ fontSize: 11, color: 'var(--grau-text)', marginBottom: 16, fontFamily: 'monospace' }}>
-          [{String(data.error)}]
+          [{debugMsg || String(data.error)}]
         </p>
       )}
       <button className="button" onClick={loadFestivalInfo}>Nochmal versuchen</button>
