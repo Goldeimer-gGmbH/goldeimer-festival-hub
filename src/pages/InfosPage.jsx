@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { cacheGet, cacheSet } from '../lib/cache'
 import { fetchWithTimeout } from '../lib/fetchWithTimeout'
@@ -12,8 +12,11 @@ const CACHE_KEY = 'infos_content'
 const FAQ_GROUPS = [
   {
     group: 'Über Goldeimer',
-    intro: 'Goldeimer ist ein gemeinnütziges Unternehmen aus Hamburg, das sich für den Zugang zu Klos für alle Menschen weltweit und eine nachhaltige Sanitärwende einsetzt. 3,4 Milliarden Menschen haben noch keinen Zugang zu einer gesicherten Sanitärversorgung. Daran wollen wir was ändern. Wir betreiben Trockenklos auf Festivals, leisten Aufklärungs-, Bildungs- und Forschungsarbeit, verkaufen soziale Produkte wie unser Klopapier, verwerten menschliche Fäkalien zu Recyclingdünger und unterstützen durch Spenden weltweite Sanitärprojekte. Unsere Vision ist »Alle für Klos! Klos für alle!«',
     items: [
+      {
+        q: 'Was ist Goldeimer?',
+        a: 'Goldeimer ist ein gemeinnütziges Unternehmen aus Hamburg, das sich für den Zugang zu Klos für alle Menschen weltweit und eine nachhaltige Sanitärwende einsetzt. 3,4 Milliarden Menschen haben noch keinen Zugang zu einer gesicherten Sanitärversorgung. Daran wollen wir was ändern. Wir betreiben Trockenklos auf Festivals, leisten Aufklärungs-, Bildungs- und Forschungsarbeit, verkaufen soziale Produkte wie unser Klopapier, verwerten menschliche Fäkalien zu Recyclingdünger und unterstützen durch Spenden weltweite Sanitärprojekte. Unsere Vision ist »Alle für Klos! Klos für alle!«',
+      },
       {
         q: 'Was bedeutet Gemeinnützigkeit?',
         a: 'Goldeimer ist ein gemeinnütziges Unternehmen (gGmbH) in Verantwortungseigentum. Wir sind unverkäuflich und nach Satzung dazu verpflichtet, unsere Arbeit und alle finanziellen Mittel für das Gemeinwohl einzusetzen. Es gibt bei uns also keine Gewinnausschüttungen an Privatpersonen. Unser gemeinnütziger Zweck ist, Menschen den Zugang zu Klos zu ermöglichen, für kreislauforientierte Toiletten zu begeistern und uns für die Verbreitung von kreislauforientierten Toiletten inklusive Recycling der Hinterlassenschaften einzusetzen.',
@@ -40,7 +43,11 @@ const FAQ_GROUPS = [
       },
       {
         q: 'Wie kann man Goldeimer unterstützen?',
-        a: '• Geldspende: Unterstütz unsere gemeinnützige Arbeit finanziell → goldeimer.de/spenden oder hier direkt über das Bezahlsystem als Freie Spende\n\n• Reichweitenspende: Folg @goldeimer auf Social Media (Instagram, LinkedIn, TikTok), teile unseren Content und verbreite unsere Marke.\n\n• Zeitspende: Komm in die Ehrenamtscrew und fahr mit Goldeimer auf\'s Festival oder unterstütz uns beim Betrieb der Kompostieranlage in Ollsen (Lüneburger Heide).',
+        a: [
+          '• Geldspende: Unterstütz unsere gemeinnützige Arbeit finanziell → ',
+          { text: 'goldeimer.de/spenden', href: 'https://goldeimer.de/spenden' },
+          ' oder hier direkt über das Bezahlsystem als Freie Spende\n\n• Reichweitenspende: Folg @goldeimer auf Social Media (Instagram, LinkedIn, TikTok), teile unseren Content und verbreite unsere Marke.\n\n• Zeitspende: Komm in die Ehrenamtscrew und fahr mit Goldeimer auf\'s Festival oder unterstütz uns beim Betrieb der Kompostieranlage in Ollsen (Lüneburger Heide).',
+        ],
       },
     ],
   },
@@ -395,18 +402,6 @@ function FaqSection() {
             {group.group}
           </div>
 
-          {/* Optionaler Intro-Text */}
-          {group.intro && (
-            <div style={{
-              background: 'var(--weiss)', borderRadius: 'var(--rounded)',
-              padding: 'var(--sp-4)', marginBottom: 'var(--sp-2)',
-              fontSize: 'var(--text-sm)', lineHeight: 1.7, color: 'var(--grau-text)',
-              boxShadow: 'var(--shadow-sm)',
-            }}>
-              {group.intro}
-            </div>
-          )}
-
           <div style={{ background: 'var(--weiss)', borderRadius: 'var(--rounded)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
             {group.items.map((item, ii) => {
               const key = `${gi}-${ii}`
@@ -435,7 +430,16 @@ function FaqSection() {
                       fontSize: 'var(--text-sm)', lineHeight: 1.75,
                       color: 'var(--grau-text)', whiteSpace: 'pre-wrap',
                     }}>
-                      {item.a}
+                      {Array.isArray(item.a)
+                        ? item.a.map((part, pi) =>
+                            typeof part === 'string'
+                              ? part
+                              : <a key={pi} href={part.href} target="_blank" rel="noopener noreferrer"
+                                  style={{ color: 'var(--schwarz)', fontWeight: 600, textDecoration: 'underline' }}>
+                                  {part.text}
+                                </a>
+                          )
+                        : item.a}
                     </div>
                   )}
                 </div>
