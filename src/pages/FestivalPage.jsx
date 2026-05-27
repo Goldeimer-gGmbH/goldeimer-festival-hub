@@ -1324,10 +1324,39 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
     .sort((a, b) => ROLLE_ORDER.indexOf(a.role) - ROLLE_ORDER.indexOf(b.role))
 
   // Pro Crew-Mitglied ein tasks-Array; wird aus DB wiederhergestellt
-  const [entries, setEntries]         = useState(() => aufbauCrew.map(() => ({ tasks: [] })))
-  const [extraPeople, setExtraPeople] = useState([{ name: '', tasks: [] }])
-  const [report, setReport]           = useState(null)
-  const [loadingReport, setLoadingReport] = useState(true)
+  const reportCacheKey = `aufbau_report_${festivalId}`
+
+  function applyReportData(data) {
+    setReport(data)
+    if (data.crew_entries?.length) {
+      setEntries(aufbauCrew.map(member => {
+        const saved = data.crew_entries.find(e => e.name === member.full_name)
+        return { tasks: saved?.tasks || [] }
+      }))
+    }
+    if (data.extra_entries?.length) {
+      setExtraPeople(data.extra_entries.map(e => ({ name: e.name, tasks: e.tasks || [] })))
+    }
+  }
+
+  const cachedReport = cacheGet(reportCacheKey)
+  const [entries, setEntries]         = useState(() => {
+    if (cachedReport?.crew_entries?.length) {
+      return aufbauCrew.map(member => {
+        const saved = cachedReport.crew_entries.find(e => e.name === member.full_name)
+        return { tasks: saved?.tasks || [] }
+      })
+    }
+    return aufbauCrew.map(() => ({ tasks: [] }))
+  })
+  const [extraPeople, setExtraPeople] = useState(() =>
+    cachedReport?.extra_entries?.length
+      ? cachedReport.extra_entries.map(e => ({ name: e.name, tasks: e.tasks || [] }))
+      : [{ name: '', tasks: [] }]
+  )
+  const [report, setReport]           = useState(() => cachedReport || null)
+  // Kein Ladescreen wenn gecachte Daten vorhanden
+  const [loadingReport, setLoadingReport] = useState(!cachedReport)
   const [submitting, setSubmitting]   = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [saveStatus, setSaveStatus]   = useState('') // 'saving' | 'saved' | ''
@@ -1337,7 +1366,6 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
   useEffect(() => { loadReport() }, [festivalId])
 
   async function loadReport() {
-    setLoadingReport(true)
     try {
       const { data, error } = await fetchWithTimeout(
         supabase
@@ -1349,17 +1377,8 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
       )
 
       if (!error && data) {
-        setReport(data)
-        // Gespeicherte Aufgaben in den lokalen State zurückschreiben
-        if (data.crew_entries?.length) {
-          setEntries(aufbauCrew.map(member => {
-            const saved = data.crew_entries.find(e => e.name === member.full_name)
-            return { tasks: saved?.tasks || [] }
-          }))
-        }
-        if (data.extra_entries?.length) {
-          setExtraPeople(data.extra_entries.map(e => ({ name: e.name, tasks: e.tasks || [] })))
-        }
+        applyReportData(data)
+        cacheSet(reportCacheKey, data, 48 * 60 * 60 * 1000)
       }
     } catch (e) {
       console.error('loadReport error:', e)
@@ -1503,13 +1522,15 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew }) {
       if (!res.ok || invokeData?.error) {
         setSubmitError(invokeData?.error || `Fehler ${res.status}`)
       } else {
-        setReport(prev => ({
-          ...prev,
+        const updated = {
+          ...(report || {}),
           is_submitted:      true,
           submitted_by_name: invokeData.submitted_by,
           submitted_at:      new Date().toISOString(),
           submission_count:  invokeData.submission_count || 1,
-        }))
+        }
+        setReport(updated)
+        cacheSet(reportCacheKey, updated, 48 * 60 * 60 * 1000)
         setNachtragMode(false)
       }
     } catch (e) {
