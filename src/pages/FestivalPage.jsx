@@ -31,17 +31,28 @@ const TabIconKontakte = () => <IconKontakte size={20} />
 function buildAnreisetagContent(festivalName) {
   const isFkp = isFkpFestival(festivalName)
   const items = [
-    { text: 'Goldeimer-Standorte mit der Festival-Produktion gegengecheckt / die Standorte gezeigt' },
+    {
+      title: 'Standorte mit Produktion gegenchecken',
+      detail: 'Kontaktiert die Festival-Produktion (siehe Kontakte), um mit ihnen die Goldeimer-Standorte gegenzuchecken bzw. sie euch zeigen zu lassen.',
+    },
   ]
   if (isFkp) {
     items.push({
-      text: 'Produktionsordnung von der Aufbau-Crew unterschreiben lassen und an die Festival-Produktion geben (nur FKP-Festivals)',
+      title: 'Nur für FKP-Festivals',
+      detail: 'Lasst die Produktionsordnung von der Aufbau-Crew unterschreiben und gebt sie bei der Festival-Produktion ab.',
       extra: { label: 'Per E-Mail: arbeitsschutz-southside@fkpscorpio.com', email: 'arbeitsschutz-southside@fkpscorpio.com' },
     })
   }
   items.push(
-    { text: 'Aufbau-Besprechung: Wann starten wir, wer baut welche Camps auf' },
-    { text: 'Sicherheitseinweisung für alle am Aufbau beteiligten Personen → Link folgt' },
+    {
+      title: 'Aufbau-Besprechung',
+      detail: 'Plant den nächsten Tag mit dem Aufbau-Team und schlaft gut :)',
+    },
+    {
+      type: 'sicherheitsbriefing',
+      title: 'Sicherheitsbriefing',
+      detail: 'Geht gemeinsam mit dem Aufbau-Team das Sicherheitsbriefing durch.',
+    },
   )
   return items
 }
@@ -596,9 +607,181 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
   )
 }
 
+// ── Sicherheitsbriefing-Inhalte (vollständig aus PDF 2025) ───────────────────
+
+const SICHERHEITSBRIEFING_CONTENT = [
+  {
+    type: 'intro',
+    text: 'Damit wir sicher durch Auf- und Abbau kommen, hier die wichtigsten Regeln auf einen Blick:',
+  },
+  { type: 'section', emoji: '🦺', text: 'Persönliche Schutzausrüstung (PSA)' },
+  { type: 'list', items: [
+    'Sicherheitsschuhe (S2) tragen – Pflicht!',
+    'Arbeitshandschuhe anziehen – schützt vor Schnitt- & Klemmgefahren.',
+    'Bei Reinigungs- und Drainagearbeiten (zusätzlich) Einmalhandschuhe tragen.',
+    'Sonnenschutz nicht vergessen: Sonnencreme + Cap gegen Sonnenbrand und Hitzschlag.',
+    'Impfung gegen Hepatitis A wird empfohlen, besonders bei Arbeit an den FSBs.',
+  ]},
+  { type: 'section', emoji: '💪', text: 'Sicheres Arbeiten' },
+  { type: 'list', items: [
+    'Nicht vom Hänger oder Anhänger springen! – Runtersteigen, nicht runterspringen.',
+    'Klemm- & Sturzgefahren beachten – besonders bei Treppen, Türen und losem Material.',
+    'Achte auf deine Haltung beim Heben und Tragen. Keine ruckartigen Bewegungen, Rücken gerade!',
+    'Nur bei stabilen Wetterbedingungen arbeiten – bei Sturm oder Gewitter: Arbeit pausieren, Unterstand suchen.',
+  ]},
+  { type: 'section', emoji: '🚗', text: 'Verkehr auf dem Gelände' },
+  { type: 'list', items: [
+    'Es gilt die Straßenverkehrsordnung – auch auf dem Veranstaltungsgelände!',
+    'Höchstgeschwindigkeit: 20 km/h.',
+    'Bei Trockenheit: Langsam fahren, um Staubaufwirbelung zu vermeiden.',
+    'Bei Nässe: Besonders vorsichtig fahren, um Gelände und Maschinen nicht zu beschädigen.',
+  ]},
+  { type: 'section', emoji: '🚫', text: 'Keine Rauschmittel' },
+  { type: 'list', items: [
+    'Alkohol, Drogen und bestimmte Medikamente beeinträchtigen deine Aufmerksamkeit und Leistungsfähigkeit.',
+    'Daher: Keine Rauschmittel vor und während der Arbeit.',
+  ]},
+  { type: 'section', emoji: '🧃', text: 'Pausen & Gesundheit' },
+  { type: 'list', items: [
+    'Regelmäßige Pausen einlegen – auch wenn\'s stressig ist.',
+    'Ausreichend trinken und Snacks einpacken. Dehydrierung ist gefährlich!',
+    'Bei Anzeichen von Erschöpfung oder Überhitzung: Arbeit unterbrechen und Bescheid sagen.',
+  ]},
+  { type: 'section', emoji: '⚠️', text: 'Gefahren erkennen & melden' },
+  { type: 'list', items: [
+    'Rahmenteile immer sichern, damit sie nicht umkippen.',
+    'Wetter beobachten – bei Starkwind Aufbau abbrechen.',
+    'Defekte Bauteile oder gefährliche Situationen den Leads melden.',
+  ]},
+  { type: 'section', emoji: '🚨', text: 'Im Notfall' },
+  { type: 'list', items: [
+    'Verletzte versorgen, Unfallstelle absichern.',
+    'Erste-Hilfe-Zelt aufsuchen oder Notruf 112 wählen.',
+    'Lead(s) informieren.',
+  ]},
+  {
+    type: 'closing',
+    text: 'Bleibt achtsam, schützt euch gegenseitig und denkt dran: Beim Auf- und Abbau gilt offiziell »Sicherheit statt Stimmung!«',
+  },
+]
+
+// ── Sicherheitsbriefing Bottom-Sheet ─────────────────────────────────────────
+
+function SicherheitsbriefingSheet({ onClose }) {
+  return (
+    <>
+      {/* Overlay */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.55)',
+          zIndex: 400,
+        }}
+      />
+      {/* Sheet */}
+      <div style={{
+        position: 'fixed',
+        bottom: 0, left: 0, right: 0,
+        background: 'var(--weiss)',
+        borderRadius: '16px 16px 0 0',
+        zIndex: 401,
+        maxHeight: '88dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
+      }}>
+        {/* Sheet-Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px var(--sp-4)',
+          borderBottom: '1px solid var(--border)',
+          flexShrink: 0,
+        }}>
+          <div style={{ fontWeight: 800, fontSize: 'var(--text-base)', fontFamily: 'var(--font-heading)' }}>
+            🦺 Sicherheitsbriefing
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Schließen"
+            style={{
+              background: 'var(--papier)', border: 'none', borderRadius: '50%',
+              width: 32, height: 32, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 16, color: 'var(--schwarz)', fontWeight: 700,
+            }}
+          >✕</button>
+        </div>
+
+        {/* Scrollbarer Inhalt */}
+        <div style={{
+          overflowY: 'auto',
+          padding: 'var(--sp-4)',
+          paddingBottom: 'calc(var(--sp-8) + env(safe-area-inset-bottom, 0px))',
+          fontSize: 'var(--text-sm)',
+        }}>
+          {SICHERHEITSBRIEFING_CONTENT.map((block, i) => {
+            switch (block.type) {
+              case 'intro':
+                return (
+                  <p key={i} style={{ lineHeight: 1.7, color: 'var(--grau-text)', marginBottom: 'var(--sp-4)', marginTop: 0 }}>
+                    {block.text}
+                  </p>
+                )
+              case 'section':
+                return (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    fontWeight: 800, fontSize: 'var(--text-sm)',
+                    fontFamily: 'var(--font-heading)',
+                    color: 'var(--schwarz)',
+                    marginTop: i === 0 ? 0 : 'var(--sp-5)',
+                    marginBottom: 'var(--sp-2)',
+                    paddingBottom: 'var(--sp-2)',
+                    borderBottom: '2px solid var(--gelb)',
+                  }}>
+                    <span>{block.emoji}</span>
+                    <span>{block.text}</span>
+                  </div>
+                )
+              case 'list':
+                return (
+                  <ul key={i} style={{ paddingLeft: 'var(--sp-4)', marginBottom: 'var(--sp-3)', marginTop: 0 }}>
+                    {block.items.map((it, j) => (
+                      <li key={j} style={{ lineHeight: 1.65, color: 'var(--grau-text)', marginBottom: 6 }}>
+                        {it}
+                      </li>
+                    ))}
+                  </ul>
+                )
+              case 'closing':
+                return (
+                  <div key={i} style={{
+                    marginTop: 'var(--sp-5)',
+                    background: 'var(--schwarz)',
+                    borderRadius: 'var(--rounded)',
+                    padding: 'var(--sp-3) var(--sp-4)',
+                    fontWeight: 700, color: 'var(--gelb)',
+                    lineHeight: 1.5, fontSize: 'var(--text-sm)',
+                  }}>
+                    {block.text}
+                  </div>
+                )
+              default:
+                return null
+            }
+          })}
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ── Tages-Detailansicht ───────────────────────────────────────────────────────
 
 function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
+  const [showBriefing, setShowBriefing] = useState(false)
+
   return (
     <div>
       {/* Titel (Pfeil ist im Seiten-Header) */}
@@ -626,41 +809,96 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
 
       <div className="card">
         {day.content.map((item, i) => {
+          // ── Abschnitts-Überschrift (unverändert) ──
           if (item.section) {
             return (
               <div key={i} style={{
-                fontWeight: 800,
-                fontSize: 10,
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                color: 'var(--grau-text)',
-                fontFamily: 'var(--font-heading)',
-                marginTop: i > 0 ? 18 : 0,
-                marginBottom: 10,
+                fontWeight: 800, fontSize: 10,
+                textTransform: 'uppercase', letterSpacing: '0.1em',
+                color: 'var(--grau-text)', fontFamily: 'var(--font-heading)',
+                marginTop: i > 0 ? 18 : 0, marginBottom: 10,
               }}>
                 {item.text}
               </div>
             )
           }
+          // ── Sicherheitsbriefing-Item (öffnet Sheet) ──
+          if (item.type === 'sicherheitsbriefing') {
+            return (
+              <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
+                <span style={{
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: 'var(--gelb)', border: '1.5px solid var(--schwarz)',
+                  marginTop: 6, flexShrink: 0,
+                }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', lineHeight: 1.4 }}>
+                    {item.title}
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2, lineHeight: 1.5 }}>
+                    {item.detail}
+                  </div>
+                  <button
+                    onClick={() => setShowBriefing(true)}
+                    style={{
+                      marginTop: 8,
+                      background: 'var(--schwarz)', color: 'var(--gelb)',
+                      border: 'none', borderRadius: 'var(--rounded-input)',
+                      padding: '6px 14px', fontSize: 12, fontWeight: 800,
+                      fontFamily: 'var(--font-heading)', cursor: 'pointer',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    🦺 Sicherheitsbriefing öffnen
+                  </button>
+                </div>
+              </div>
+            )
+          }
+          // ── Todo mit Titel + Detail-Text ──
+          if (item.title) {
+            return (
+              <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
+                <span style={{
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: 'var(--gelb)', border: '1.5px solid var(--schwarz)',
+                  marginTop: 6, flexShrink: 0,
+                }} />
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', lineHeight: 1.4 }}>
+                    {item.title}
+                  </div>
+                  {item.detail && (
+                    <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2, lineHeight: 1.5 }}>
+                      {item.detail}
+                    </div>
+                  )}
+                  {item.extra && (
+                    <div style={{ marginTop: 4 }}>
+                      <a href={`mailto:${item.extra.email}`}
+                        style={{ fontSize: 13, color: 'var(--grau-text)', wordBreak: 'break-all' }}>
+                        {item.extra.label}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          }
+          // ── Normales Todo (plain text, wie bisher) ──
           return (
             <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
               <span style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: 'var(--gelb)',
-                border: '1.5px solid var(--schwarz)',
-                marginTop: 5,
-                flexShrink: 0,
+                width: 6, height: 6, borderRadius: '50%',
+                background: 'var(--gelb)', border: '1.5px solid var(--schwarz)',
+                marginTop: 5, flexShrink: 0,
               }} />
               <div style={{ fontSize: 14, lineHeight: 1.65, color: 'var(--schwarz)' }}>
                 {item.text}
                 {item.extra && (
                   <div style={{ marginTop: 4 }}>
-                    <a
-                      href={`mailto:${item.extra.email}`}
-                      style={{ fontSize: 13, color: 'var(--grau-text)', wordBreak: 'break-all' }}
-                    >
+                    <a href={`mailto:${item.extra.email}`}
+                      style={{ fontSize: 13, color: 'var(--grau-text)', wordBreak: 'break-all' }}>
                       {item.extra.label}
                     </a>
                   </div>
@@ -670,6 +908,9 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
           )
         })}
       </div>
+
+      {/* Sicherheitsbriefing Bottom-Sheet */}
+      {showBriefing && <SicherheitsbriefingSheet onClose={() => setShowBriefing(false)} />}
 
       {/* Rückmeldungs-Formular – nur am Aufbautag */}
       {day.type === 'aufbautag' && festivalId && (
