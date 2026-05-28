@@ -793,7 +793,260 @@ function SicherheitsbriefingSheet({ onClose }) {
   )
 }
 
-// ── Auf- und Abbau-Anleitung Sheet (Platzhalter, Inhalt folgt mit Bildern) ────
+// ── Aufbauanleitung-Inhalte (vollständig aus PDF, Abbau weggelassen) ──────────
+
+const AUFBAUANLEITUNG_CONTENT = [
+  // ── Dienstag (Abend) ─────────────────────────────────────────────────────────
+  { type: 'day', text: 'Dienstag (Abend)' },
+  { type: 'list', numbered: true, items: [
+    { text: 'Ankunft des Leads und Begrüßung im Produktionsbüro', sub: [
+      'Standorte checken (auf Karte oder mit dem Produktionsleiter rausfahren und zeigen lassen)',
+      'Strom, Bauzäune, Abpumpen klären',
+      'Besonderheiten klären (Öffnungszeiten, Arbeitssicherheit…)',
+    ]},
+    { text: 'Ankunft und Begrüßung der Operator/Aufbauhelfenden & Küche', sub: [
+      'Crewcamp aufbauen (Küchenzelt und -modul)',
+      'Alle bauen ihre private Zelte etc. auf',
+    ]},
+    { text: 'Aufbaumeeting', sub: [
+      'Lead gibt Orientierung für den nächsten Tag (Aufbautag)',
+      'Teilt die Gruppe in ausgewogene Teams auf (nach Erfahrung, Kraft etc)',
+    ]},
+    { text: 'Logistik', sub: [
+      'Alle Hänger/Container stehen an Ort und Stelle, damit am nächsten Morgen direkt gestartet werden kann mit dem Aufbau',
+    ]},
+  ]},
+
+  // ── Mittwoch ─────────────────────────────────────────────────────────────────
+  { type: 'day', text: 'Mittwoch' },
+  { type: 'h2', text: 'Vorbereitung' },
+  { type: 'list', numbered: true, items: [
+    'Alle haben gefrühstückt und Proviant (Wasser und Snacks) für den Aufbautag dabei',
+    'Lead gibt Sicherheitsanweisung: Nicht vom Hänger springen, Sicherheitsschuhe anhaben, ausreichend Pausen machen (trinken und snacks), Sonnenschutz.. (Verlinkung Gefährdungsbeurteilung)',
+    'Idealerweise: Lead zeigt jedem Team nochmal auf dem Geländeplan, wo genau und wie rum die Camps aufgebaut werden (Position und Richtung Eingang, Infostand)',
+    'Teams starten mit ihrer persönlichen Schutzausrüstung (Sicherheitsschuhe, Arbeitshandschuhe, Sonnencreme, Mütze, Regenausrüstung) zu den Camps',
+  ]},
+  { type: 'tip', text: 'Bei angekündigter Hitze ist es sinnvoll früher zu starten und dafür eine längere Mittagspause einzulegen' },
+
+  { type: 'h2', text: 'Modul aufbauen' },
+  { type: 'meta', items: [
+    { icon: '💪', text: 'Idealerweise 4 Personen pro Modul' },
+    { icon: '⏱', text: 'ca. 2–3 Stunden' },
+    { icon: '🧤', text: 'Arbeitshandschuhe und Sicherheitsschuhe!' },
+  ]},
+
+  { type: 'h3', text: '1. Aufbau planen: Wo wird das Camp aufgebaut?' },
+  { type: 'p', text: 'Hier sollte der Lead dabei sein oder die Info vorab geklärt haben:' },
+  { type: 'list', items: [
+    'Wo ist der Eingang/Ausgang und Infostand? Wie ist das Camp positioniert? → Lead muss entscheiden (Wichtig: Ausgang muss Richtung Hauptlaufwege ausgerichtet sein, um möglichst viele Benutzerinnen zu erreichen)',
+    'Wo starten wir mit dem ersten Rahmen (achte darauf von links nach rechts aufzubauen)',
+    'Wo positionieren wir den IBC, damit das Abpumpfahrzeug bestmöglich Urin abpumpen kann?',
+  ]},
+  { type: 'sketch', label: 'Aktualisierte Skizze von Manni – folgt' },
+
+  { type: 'h3', text: '2. Hänger vorbereiten' },
+  { type: 'list', items: [
+    { text: 'Hänger freiräumen, um Platz zu schaffen und gut an die Rahmen zu kommen', photo: true, sub: [
+      'rausräumen: FSBs und Drainagekisten, Stangen für Pavillon sowie IBC',
+      'auf dem Hänger (vorne) bleibt stehen: 2x Rolli mit Betriebsmittel/Infostand und Klopapier, Späneballen, Spänekiste mit Füßen, Dächer, Rückwände, Bauzaunbanner',
+    ]},
+  ]},
+
+  { type: 'h3', text: '3. Aufbau der Rahmen' },
+  { type: 'phase', text: '1. Phase' },
+  { type: 'list', items: [
+    'Füße für die ersten 4 Rahmen schon an Ort und Stelle bringen',
+    'Erster Rahmen (leer) mit 4 Personen runterheben und an finalen Standort ablegen (2 Personen stehen auf dem Hänger, 2 Personen nehmen unten an), 1 Person hält Rahmen fest',
+  ]},
+  { type: 'warning', text: 'Die ersten 3–4 Rahmen unbedingt mit 4 Personen (oder allen, die vor Ort sind) runterheben, da sie sehr hoch sind' },
+  { type: 'list', items: [
+    'Zweiten Rahmen leeren (Türen, Treppe, Sitzplatte und Bodenplatte zur Seite stellen (werden für die letzte Toilette erst wieder gebraucht) und an Standort bringen',
+    { text: 'Beide Rahmen über das Kreuz an der Rückseite verbinden (kein Werkzeug notwendig)', photo: true,
+      warning: 'hier drauf achten, dass eine Person die beiden Rahmen noch sichert da es noch instabil ist. Erst ab dem dritten Rahmen steht das Modul auch sicher allein' },
+    '3. Rahmen leeren: Tür und Treppe zur Seite stellen; Bodenplatte und die Sitzplatte in die erste Kabine einbauen',
+    'FSB Höhe checken (FSB unter die erste Kabine stellen und checken das die Lücke zwischen Oberkante FSB und Sitzplatte nicht größer ist als der Spritzschutz. Über die Füße entsprechend anpassen. Beachte: Wenn die Fläche nicht eben ist muss man an der höchsten Stelle die Füße in der minimalen Höhe haben damit es an der tiefen Stelle die Toiletten nicht zu hoch werden)',
+  ]},
+  { type: 'tip', text: 'Immer von links nach rechts aufbauen (wenn man von vorne auf das Modul schaut), damit der Rahmen direkt angebaut werden kann' },
+  { type: 'photo' },
+  { type: 'tip', text: 'Kabinen nach vorne etwas abschüssig aufbauen, damit die Türen beim Betrieb standardmäßig offen stehen und weniger knallen' },
+
+  { type: 'phase', text: '2. Phase (ab dem 3. Rahmen)' },
+  { type: 'p', text: 'Scooter ballern, jetzt kommt der Flow!' },
+  { type: 'list', numbered: true, items: [
+    { text: 'Leeren Rahmen mit 2 Personen aus dem Hänger heben, Füße einschieben und ca. 1 Meter parallel zum vorherigen Rahmen aufstellen.', photo: true },
+    { text: 'Über die Querverstrebung miteinander verbinden und schon direkt ausnivellieren, damit es einigermaßen waagerecht ist.',
+      tip: 'Erst den neuen Rahmen mit dem alten verbinden, damit man dann noch einfach über die Füße nachjustieren kann?', photo: true },
+    { text: 'Den nächsten Rahmen im Hänger leeren', sub: [
+      { text: 'Bodenplatte in das bereits stehende Modul legen', photo: true,
+        tip: 'Bodenplatte zu zweit von vorne und hinten anpacken, schräg einsetzen und erst an den stehenden Block anlegen, dann an den neuen Rahmen' },
+      { text: 'Toilettensitz einlegen', photo: true },
+      { text: 'Gummi unter der Bodenplatte befestigen' },
+      { text: 'Treppe vor das Modul legen', photo: true },
+      { text: 'Türe an den Hänger / am Bauzaun abstellen', photo: true },
+    ]},
+    { text: 'Wiederholen bis alle 13 Rahmen (12 Toiletten) stehen' },
+    { text: 'Inlay aus dem ersten Rahmen wird in der letzten Kabine verbaut' },
+  ]},
+  { type: 'important', text: 'Schauen, dass die Rahmen einigermaßen in der Waage stehen. Dafür am besten nach jedem Rahmen mit etwas Abstand die Bodenplatten oder die Rahmen anschauen um nach Augenmaß zu prüfen ob sie in der Waage stehen und bei Bedarf an den Füßen nachjustieren' },
+  { type: 'photo' },
+
+  { type: 'h3', text: '4. Finalisieren der Toiletten' },
+  { type: 'list', numbered: true, items: [
+    { text: 'Treppen einhängen', photo: true, sub: [
+      'Alle 12 Treppen: Erst Treppe anhalten, Bolzen links einschieben (immer von links nach rechts), dann auf der rechten Seite der Treppe ebenfalls Bolzen einschieben. Bei der nächsten Treppe direkt auf Bolzen einhängen und so weiter. Letzten Bolzen andersrum einschieben.',
+    ]},
+    { text: 'Alle 12 Rückwände einziehen (am Besten eine Person führt die Plane ein – auf der Sitzplatte stehend – und eine Person zieht von hinten die Planen nach unten',
+      photo: true, note: 'Hack: Gleichmäßig einführen, sonst hakt es' },
+    { text: 'Alle 12 Dachplanen einziehen', sub: [
+      'von vorne nach hinten',
+      'auf die Schrauben achten, die fungieren als Bremse und kommen entsprechend vorne an die Schiene, damit die Plane nicht durchrutschen kann',
+    ], photo: true, tip: 'Planen immer gleichmäßig in die Leiste einführen, sonst hakt es' },
+    { text: 'Tür-Querstreben einsetzen von links nach rechts', sub: [
+      'Wichtig: In den ersten und letzten Rahmen muss ein kleiner Keil eingesetzt werden, damit die Rahmen stabil sind und die Türen korrekt schließen',
+    ]},
+    { text: 'Türen einhängen und Gummiband am Rahmen fixieren', photo: true },
+  ]},
+  { type: 'highlight', text: 'Jetzt steht die Hardware. Zwischen-High-Five und Trinkpause nicht vergessen!' },
+
+  { type: 'h3', text: '5. Bauzäune und Backoffice einrichten' },
+  { type: 'list', numbered: true, items: [
+    { text: 'Bauzäune stellen, um das Camp zu sichern', sub: [
+      'Skizze siehe oben',
+      'Hänger wird mit eingebaut, als Betriebsmittellager',
+      'Eingang mit Mütze wird aufgebaut (auch als Wetterschutz für den Aufbau wichtig)',
+      'Bebannerte Bauzäune (schwarze Planen) für Sichtschutz zum Backoffice hinten nutzen.',
+    ]},
+    { text: 'IBC im Backoffice aufstellen', photo: true, sub: [
+      'Beachten: Standort so wählen, dass die Drainage möglichst bergab zum IBC läuft, keinesfalls berghoch. Außerdem sollte der IBC möglichst nah am Weg stehen, damit das Abpump Fahrzeug gut dran kommt.',
+    ]},
+    { text: 'FSBs mit Stroh befüllen und anschließend unter die Toiletten stellen (in jede Tonne kommt eine gute Handvoll Stroh als natürlicher Filter, damit der Abfluss nicht verstopft und der Urin gut abfließen kann)' },
+    { text: 'Drainage legen, zusammenstecken und an die Tonnen anschließen', photo: true,
+      sub: [
+        'Beachten: Es gibt kurze (schwarzer Kabelbinder) und lange Drainage-Schläuche (weißer Kabelbinder). Die Kurzen werden von der Öffnung an der Tonne nach hinten gelegt und mit einem T-Stück verbunden. Seitlich kommt dann der lange Schlauch dran, der parallel zum Moduls zur nächsten Tonne führt.',
+      ],
+      tip: 'Vor dem Zusammenstecken der Drainage (GeKa-Anschluss) die Gummis anfeuchten, dann geht\'s viel einfacher anzukuppeln.' },
+    { text: 'Pumpe anschließen an die Drainage und mit dem IBC verbinden', photo: true, sub: [
+      'Verschlusshahn und Pumpe an die Drainageschläuche anschließen. Beachte: Der Verschlusshahn (roter Griff) muss vor die Pumpe auf der Seite der Toiletten eingebaut werden. Dies dient der Absicherung, um bei einem Pumpenausfall bzw. wenn der IBC voll ist den Urinfluss zu stoppen.',
+      'Weitere Drainageschläuche von der Pumpe zum IBC legen und anstecken.',
+      'Strom mit Kabeltrommel zur Pumpe legen (wetterfest machen!)',
+      'Pumpe und Hahn erst bei Öffnung der Toiletten einschalten / öffnen.',
+    ]},
+    { text: 'Spritzschütze einhängen und Müllbeutel befestigen (neues Verfahren)' },
+  ]},
+
+  { type: 'h3', text: '6. Infostand, Pavillon und Aktionsbereich aufbauen' },
+  { type: 'list', items: [
+    { text: 'Infotresen aufbauen', photo: true },
+    'Betriebsmittelkisten einlegen',
+    { text: 'Pfand und Müllsack einrichten', photo: true },
+    'Schilder beschriften',
+    'Goldeimer Klopapier präsentieren',
+    'Bierbank aufstellen',
+    'Strom vom Strommast / Generator zum Infostand legen',
+    'Pavillon aufbauen',
+    'Fahne aufbauen',
+    { text: 'Banner anbringen (s. Mannis Aufbauskizze)',
+      warning: 'Goldeimer Banner bitte nur für die Präsentation nach vorne nutzen, nicht an der Rückseite des Camps aufhängen, da sie dort häufig beschmiert werden' },
+    'Spänebox (+ Becher) aufstellen',
+    'Desispender am Eingang aufhängen',
+    'Superflitzer',
+  ]},
+
+  // ── Donnerstag ───────────────────────────────────────────────────────────────
+  { type: 'day', text: 'Donnerstag' },
+  { type: 'h2', text: 'Toiletten betriebsbereit machen' },
+  { type: 'list', numbered: true, items: [
+    { text: 'Klopapier einhängen', photo: true },
+    { text: 'Mülleimer reinstellen und Mülltüte einhängen', photo: true },
+    { text: 'Reinigung: Alle Kabinen einmal durchwischen und Sitzplatte und Klobrille putzen' },
+  ]},
+
+  { type: 'h2', text: 'Grundregeln' },
+  { type: 'list', items: [
+    'Aufbau der Module immer mit mind. 3 Personen',
+    'Je nach Anzahl an Aufbauhelfenden können nicht alle Camps gleichzeitig aufgebaut werden',
+    'Camps können dann auch mit 2 Personen finalisiert werden',
+    'Lead sind hauptsächlich für Strom, Bauzäune und Koordination vor Ort verantwortlich damit es hier keine Verzögerungen gibt. Allerdings helfen sie auch beim Aufbau wenn die Kapazitäten dafür vorhanden sind',
+    'Laufwege aller Helfer möglichst gering halten da sehr kraftraubend',
+    'Inventur vor dem Start: alles ausreichend vor Ort und das Camp komplett autark ist (diese Listen gilt es noch zu aktualisieren)',
+  ]},
+]
+
+// ── Hilfsfunktionen für Aufbauanleitung ──────────────────────────────────────
+
+function AnleitungPhoto() {
+  return (
+    <div style={{
+      background: 'var(--border)', borderRadius: 8, marginTop: 8, marginBottom: 4,
+      padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8,
+      fontSize: 12, color: 'var(--grau-text)',
+    }}>
+      <span style={{ fontSize: 16 }}>📷</span>
+      <span>Foto folgt</span>
+    </div>
+  )
+}
+
+function AnleitungItem({ item, numbered, index, depth = 0 }) {
+  const text  = typeof item === 'string' ? item : item.text
+  const photo = typeof item === 'object' && item.photo
+  const sub   = typeof item === 'object' && item.sub
+  const tip   = typeof item === 'object' && item.tip
+  const warn  = typeof item === 'object' && item.warning
+  const note  = typeof item === 'object' && item.note
+
+  const bulletStyle = {
+    flexShrink: 0,
+    marginTop: 4,
+    ...(depth > 0
+      ? { fontSize: 11, color: 'var(--grau-text)', marginRight: 2 }
+      : { width: 6, height: 6, borderRadius: '50%', background: 'var(--gelb)', border: '1.5px solid var(--schwarz)' }
+    ),
+  }
+
+  return (
+    <div style={{ marginBottom: depth > 0 ? 6 : 10 }}>
+      <div style={{ display: 'flex', gap: depth > 0 ? 6 : 8, alignItems: 'flex-start' }}>
+        {numbered && depth === 0
+          ? <span style={{ flexShrink: 0, fontWeight: 700, fontSize: 13, color: 'var(--schwarz)', minWidth: 18 }}>{index + 1}.</span>
+          : <span style={bulletStyle}>{depth > 0 ? '◦' : ''}</span>
+        }
+        <div style={{ flex: 1 }}>
+          <span style={{ fontSize: 13, lineHeight: 1.65, color: depth > 0 ? 'var(--grau-text)' : 'var(--schwarz)' }}>
+            {text}
+          </span>
+          {photo && <AnleitungPhoto />}
+          {warn && (
+            <div style={{ marginTop: 6, padding: '6px 10px', borderLeft: '3px solid #F97316',
+              background: '#FFF7ED', borderRadius: '0 4px 4px 0', fontSize: 12, color: '#9A3412', lineHeight: 1.5 }}>
+              ⚠ {warn}
+            </div>
+          )}
+          {tip && (
+            <div style={{ marginTop: 6, padding: '6px 10px', borderLeft: '3px solid var(--gelb)',
+              background: '#FFFBEB', borderRadius: '0 4px 4px 0', fontSize: 12, color: 'var(--grau-text)', lineHeight: 1.5 }}>
+              💡 {tip}
+            </div>
+          )}
+          {note && (
+            <div style={{ marginTop: 4, fontSize: 12, color: 'var(--grau-text)', fontStyle: 'italic' }}>
+              {note}
+            </div>
+          )}
+          {sub && (
+            <div style={{ marginTop: 6, paddingLeft: depth === 0 ? 4 : 0 }}>
+              {sub.map((s, si) => (
+                <AnleitungItem key={si} item={s} numbered={false} index={si} depth={depth + 1} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Aufbauanleitung Sheet ─────────────────────────────────────────────────────
 
 function AnleitungSheet({ onClose }) {
   return (
@@ -804,16 +1057,17 @@ function AnleitungSheet({ onClose }) {
         left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: 480,
         background: 'var(--weiss)', borderRadius: '16px 16px 0 0',
-        zIndex: 401, maxHeight: '88dvh',
+        zIndex: 401, maxHeight: '92dvh',
         display: 'flex', flexDirection: 'column',
         boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
       }}>
+        {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '14px var(--sp-4)', borderBottom: '1px solid var(--border)', flexShrink: 0,
         }}>
           <div style={{ fontWeight: 800, fontSize: 'var(--text-base)', fontFamily: 'var(--font-heading)' }}>
-            Auf- & Abbau-Anleitung
+            Aufbauanleitung
           </div>
           <button onClick={onClose} aria-label="Schließen" style={{
             background: 'var(--papier)', border: 'none', borderRadius: '50%',
@@ -822,25 +1076,149 @@ function AnleitungSheet({ onClose }) {
             fontSize: 16, color: 'var(--schwarz)', fontWeight: 700,
           }}>✕</button>
         </div>
+
+        {/* Inhalt */}
         <div style={{
-          overflowY: 'auto', padding: 'var(--sp-5)',
+          overflowY: 'auto',
+          padding: 'var(--sp-4)',
           paddingBottom: 'calc(var(--sp-8) + env(safe-area-inset-bottom, 0px))',
           fontSize: 'var(--text-sm)',
         }}>
-          <div style={{
-            background: 'var(--papier)', border: '1px solid var(--border)',
-            borderRadius: 'var(--rounded-input)', padding: 'var(--sp-4)',
-            color: 'var(--grau-text)', lineHeight: 1.7,
-            display: 'flex', alignItems: 'flex-start', gap: 12,
-          }}>
-            <span style={{ fontSize: 24, flexShrink: 0 }}>🔧</span>
-            <div>
-              <div style={{ fontWeight: 700, color: 'var(--schwarz)', marginBottom: 4 }}>
-                Anleitung folgt in Kürze
-              </div>
-              Die Schritt-für-Schritt-Anleitung für Auf- und Abbau wird gerade mit Bildmaterial ergänzt und ist bald hier verfügbar.
-            </div>
-          </div>
+          <p style={{ fontSize: 12, color: 'var(--grau-text)', marginTop: 0, marginBottom: 'var(--sp-4)', fontStyle: 'italic' }}>
+            Am Beispiel des Hurricane
+          </p>
+          {AUFBAUANLEITUNG_CONTENT.map((block, i) => {
+            switch (block.type) {
+              case 'day':
+                return (
+                  <div key={i} style={{
+                    background: 'var(--schwarz)', color: 'var(--gelb)',
+                    borderRadius: 'var(--rounded)', padding: '8px var(--sp-4)',
+                    fontWeight: 800, fontSize: 'var(--text-base)',
+                    fontFamily: 'var(--font-heading)',
+                    marginTop: i === 0 ? 0 : 'var(--sp-6)',
+                    marginBottom: 'var(--sp-4)',
+                  }}>
+                    {block.text}
+                  </div>
+                )
+              case 'h2':
+                return (
+                  <div key={i} style={{
+                    fontWeight: 800, fontSize: 'var(--text-sm)',
+                    fontFamily: 'var(--font-heading)', color: 'var(--schwarz)',
+                    marginTop: 'var(--sp-5)', marginBottom: 'var(--sp-3)',
+                    paddingBottom: 'var(--sp-2)', borderBottom: '2px solid var(--gelb)',
+                  }}>
+                    {block.text}
+                  </div>
+                )
+              case 'h3':
+                return (
+                  <div key={i} style={{
+                    fontWeight: 700, fontSize: 13,
+                    color: 'var(--schwarz)',
+                    marginTop: 'var(--sp-4)', marginBottom: 'var(--sp-2)',
+                  }}>
+                    {block.text}
+                  </div>
+                )
+              case 'phase':
+                return (
+                  <div key={i} style={{
+                    fontWeight: 800, fontSize: 10,
+                    textTransform: 'uppercase', letterSpacing: '0.1em',
+                    color: 'var(--grau-text)', fontFamily: 'var(--font-heading)',
+                    marginTop: 'var(--sp-4)', marginBottom: 'var(--sp-2)',
+                  }}>
+                    {block.text}
+                  </div>
+                )
+              case 'meta':
+                return (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 'var(--sp-4)' }}>
+                    {block.items.map((m, mi) => (
+                      <div key={mi} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--grau-text)' }}>
+                        <span>{m.icon}</span>
+                        <span>{m.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                )
+              case 'p':
+                return (
+                  <p key={i} style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--grau-text)', marginTop: 0, marginBottom: 'var(--sp-3)' }}>
+                    {block.text}
+                  </p>
+                )
+              case 'list':
+                return (
+                  <div key={i} style={{ marginBottom: 'var(--sp-3)' }}>
+                    {block.items.map((item, ii) => (
+                      <AnleitungItem key={ii} item={item} numbered={!!block.numbered} index={ii} depth={0} />
+                    ))}
+                  </div>
+                )
+              case 'tip':
+                return (
+                  <div key={i} style={{
+                    padding: '8px 12px', borderLeft: '3px solid var(--gelb)',
+                    background: '#FFFBEB', borderRadius: '0 6px 6px 0',
+                    marginBottom: 'var(--sp-3)', fontSize: 12,
+                    color: 'var(--grau-text)', lineHeight: 1.6,
+                  }}>
+                    💡 {block.text}
+                  </div>
+                )
+              case 'warning':
+                return (
+                  <div key={i} style={{
+                    padding: '8px 12px', borderLeft: '3px solid #F97316',
+                    background: '#FFF7ED', borderRadius: '0 6px 6px 0',
+                    marginBottom: 'var(--sp-3)', fontSize: 12,
+                    color: '#9A3412', lineHeight: 1.6,
+                  }}>
+                    ⚠ {block.text}
+                  </div>
+                )
+              case 'important':
+                return (
+                  <div key={i} style={{
+                    padding: '8px 12px', borderLeft: '3px solid var(--schwarz)',
+                    background: 'var(--papier)', borderRadius: '0 6px 6px 0',
+                    marginBottom: 'var(--sp-3)', fontSize: 12,
+                    color: 'var(--schwarz)', lineHeight: 1.6, fontWeight: 600,
+                  }}>
+                    Wichtig: {block.text}
+                  </div>
+                )
+              case 'photo':
+                return <AnleitungPhoto key={i} />
+              case 'sketch':
+                return (
+                  <div key={i} style={{
+                    background: 'var(--border)', borderRadius: 8, marginBottom: 'var(--sp-3)',
+                    padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    gap: 8, fontSize: 12, color: 'var(--grau-text)', minHeight: 80,
+                  }}>
+                    <span style={{ fontSize: 20 }}>🗺</span>
+                    <span>{block.label || 'Skizze folgt'}</span>
+                  </div>
+                )
+              case 'highlight':
+                return (
+                  <div key={i} style={{
+                    background: 'var(--schwarz)', borderRadius: 'var(--rounded)',
+                    padding: 'var(--sp-3) var(--sp-4)', marginBottom: 'var(--sp-4)',
+                    fontWeight: 700, color: 'var(--gelb)', lineHeight: 1.5, fontSize: 13,
+                  }}>
+                    {block.text}
+                  </div>
+                )
+              default:
+                return null
+            }
+          })}
         </div>
       </div>
     </>
@@ -953,7 +1331,7 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
                     className="button button--yellow button--sm"
                     style={{ marginTop: 8, width: 'auto' }}
                   >
-                    Auf- & Abbau-Anleitung öffnen
+                    Aufbauanleitung öffnen
                   </button>
                 </div>
               </div>
