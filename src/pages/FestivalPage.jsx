@@ -841,7 +841,7 @@ const AUFBAUANLEITUNG_CONTENT = [
     'Wo starten wir mit dem ersten Rahmen (achte darauf von links nach rechts aufzubauen)',
     'Wo positionieren wir den IBC, damit das Abpumpfahrzeug bestmöglich Urin abpumpen kann?',
   ]},
-  { type: 'sketch', label: 'Aktualisierte Skizze von Manni – folgt' },
+  { type: 'sketch', label: 'Skizze: Standardcamp (Manni)', src: 'https://wsdkmglkqxszyvomrfim.supabase.co/storage/v1/object/public/assets/anleitung/skizze-standardcamp.pdf' },
 
   { type: 'h3', text: '2. Hänger vorbereiten' },
   { type: 'list', items: [
@@ -972,7 +972,55 @@ const AUFBAUANLEITUNG_CONTENT = [
 
 // ── Hilfsfunktionen für Aufbauanleitung ──────────────────────────────────────
 
-function AnleitungPhoto() {
+// Fullscreen-Lightbox für Fotos — unterstützt natives Pinch-to-Zoom
+function MediaLightbox({ src, alt, onClose }) {
+  return (
+    <>
+      <div onClick={onClose} style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 600,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <button onClick={onClose} style={{
+          position: 'absolute', top: 16, right: 16,
+          background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%',
+          width: 36, height: 36, color: '#fff', fontSize: 18, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 601,
+        }}>✕</button>
+        {/* overflow-auto + touch-action erlaubt natives Pinch-to-Zoom im Browser */}
+        <div style={{
+          width: '100%', height: '100%', overflow: 'auto',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          touchAction: 'manipulation',
+        }} onClick={e => e.stopPropagation()}>
+          <img src={src} alt={alt || ''} style={{
+            maxWidth: '100%', maxHeight: '100%',
+            objectFit: 'contain', display: 'block',
+            touchAction: 'manipulation',
+          }} />
+        </div>
+      </div>
+    </>
+  )
+}
+
+// Foto-Platzhalter — zeigt echtes Bild wenn src vorhanden, sonst Placeholder
+function AnleitungPhoto({ src, alt }) {
+  const [open, setOpen] = useState(false)
+  if (src) {
+    return (
+      <>
+        <div onClick={() => setOpen(true)} style={{
+          borderRadius: 8, marginTop: 8, marginBottom: 4, overflow: 'hidden',
+          cursor: 'zoom-in', border: '1px solid var(--border)',
+        }}>
+          <img src={src} alt={alt || 'Foto'} style={{
+            width: '100%', display: 'block', maxHeight: 200, objectFit: 'cover',
+          }} />
+        </div>
+        {open && <MediaLightbox src={src} alt={alt} onClose={() => setOpen(false)} />}
+      </>
+    )
+  }
   return (
     <div style={{
       background: 'var(--border)', borderRadius: 8, marginTop: 8, marginBottom: 4,
@@ -981,6 +1029,44 @@ function AnleitungPhoto() {
     }}>
       <span style={{ fontSize: 16 }}>📷</span>
       <span>Foto folgt</span>
+    </div>
+  )
+}
+
+// Skizze-Karte — öffnet PDF/Bild im neuen Tab (Browser-nativer Zoom auf Mobile)
+function SketchCard({ src, label }) {
+  if (src) {
+    const isPdf = src.endsWith('.pdf')
+    if (isPdf) {
+      return (
+        <a href={src} target="_blank" rel="noopener noreferrer" style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          background: 'var(--border)', borderRadius: 8,
+          padding: '10px 14px', marginBottom: 'var(--sp-3)',
+          textDecoration: 'none', color: 'var(--schwarz)',
+          border: '1px solid rgba(0,0,0,0.08)',
+        }}>
+          <span style={{ fontSize: 22, flexShrink: 0 }}>🗺</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3 }}>{label || 'Skizze öffnen'}</div>
+            <div style={{ fontSize: 11, color: 'var(--grau-text)', marginTop: 2 }}>Antippen zum Öffnen · Zoom im Browser</div>
+          </div>
+          <span style={{ fontSize: 16, color: 'var(--grau-text)', flexShrink: 0 }}>↗</span>
+        </a>
+      )
+    }
+    // Bild-Skizze: Lightbox
+    return <AnleitungPhoto src={src} alt={label} />
+  }
+  // Placeholder
+  return (
+    <div style={{
+      background: 'var(--border)', borderRadius: 8, marginBottom: 'var(--sp-3)',
+      padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      gap: 8, fontSize: 12, color: 'var(--grau-text)', minHeight: 80,
+    }}>
+      <span style={{ fontSize: 20 }}>🗺</span>
+      <span>{label || 'Skizze folgt'}</span>
     </div>
   )
 }
@@ -1171,16 +1257,7 @@ function AnleitungSheet({ onClose }) {
               case 'photo':
                 return <AnleitungPhoto key={i} />
               case 'sketch':
-                return (
-                  <div key={i} style={{
-                    background: 'var(--border)', borderRadius: 8, marginBottom: 'var(--sp-3)',
-                    padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    gap: 8, fontSize: 12, color: 'var(--grau-text)', minHeight: 80,
-                  }}>
-                    <span style={{ fontSize: 20 }}>🗺</span>
-                    <span>{block.label || 'Skizze folgt'}</span>
-                  </div>
-                )
+                return <SketchCard key={i} src={block.src} label={block.label} />
               default:
                 return null
             }
