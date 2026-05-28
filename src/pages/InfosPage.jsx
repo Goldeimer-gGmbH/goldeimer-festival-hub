@@ -778,10 +778,10 @@ function ContentCard({ item }) {
       )}
       {item.file_url && (
         <a href={item.file_url} target="_blank" rel="noopener noreferrer"
-          className="button button--secondary"
+          className="button button--yellow"
           style={{ marginTop: 12, textDecoration: 'none', display: 'inline-block' }}
           onClick={e => e.stopPropagation()}>
-          Dokument öffnen →
+          Dokument öffnen
         </a>
       )}
     </div>

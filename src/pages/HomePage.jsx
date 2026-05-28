@@ -388,7 +388,7 @@ function FeedbackSection({ assignments, senderName }) {
       <div className="card" style={{ textAlign: 'center', padding: 'var(--sp-6)' }}>
         <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
         <div className="card-title" style={{ marginBottom: 'var(--sp-4)' }}>Feedback gesendet!</div>
-        <button className="button button--secondary" onClick={() => setSent(false)}>
+        <button className="button" onClick={() => setSent(false)}>
           Weiteres Feedback senden
         </button>
       </div>

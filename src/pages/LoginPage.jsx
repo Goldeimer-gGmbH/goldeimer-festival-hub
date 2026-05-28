@@ -203,7 +203,7 @@ export default function LoginPage() {
         <button
           onClick={handleResend}
           disabled={cooldown > 0}
-          className="button button--secondary"
+          className="button"
           style={{ width: '100%' }}
         >
           {cooldown > 0 ? `Nochmal senden (${fmtCooldown(cooldown)})` : 'Nochmal senden'}

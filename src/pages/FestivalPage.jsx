@@ -950,16 +950,10 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
                   </div>
                   <button
                     onClick={() => setShowAnleitung(true)}
-                    style={{
-                      marginTop: 8,
-                      background: 'var(--schwarz)', color: 'var(--gelb)',
-                      border: 'none', borderRadius: 'var(--rounded-input)',
-                      padding: '6px 14px', fontSize: 12, fontWeight: 800,
-                      fontFamily: 'var(--font-heading)', cursor: 'pointer',
-                      letterSpacing: '0.04em',
-                    }}
+                    className="button button--yellow button--sm"
+                    style={{ marginTop: 8, width: 'auto' }}
                   >
-                    🔧 Auf- & Abbau-Anleitung öffnen
+                    Auf- & Abbau-Anleitung öffnen
                   </button>
                 </div>
               </div>
@@ -983,16 +977,10 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
                   </div>
                   <button
                     onClick={() => setShowRueckmeldung(true)}
-                    style={{
-                      marginTop: 8,
-                      background: 'var(--gelb)', color: 'var(--schwarz)',
-                      border: '1.5px solid var(--schwarz)', borderRadius: 'var(--rounded-input)',
-                      padding: '6px 14px', fontSize: 12, fontWeight: 800,
-                      fontFamily: 'var(--font-heading)', cursor: 'pointer',
-                      letterSpacing: '0.04em',
-                    }}
+                    className="button button--yellow button--sm"
+                    style={{ marginTop: 8, width: 'auto' }}
                   >
-                    Rückmeldung Aufbau →
+                    Rückmeldung Aufbau
                   </button>
                 </div>
               </div>
@@ -1016,16 +1004,10 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
                   </div>
                   <button
                     onClick={() => setShowBriefing(true)}
-                    style={{
-                      marginTop: 8,
-                      background: 'var(--schwarz)', color: 'var(--gelb)',
-                      border: 'none', borderRadius: 'var(--rounded-input)',
-                      padding: '6px 14px', fontSize: 12, fontWeight: 800,
-                      fontFamily: 'var(--font-heading)', cursor: 'pointer',
-                      letterSpacing: '0.04em',
-                    }}
+                    className="button button--yellow button--sm"
+                    style={{ marginTop: 8, width: 'auto' }}
                   >
-                    🦺 Sicherheitsbriefing öffnen
+                    Sicherheitsbriefing öffnen
                   </button>
                 </div>
               </div>
@@ -1421,10 +1403,10 @@ function CrewListSection({ crew }) {
     <div>
       <button
         onClick={() => setOpen(o => !o)}
-        className="button button--secondary"
+        className="button button--yellow"
         style={{ width: '100%', marginBottom: open ? 8 : 0 }}
       >
-        {open ? 'Crew-Liste schließen ↑' : 'Crew-Liste anzeigen →'}
+        {open ? 'Crew-Liste schließen' : 'Crew-Liste anzeigen'}
       </button>
 
       {open && crew && (
@@ -1648,8 +1630,8 @@ function InfosTab({ details, role, content, festivalId }) {
               )}
               {c.file_url && (
                 <a href={c.file_url} target="_blank" rel="noopener noreferrer"
-                  className="button button--secondary" style={{ marginTop: 12, textDecoration: 'none' }}>
-                  Dokument öffnen →
+                  className="button button--yellow" style={{ marginTop: 12, textDecoration: 'none' }}>
+                  Dokument öffnen
                 </a>
               )}
             </div>
