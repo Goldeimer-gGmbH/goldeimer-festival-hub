@@ -821,7 +821,7 @@ const AUFBAUANLEITUNG_CONTENT = [
   { type: 'h2', text: 'Vorbereitung' },
   { type: 'list', numbered: true, items: [
     'Alle haben gefrühstückt und Proviant (Wasser und Snacks) für den Aufbautag dabei',
-    'Lead gibt Sicherheitsanweisung: Nicht vom Hänger springen, Sicherheitsschuhe anhaben, ausreichend Pausen machen (trinken und snacks), Sonnenschutz.. (Verlinkung Gefährdungsbeurteilung)',
+    { text: 'Lead gibt Sicherheitsanweisung: Nicht vom Hänger springen, Sicherheitsschuhe anhaben, ausreichend Pausen machen (trinken und snacks), Sonnenschutz..', redSuffix: '(Verlinkung Gefährdungsbeurteilung)' },
     'Idealerweise: Lead zeigt jedem Team nochmal auf dem Geländeplan, wo genau und wie rum die Camps aufgebaut werden (Position und Richtung Eingang, Infostand)',
     'Teams starten mit ihrer persönlichen Schutzausrüstung (Sicherheitsschuhe, Arbeitshandschuhe, Sonnencreme, Mütze, Regenausrüstung) zu den Camps',
   ]},
@@ -952,7 +952,7 @@ const AUFBAUANLEITUNG_CONTENT = [
   ]},
 
   // ── Donnerstag ───────────────────────────────────────────────────────────────
-  { type: 'h2', text: 'Toiletten betriebsbereit machen' },
+  { type: 'h3', text: '7. Toiletten betriebsbereit machen' },
   { type: 'list', numbered: true, items: [
     { text: 'Klopapier einhängen', photo: true },
     { text: 'Mülleimer reinstellen und Mülltüte einhängen', photo: true },
@@ -992,12 +992,13 @@ const CALLOUT_STYLE = {
 }
 
 function AnleitungItem({ item, numbered, index, depth = 0 }) {
-  const text  = typeof item === 'string' ? item : item.text
-  const photo = typeof item === 'object' && item.photo
-  const sub   = typeof item === 'object' && item.sub
-  const tip   = typeof item === 'object' && item.tip
-  const warn  = typeof item === 'object' && item.warning
-  const note  = typeof item === 'object' && item.note
+  const text      = typeof item === 'string' ? item : item.text
+  const photo     = typeof item === 'object' && item.photo
+  const sub       = typeof item === 'object' && item.sub
+  const tip       = typeof item === 'object' && item.tip
+  const warn      = typeof item === 'object' && item.warning
+  const note      = typeof item === 'object' && item.note
+  const redSuffix = typeof item === 'object' && item.redSuffix
 
   // depth 0 → schwarzer Punkt; depth 1 → a), b); depth 2+ → kleiner schwarzer Punkt
   const renderBullet = () => {
@@ -1019,7 +1020,7 @@ function AnleitungItem({ item, numbered, index, depth = 0 }) {
         {renderBullet()}
         <div style={{ flex: 1 }}>
           <span style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--schwarz)' }}>
-            {text}
+            {text}{redSuffix && <span style={{ color: 'var(--rot)' }}> {redSuffix}</span>}
           </span>
           {photo && <AnleitungPhoto />}
           {warn && (
@@ -1097,18 +1098,42 @@ function AnleitungSheet({ onClose }) {
                     {block.text}
                   </div>
                 )
-              case 'h3':
+              case 'h3': {
+                const m = block.text.match(/^(\d+)\.\s*(.*)/)
+                const num   = m ? m[1] : null
+                const label = m ? m[2] : block.text
                 return (
                   <div key={i} style={{
-                    fontWeight: 700, fontSize: 'var(--text-sm)',
-                    color: 'var(--schwarz)',
-                    marginTop: 'var(--sp-4)', marginBottom: 'var(--sp-2)',
+                    display: 'flex', alignItems: 'flex-start', gap: 10,
+                    marginTop: 'var(--sp-5)', marginBottom: 'var(--sp-2)',
                   }}>
-                    {block.text}
+                    {num && (
+                      <span style={{
+                        flexShrink: 0, width: 24, height: 24, borderRadius: '50%',
+                        background: 'var(--schwarz)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'var(--weiss)', fontWeight: 800, fontSize: 12,
+                        fontFamily: 'var(--font-heading)', marginTop: 1,
+                      }}>{num}</span>
+                    )}
+                    <div style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--schwarz)', lineHeight: 1.35, flex: 1 }}>
+                      {label}
+                    </div>
                   </div>
                 )
+              }
               case 'phase':
-                return null
+                return (
+                  <div key={i} style={{ marginTop: 'var(--sp-3)', marginBottom: 'var(--sp-2)' }}>
+                    <span style={{
+                      display: 'inline-block',
+                      background: 'var(--gelb)', color: 'var(--schwarz)',
+                      padding: '3px 10px', borderRadius: 'var(--rounded-full)',
+                      fontSize: 11, fontWeight: 800,
+                      fontFamily: 'var(--font-heading)',
+                    }}>{block.text}</span>
+                  </div>
+                )
               case 'meta':
                 return (
                   <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 'var(--sp-4)' }}>
