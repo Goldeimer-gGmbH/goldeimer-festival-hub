@@ -33,25 +33,46 @@ function buildAnreisetagContent(festivalName) {
   const items = [
     {
       title: 'Standorte mit Produktion gegenchecken',
-      detail: 'Kontaktiert die Festival-Produktion (siehe Kontakte), um mit ihnen die Goldeimer-Standorte gegenzuchecken bzw. sie euch zeigen zu lassen.',
+      bullets: [
+        'Kontaktiert die Festival-Produktion (siehe Kontakte)',
+        'Gegenchecken der Goldeimer-Standorte (auf Karte oder mit dem Produktionsleiter rausfahren und zeigen lassen)',
+        'Strom, Bauzäune, Abpumpen klären',
+        'Besonderheiten klären (Öffnungszeiten, Arbeitssicherheit…)',
+      ],
     },
   ]
   if (isFkp) {
     items.push({
       title: 'Nur für FKP-Festivals',
-      detail: 'Lasst die Produktionsordnung von der Aufbau-Crew unterschreiben und gebt sie bei der Festival-Produktion ab.',
+      bullets: [
+        'Lasst die Produktionsordnung von der Aufbau-Crew unterschreiben und gebt sie bei der Festival-Produktion ab.',
+      ],
       extra: { label: 'Per E-Mail: arbeitsschutz-southside@fkpscorpio.com', email: 'arbeitsschutz-southside@fkpscorpio.com' },
     })
   }
   items.push(
     {
-      title: 'Aufbau-Besprechung',
-      detail: 'Plant den nächsten Tag mit dem Aufbau-Team und schlaft gut :)',
+      title: 'Begrüßung und Team-Besprechung',
+      bullets: [
+        'Ankunft und Begrüßung der Operator/Aufbauhelfenden & Küche',
+        'Crewcamp aufbauen (Küchenzelt und -modul)',
+        'Alle bauen ihre private Zelte etc. auf',
+        'Lead gibt Orientierung für den nächsten Tag (Aufbautag)',
+        'Teilt die Gruppe in ausgewogene Teams auf (nach Erfahrung, Kraft etc.)',
+      ],
+    },
+    {
+      title: 'Logistik',
+      bullets: [
+        'Alle Hänger/Container stehen an Ort und Stelle, damit am nächsten Morgen direkt gestartet werden kann mit dem Aufbau',
+      ],
     },
     {
       type: 'sicherheitsbriefing',
       title: 'Sicherheitsbriefing',
-      detail: 'Geht gemeinsam mit dem Aufbau-Team das Sicherheitsbriefing durch.',
+      bullets: [
+        'Geht gemeinsam mit dem Aufbau-Team das Sicherheitsbriefing durch.',
+      ],
     },
   )
   return items
@@ -796,27 +817,6 @@ function SicherheitsbriefingSheet({ onClose }) {
 // ── Aufbauanleitung-Inhalte (vollständig aus PDF, Abbau weggelassen) ──────────
 
 const AUFBAUANLEITUNG_CONTENT = [
-  // ── Dienstag (Abend) ─────────────────────────────────────────────────────────
-  { type: 'day', text: 'Dienstag (Abend)' },
-  { type: 'list', numbered: true, items: [
-    { text: 'Ankunft des Leads und Begrüßung im Produktionsbüro', sub: [
-      'Standorte checken (auf Karte oder mit dem Produktionsleiter rausfahren und zeigen lassen)',
-      'Strom, Bauzäune, Abpumpen klären',
-      'Besonderheiten klären (Öffnungszeiten, Arbeitssicherheit…)',
-    ]},
-    { text: 'Ankunft und Begrüßung der Operator/Aufbauhelfenden & Küche', sub: [
-      'Crewcamp aufbauen (Küchenzelt und -modul)',
-      'Alle bauen ihre private Zelte etc. auf',
-    ]},
-    { text: 'Aufbaumeeting', sub: [
-      'Lead gibt Orientierung für den nächsten Tag (Aufbautag)',
-      'Teilt die Gruppe in ausgewogene Teams auf (nach Erfahrung, Kraft etc)',
-    ]},
-    { text: 'Logistik', sub: [
-      'Alle Hänger/Container stehen an Ort und Stelle, damit am nächsten Morgen direkt gestartet werden kann mit dem Aufbau',
-    ]},
-  ]},
-
   // ── Mittwoch ─────────────────────────────────────────────────────────────────
   { type: 'day', text: 'Mittwoch' },
   { type: 'h2', text: 'Vorbereitung' },
@@ -1084,9 +1084,6 @@ function AnleitungSheet({ onClose }) {
           paddingBottom: 'calc(var(--sp-8) + env(safe-area-inset-bottom, 0px))',
           fontSize: 'var(--text-sm)',
         }}>
-          <p style={{ fontSize: 12, color: 'var(--grau-text)', marginTop: 0, marginBottom: 'var(--sp-4)', fontStyle: 'italic' }}>
-            Am Beispiel des Hurricane
-          </p>
           {AUFBAUANLEITUNG_CONTENT.map((block, i) => {
             switch (block.type) {
               case 'day':
@@ -1377,9 +1374,18 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', lineHeight: 1.4 }}>
                     {item.title}
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2, lineHeight: 1.5 }}>
-                    {item.detail}
-                  </div>
+                  {item.bullets?.length > 0 && (
+                    <ul style={{ margin: '4px 0 0', paddingLeft: 16, listStyleType: 'disc' }}>
+                      {item.bullets.map((b, bi) => (
+                        <li key={bi} style={{ fontSize: 13, color: 'var(--schwarz)', lineHeight: 1.5, marginBottom: 2 }}>{b}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {item.detail && !item.bullets && (
+                    <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2, lineHeight: 1.5 }}>
+                      {item.detail}
+                    </div>
+                  )}
                   <button
                     onClick={() => setShowBriefing(true)}
                     className="button button--yellow button--sm"
@@ -1391,7 +1397,7 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
               </div>
             )
           }
-          // ── Todo mit Titel + Detail-Text ──
+          // ── Todo mit Titel + Bullet-Liste oder Detail-Text ──
           if (item.title) {
             return (
               <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
@@ -1400,11 +1406,18 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
                   background: 'var(--gelb)', border: '1.5px solid var(--schwarz)',
                   marginTop: 6, flexShrink: 0,
                 }} />
-                <div>
+                <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', lineHeight: 1.4 }}>
                     {item.title}
                   </div>
-                  {item.detail && (
+                  {item.bullets?.length > 0 && (
+                    <ul style={{ margin: '4px 0 0', paddingLeft: 16, listStyleType: 'disc' }}>
+                      {item.bullets.map((b, bi) => (
+                        <li key={bi} style={{ fontSize: 13, color: 'var(--schwarz)', lineHeight: 1.5, marginBottom: 2 }}>{b}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {item.detail && !item.bullets && (
                     <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2, lineHeight: 1.5 }}>
                       {item.detail}
                     </div>
