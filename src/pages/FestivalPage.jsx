@@ -1104,7 +1104,7 @@ function AnleitungSheet({ onClose }) {
                 const label = m ? m[2] : block.text
                 return (
                   <div key={i} style={{
-                    display: 'flex', alignItems: 'flex-start', gap: 10,
+                    display: 'flex', alignItems: 'center', gap: 10,
                     marginTop: 'var(--sp-5)', marginBottom: 'var(--sp-2)',
                   }}>
                     {num && (
@@ -1113,7 +1113,7 @@ function AnleitungSheet({ onClose }) {
                         background: 'var(--schwarz)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         color: 'var(--weiss)', fontWeight: 800, fontSize: 12,
-                        fontFamily: 'var(--font-heading)', marginTop: 1,
+                        fontFamily: 'var(--font-heading)',
                       }}>{num}</span>
                     )}
                     <div style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--schwarz)', lineHeight: 1.35, flex: 1 }}>
