@@ -818,7 +818,6 @@ function SicherheitsbriefingSheet({ onClose }) {
 
 const AUFBAUANLEITUNG_CONTENT = [
   // ── Mittwoch ─────────────────────────────────────────────────────────────────
-  { type: 'day', text: 'Mittwoch' },
   { type: 'h2', text: 'Vorbereitung' },
   { type: 'list', numbered: true, items: [
     'Alle haben gefrühstückt und Proviant (Wasser und Snacks) für den Aufbautag dabei',
@@ -953,7 +952,6 @@ const AUFBAUANLEITUNG_CONTENT = [
   ]},
 
   // ── Donnerstag ───────────────────────────────────────────────────────────────
-  { type: 'day', text: 'Donnerstag' },
   { type: 'h2', text: 'Toiletten betriebsbereit machen' },
   { type: 'list', numbered: true, items: [
     { text: 'Klopapier einhängen', photo: true },
@@ -987,6 +985,12 @@ function AnleitungPhoto() {
   )
 }
 
+const CALLOUT_STYLE = {
+  padding: '8px 12px', borderLeft: '3px solid var(--gelb)',
+  background: '#FFFBEB', borderRadius: '0 6px 6px 0',
+  fontSize: 12, color: 'var(--grau-text)', lineHeight: 1.6,
+}
+
 function AnleitungItem({ item, numbered, index, depth = 0 }) {
   const text  = typeof item === 'string' ? item : item.text
   const photo = typeof item === 'object' && item.photo
@@ -995,43 +999,37 @@ function AnleitungItem({ item, numbered, index, depth = 0 }) {
   const warn  = typeof item === 'object' && item.warning
   const note  = typeof item === 'object' && item.note
 
-  const bulletStyle = {
-    flexShrink: 0,
-    marginTop: 4,
-    ...(depth > 0
-      ? { fontSize: 11, color: 'var(--grau-text)', marginRight: 2 }
-      : { width: 6, height: 6, borderRadius: '50%', background: 'var(--gelb)', border: '1.5px solid var(--schwarz)' }
-    ),
+  // depth 0 → schwarzer Punkt; depth 1 → a), b); depth 2+ → kleiner schwarzer Punkt
+  const renderBullet = () => {
+    if (numbered && depth === 0) {
+      return <span style={{ flexShrink: 0, fontWeight: 700, fontSize: 13, color: 'var(--schwarz)', minWidth: 20 }}>{index + 1}.</span>
+    }
+    if (depth === 1) {
+      return <span style={{ flexShrink: 0, fontWeight: 600, fontSize: 12, color: 'var(--schwarz)', minWidth: 18 }}>{String.fromCharCode(97 + index)})</span>
+    }
+    if (depth === 0) {
+      return <span style={{ flexShrink: 0, width: 5, height: 5, borderRadius: '50%', background: 'var(--schwarz)', marginTop: 6 }} />
+    }
+    return <span style={{ flexShrink: 0, width: 4, height: 4, borderRadius: '50%', background: 'var(--grau-text)', marginTop: 7 }} />
   }
 
   return (
-    <div style={{ marginBottom: depth > 0 ? 6 : 10 }}>
-      <div style={{ display: 'flex', gap: depth > 0 ? 6 : 8, alignItems: 'flex-start' }}>
-        {numbered && depth === 0
-          ? <span style={{ flexShrink: 0, fontWeight: 700, fontSize: 13, color: 'var(--schwarz)', minWidth: 18 }}>{index + 1}.</span>
-          : <span style={bulletStyle}>{depth > 0 ? '◦' : ''}</span>
-        }
+    <div style={{ marginBottom: depth > 0 ? 5 : 10 }}>
+      <div style={{ display: 'flex', gap: depth >= 1 ? 6 : 8, alignItems: 'flex-start' }}>
+        {renderBullet()}
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: 13, lineHeight: 1.65, color: depth > 0 ? 'var(--grau-text)' : 'var(--schwarz)' }}>
+          <span style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--schwarz)' }}>
             {text}
           </span>
           {photo && <AnleitungPhoto />}
           {warn && (
-            <div style={{ marginTop: 6, padding: '6px 10px', borderLeft: '3px solid #F97316',
-              background: '#FFF7ED', borderRadius: '0 4px 4px 0', fontSize: 12, color: '#9A3412', lineHeight: 1.5 }}>
-              ⚠ {warn}
-            </div>
+            <div style={{ marginTop: 6, ...CALLOUT_STYLE }}>💡 {warn}</div>
           )}
           {tip && (
-            <div style={{ marginTop: 6, padding: '6px 10px', borderLeft: '3px solid var(--gelb)',
-              background: '#FFFBEB', borderRadius: '0 4px 4px 0', fontSize: 12, color: 'var(--grau-text)', lineHeight: 1.5 }}>
-              💡 {tip}
-            </div>
+            <div style={{ marginTop: 6, ...CALLOUT_STYLE }}>💡 {tip}</div>
           )}
           {note && (
-            <div style={{ marginTop: 4, fontSize: 12, color: 'var(--grau-text)', fontStyle: 'italic' }}>
-              {note}
-            </div>
+            <div style={{ marginTop: 6, ...CALLOUT_STYLE }}>💡 {note}</div>
           )}
           {sub && (
             <div style={{ marginTop: 6, paddingLeft: depth === 0 ? 4 : 0 }}>
@@ -1087,24 +1085,13 @@ function AnleitungSheet({ onClose }) {
           {AUFBAUANLEITUNG_CONTENT.map((block, i) => {
             switch (block.type) {
               case 'day':
-                return (
-                  <div key={i} style={{
-                    background: 'var(--schwarz)', color: 'var(--gelb)',
-                    borderRadius: 'var(--rounded)', padding: '8px var(--sp-4)',
-                    fontWeight: 800, fontSize: 'var(--text-base)',
-                    fontFamily: 'var(--font-heading)',
-                    marginTop: i === 0 ? 0 : 'var(--sp-6)',
-                    marginBottom: 'var(--sp-4)',
-                  }}>
-                    {block.text}
-                  </div>
-                )
+                return null
               case 'h2':
                 return (
                   <div key={i} style={{
-                    fontWeight: 800, fontSize: 'var(--text-sm)',
+                    fontWeight: 800, fontSize: 'var(--text-base)',
                     fontFamily: 'var(--font-heading)', color: 'var(--schwarz)',
-                    marginTop: 'var(--sp-5)', marginBottom: 'var(--sp-3)',
+                    marginTop: i === 0 ? 0 : 'var(--sp-6)', marginBottom: 'var(--sp-3)',
                     paddingBottom: 'var(--sp-2)', borderBottom: '2px solid var(--gelb)',
                   }}>
                     {block.text}
@@ -1113,7 +1100,7 @@ function AnleitungSheet({ onClose }) {
               case 'h3':
                 return (
                   <div key={i} style={{
-                    fontWeight: 700, fontSize: 13,
+                    fontWeight: 700, fontSize: 'var(--text-sm)',
                     color: 'var(--schwarz)',
                     marginTop: 'var(--sp-4)', marginBottom: 'var(--sp-2)',
                   }}>
@@ -1121,16 +1108,7 @@ function AnleitungSheet({ onClose }) {
                   </div>
                 )
               case 'phase':
-                return (
-                  <div key={i} style={{
-                    fontWeight: 800, fontSize: 10,
-                    textTransform: 'uppercase', letterSpacing: '0.1em',
-                    color: 'var(--grau-text)', fontFamily: 'var(--font-heading)',
-                    marginTop: 'var(--sp-4)', marginBottom: 'var(--sp-2)',
-                  }}>
-                    {block.text}
-                  </div>
-                )
+                return null
               case 'meta':
                 return (
                   <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 'var(--sp-4)' }}>
@@ -1157,36 +1135,12 @@ function AnleitungSheet({ onClose }) {
                   </div>
                 )
               case 'tip':
-                return (
-                  <div key={i} style={{
-                    padding: '8px 12px', borderLeft: '3px solid var(--gelb)',
-                    background: '#FFFBEB', borderRadius: '0 6px 6px 0',
-                    marginBottom: 'var(--sp-3)', fontSize: 12,
-                    color: 'var(--grau-text)', lineHeight: 1.6,
-                  }}>
-                    💡 {block.text}
-                  </div>
-                )
               case 'warning':
-                return (
-                  <div key={i} style={{
-                    padding: '8px 12px', borderLeft: '3px solid #F97316',
-                    background: '#FFF7ED', borderRadius: '0 6px 6px 0',
-                    marginBottom: 'var(--sp-3)', fontSize: 12,
-                    color: '#9A3412', lineHeight: 1.6,
-                  }}>
-                    ⚠ {block.text}
-                  </div>
-                )
               case 'important':
+              case 'highlight':
                 return (
-                  <div key={i} style={{
-                    padding: '8px 12px', borderLeft: '3px solid var(--schwarz)',
-                    background: 'var(--papier)', borderRadius: '0 6px 6px 0',
-                    marginBottom: 'var(--sp-3)', fontSize: 12,
-                    color: 'var(--schwarz)', lineHeight: 1.6, fontWeight: 600,
-                  }}>
-                    Wichtig: {block.text}
+                  <div key={i} style={{ ...CALLOUT_STYLE, marginBottom: 'var(--sp-3)' }}>
+                    💡 {block.text}
                   </div>
                 )
               case 'photo':
@@ -1200,16 +1154,6 @@ function AnleitungSheet({ onClose }) {
                   }}>
                     <span style={{ fontSize: 20 }}>🗺</span>
                     <span>{block.label || 'Skizze folgt'}</span>
-                  </div>
-                )
-              case 'highlight':
-                return (
-                  <div key={i} style={{
-                    background: 'var(--schwarz)', borderRadius: 'var(--rounded)',
-                    padding: 'var(--sp-3) var(--sp-4)', marginBottom: 'var(--sp-4)',
-                    fontWeight: 700, color: 'var(--gelb)', lineHeight: 1.5, fontSize: 13,
-                  }}>
-                    {block.text}
                   </div>
                 )
               default:
@@ -1312,9 +1256,9 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
             return (
               <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
                 <span style={{
-                  width: 6, height: 6, borderRadius: '50%',
-                  background: 'var(--gelb)', border: '1.5px solid var(--schwarz)',
-                  marginTop: 6, flexShrink: 0,
+                  width: 5, height: 5, borderRadius: '50%',
+                  background: 'var(--schwarz)',
+                  marginTop: 5, flexShrink: 0,
                 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', lineHeight: 1.4 }}>
@@ -1339,9 +1283,9 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
             return (
               <div key={i} style={{ display: 'flex', gap: 10, marginBottom: i < day.content.length - 1 ? 10 : 0, alignItems: 'flex-start' }}>
                 <span style={{
-                  width: 6, height: 6, borderRadius: '50%',
-                  background: 'var(--gelb)', border: '1.5px solid var(--schwarz)',
-                  marginTop: 6, flexShrink: 0,
+                  width: 5, height: 5, borderRadius: '50%',
+                  background: 'var(--schwarz)',
+                  marginTop: 5, flexShrink: 0,
                 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', lineHeight: 1.4 }}>
@@ -1366,9 +1310,9 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
             return (
               <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
                 <span style={{
-                  width: 6, height: 6, borderRadius: '50%',
-                  background: 'var(--gelb)', border: '1.5px solid var(--schwarz)',
-                  marginTop: 6, flexShrink: 0,
+                  width: 5, height: 5, borderRadius: '50%',
+                  background: 'var(--schwarz)',
+                  marginTop: 5, flexShrink: 0,
                 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', lineHeight: 1.4 }}>
@@ -1402,9 +1346,9 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
             return (
               <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
                 <span style={{
-                  width: 6, height: 6, borderRadius: '50%',
-                  background: 'var(--gelb)', border: '1.5px solid var(--schwarz)',
-                  marginTop: 6, flexShrink: 0,
+                  width: 5, height: 5, borderRadius: '50%',
+                  background: 'var(--schwarz)',
+                  marginTop: 5, flexShrink: 0,
                 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', lineHeight: 1.4 }}>
@@ -1438,8 +1382,8 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
           return (
             <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
               <span style={{
-                width: 6, height: 6, borderRadius: '50%',
-                background: 'var(--gelb)', border: '1.5px solid var(--schwarz)',
+                width: 5, height: 5, borderRadius: '50%',
+                background: 'var(--schwarz)',
                 marginTop: 5, flexShrink: 0,
               }} />
               <div style={{ fontSize: 14, lineHeight: 1.65, color: 'var(--schwarz)' }}>
