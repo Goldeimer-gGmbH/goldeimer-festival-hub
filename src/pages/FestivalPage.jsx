@@ -841,7 +841,9 @@ const AUFBAUANLEITUNG_CONTENT = [
     'Wo starten wir mit dem ersten Rahmen (achte darauf von links nach rechts aufzubauen)',
     'Wo positionieren wir den IBC, damit das Abpumpfahrzeug bestmöglich Urin abpumpen kann?',
   ]},
-  { type: 'sketch', label: 'Skizze: Standardcamp (Manni)', src: 'https://wsdkmglkqxszyvomrfim.supabase.co/storage/v1/object/public/assets/anleitung/skizze-standardcamp.pdf' },
+  { type: 'sketch', label: 'Skizze: Standardcamp (Manni)',
+    thumb: 'https://wsdkmglkqxszyvomrfim.supabase.co/storage/v1/object/public/assets/anleitung/skizze-standardcamp.thumb.png',
+    src:   'https://wsdkmglkqxszyvomrfim.supabase.co/storage/v1/object/public/assets/anleitung/skizze-standardcamp.pdf' },
 
   { type: 'h3', text: '2. Hänger vorbereiten' },
   { type: 'list', items: [
@@ -1033,31 +1035,95 @@ function AnleitungPhoto({ src, alt }) {
   )
 }
 
-// Skizze-Karte — öffnet PDF/Bild im neuen Tab (Browser-nativer Zoom auf Mobile)
-function SketchCard({ src, label }) {
-  if (src) {
-    const isPdf = src.endsWith('.pdf')
-    if (isPdf) {
-      return (
-        <a href={src} target="_blank" rel="noopener noreferrer" style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          background: 'var(--border)', borderRadius: 8,
-          padding: '10px 14px', marginBottom: 'var(--sp-3)',
-          textDecoration: 'none', color: 'var(--schwarz)',
-          border: '1px solid rgba(0,0,0,0.08)',
-        }}>
-          <span style={{ fontSize: 22, flexShrink: 0 }}>🗺</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3 }}>{label || 'Skizze öffnen'}</div>
-            <div style={{ fontSize: 11, color: 'var(--grau-text)', marginTop: 2 }}>Antippen zum Öffnen · Zoom im Browser</div>
+// Skizze-Karte — zeigt Thumbnail inline, Tap öffnet Lightbox mit Pinch-to-Zoom
+function SketchCard({ src, thumb, label }) {
+  const [open, setOpen] = useState(false)
+
+  // Thumbnail vorhanden → Bild inline + Lightbox
+  if (thumb) {
+    return (
+      <>
+        <div style={{ marginBottom: 'var(--sp-3)', borderRadius: 8, overflow: 'hidden',
+          border: '1px solid var(--border)', cursor: 'zoom-in', background: '#fff' }}
+          onClick={() => setOpen(true)}>
+          <img src={thumb} alt={label || 'Skizze'} style={{
+            width: '100%', display: 'block',
+          }} />
+          <div style={{
+            padding: '6px 10px', fontSize: 11, color: 'var(--grau-text)',
+            display: 'flex', alignItems: 'center', gap: 6, background: 'var(--border)',
+          }}>
+            <span>🗺</span>
+            <span style={{ flex: 1, fontWeight: 600 }}>{label || 'Skizze'}</span>
+            <span style={{ opacity: 0.6 }}>Antippen zum Vergrößern</span>
           </div>
-          <span style={{ fontSize: 16, color: 'var(--grau-text)', flexShrink: 0 }}>↗</span>
-        </a>
-      )
-    }
-    // Bild-Skizze: Lightbox
-    return <AnleitungPhoto src={src} alt={label} />
+        </div>
+
+        {open && (
+          <>
+            <div onClick={() => setOpen(false)} style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 600,
+            }} />
+            <div style={{
+              position: 'fixed', inset: 0, zIndex: 601,
+              display: 'flex', flexDirection: 'column',
+            }}>
+              {/* Header */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 16px', flexShrink: 0,
+              }}>
+                <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{label}</span>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  {src && (
+                    <a href={src} target="_blank" rel="noopener noreferrer" style={{
+                      color: 'var(--gelb)', fontSize: 12, fontWeight: 700, textDecoration: 'none',
+                      padding: '4px 10px', border: '1px solid var(--gelb)', borderRadius: 20,
+                    }}>PDF öffnen ↗</a>
+                  )}
+                  <button onClick={() => setOpen(false)} style={{
+                    background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%',
+                    width: 34, height: 34, color: '#fff', fontSize: 18, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>✕</button>
+                </div>
+              </div>
+              {/* Scrollbarer Bereich — natives Pinch-to-Zoom */}
+              <div style={{
+                flex: 1, overflow: 'auto', touchAction: 'manipulation',
+                display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+              }}>
+                <img src={thumb} alt={label || 'Skizze'} style={{
+                  maxWidth: '100%', display: 'block', touchAction: 'manipulation',
+                }} />
+              </div>
+            </div>
+          </>
+        )}
+      </>
+    )
   }
+
+  // Nur PDF, kein Thumb → Link-Karte
+  if (src) {
+    return (
+      <a href={src} target="_blank" rel="noopener noreferrer" style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        background: 'var(--border)', borderRadius: 8,
+        padding: '10px 14px', marginBottom: 'var(--sp-3)',
+        textDecoration: 'none', color: 'var(--schwarz)',
+        border: '1px solid rgba(0,0,0,0.08)',
+      }}>
+        <span style={{ fontSize: 22 }}>🗺</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700 }}>{label || 'Skizze öffnen'}</div>
+          <div style={{ fontSize: 11, color: 'var(--grau-text)', marginTop: 2 }}>Antippen zum Öffnen</div>
+        </div>
+        <span style={{ color: 'var(--grau-text)' }}>↗</span>
+      </a>
+    )
+  }
+
   // Placeholder
   return (
     <div style={{
@@ -1257,7 +1323,7 @@ function AnleitungSheet({ onClose }) {
               case 'photo':
                 return <AnleitungPhoto key={i} />
               case 'sketch':
-                return <SketchCard key={i} src={block.src} label={block.label} />
+                return <SketchCard key={i} src={block.src} thumb={block.thumb} label={block.label} />
               default:
                 return null
             }
