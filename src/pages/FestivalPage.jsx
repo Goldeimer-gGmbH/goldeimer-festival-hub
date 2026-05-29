@@ -1054,7 +1054,8 @@ function SketchCard({ thumb, label }) {
           onClick={() => setOpen(true)}>
           <div style={{
             padding: '6px 10px', fontSize: 11, color: 'var(--grau-text)',
-            display: 'flex', alignItems: 'center', gap: 6, background: 'var(--border)',
+            display: 'flex', alignItems: 'center', gap: 6, background: '#fff',
+            borderBottom: '1px solid var(--border)',
           }}>
             <span style={{ flex: 1, fontWeight: 600 }}>{label || 'Skizze'}</span>
             <span style={{ opacity: 0.6 }}>Antippen zum Vergrößern</span>
@@ -1065,39 +1066,37 @@ function SketchCard({ thumb, label }) {
         </div>
 
         {open && (
-          <>
-            <div onClick={() => setOpen(false)} style={{
-              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 600,
-            }} />
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 601,
+            display: 'flex', flexDirection: 'column',
+            background: 'rgba(0,0,0,0.92)',
+          }}>
+            {/* Header */}
             <div style={{
-              position: 'fixed', inset: 0, zIndex: 601,
-              display: 'flex', flexDirection: 'column',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '12px 16px', flexShrink: 0,
             }}>
-              {/* Header */}
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '12px 16px', flexShrink: 0,
-              }}>
-                <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{label}</span>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <button onClick={() => setOpen(false)} style={{
-                    background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%',
-                    width: 34, height: 34, color: '#fff', fontSize: 18, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>✕</button>
-                </div>
-              </div>
-              {/* Scrollbarer Bereich — natives Pinch-to-Zoom */}
-              <div style={{
-                flex: 1, overflow: 'auto', touchAction: 'manipulation',
-                display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-              }}>
-                <img src={thumb} alt={label || 'Skizze'} style={{
-                  maxWidth: '100%', display: 'block', touchAction: 'manipulation',
-                }} />
-              </div>
+              <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{label}</span>
+              <button onClick={() => setOpen(false)} style={{
+                background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%',
+                width: 34, height: 34, color: '#fff', fontSize: 18, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>✕</button>
             </div>
-          </>
+            {/* Scrollbarer Bereich — Bild auf 250% damit Pinch-to-Zoom greift */}
+            <div style={{
+              flex: 1,
+              overflow: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-x pan-y pinch-zoom',
+            }}>
+              <img src={thumb} alt={label || 'Skizze'} style={{
+                display: 'block',
+                width: '250%',      // breiter als Viewport → Browser lässt zoomen
+                maxWidth: 2000,
+              }} />
+            </div>
+          </div>
         )}
       </>
     )
