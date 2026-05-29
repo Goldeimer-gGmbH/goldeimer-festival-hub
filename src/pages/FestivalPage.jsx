@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
@@ -1044,95 +1045,93 @@ function AnleitungPhoto({ src, alt }) {
 function SketchCard({ thumb, label }) {
   const [open, setOpen] = useState(false)
 
-  // Thumbnail vorhanden → Bild inline + Lightbox
-  if (thumb) {
+  if (!thumb) {
+    // Placeholder
     return (
-      <>
-        <div style={{ marginBottom: 'var(--sp-3)', borderRadius: 8, overflow: 'hidden',
-          border: '1px solid var(--border)', cursor: 'zoom-in', background: '#fff' }}
-          onClick={() => setOpen(true)}>
-          <div style={{
-            padding: '6px 10px', fontSize: 11, color: 'var(--grau-text)',
-            display: 'flex', alignItems: 'center', gap: 6, background: '#fff',
-            borderBottom: '1px solid var(--border)',
-          }}>
-            <span style={{ flex: 1, fontWeight: 600 }}>{label || 'Skizze'}</span>
-            <span style={{ opacity: 0.6 }}>Antippen zum Vergrößern</span>
-          </div>
-          <img src={thumb} alt={label || 'Skizze'} style={{
-            width: '100%', display: 'block',
-          }} />
-        </div>
-
-        {open && (
-          <div style={{
-            position: 'fixed', inset: 0, zIndex: 601,
-            display: 'flex', flexDirection: 'column',
-            background: 'rgba(0,0,0,0.92)',
-          }}>
-            {/* Header */}
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '12px 16px', flexShrink: 0,
-            }}>
-              <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{label}</span>
-              <button onClick={() => setOpen(false)} style={{
-                background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%',
-                width: 34, height: 34, color: '#fff', fontSize: 18, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>✕</button>
-            </div>
-            {/* Scrollbarer Bereich — Bild auf 250% damit Pinch-to-Zoom greift */}
-            <div style={{
-              flex: 1,
-              overflow: 'auto',
-              WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-x pan-y pinch-zoom',
-            }}>
-              <img src={thumb} alt={label || 'Skizze'} style={{
-                display: 'block',
-                width: '250%',      // breiter als Viewport → Browser lässt zoomen
-                maxWidth: 2000,
-              }} />
-            </div>
-          </div>
-        )}
-      </>
-    )
-  }
-
-  // Nur PDF, kein Thumb → Link-Karte
-  if (src) {
-    return (
-      <a href={src} target="_blank" rel="noopener noreferrer" style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        background: 'var(--border)', borderRadius: 8,
-        padding: '10px 14px', marginBottom: 'var(--sp-3)',
-        textDecoration: 'none', color: 'var(--schwarz)',
-        border: '1px solid rgba(0,0,0,0.08)',
+      <div style={{
+        background: 'var(--border)', borderRadius: 8, marginBottom: 'var(--sp-3)',
+        padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: 8, fontSize: 12, color: 'var(--grau-text)', minHeight: 80,
       }}>
-        <span style={{ fontSize: 22 }}>🗺</span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 700 }}>{label || 'Skizze öffnen'}</div>
-          <div style={{ fontSize: 11, color: 'var(--grau-text)', marginTop: 2 }}>Antippen zum Öffnen</div>
-        </div>
-        <span style={{ color: 'var(--grau-text)' }}>↗</span>
-      </a>
+        <span>{label || 'Skizze folgt'}</span>
+      </div>
     )
   }
 
-  // Placeholder
   return (
-    <div style={{
-      background: 'var(--border)', borderRadius: 8, marginBottom: 'var(--sp-3)',
-      padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      gap: 8, fontSize: 12, color: 'var(--grau-text)', minHeight: 80,
-    }}>
-      <span style={{ fontSize: 20 }}>🗺</span>
-      <span>{label || 'Skizze folgt'}</span>
-    </div>
+    <>
+      {/* Inline-Vorschau */}
+      <div
+        onClick={() => setOpen(true)}
+        style={{ marginBottom: 'var(--sp-3)', borderRadius: 8, overflow: 'hidden',
+          border: '1px solid var(--border)', cursor: 'zoom-in', background: '#fff' }}>
+        <div style={{
+          padding: '6px 10px', fontSize: 11, color: 'var(--grau-text)',
+          display: 'flex', alignItems: 'center', gap: 6,
+          borderBottom: '1px solid var(--border)',
+        }}>
+          <span style={{ flex: 1, fontWeight: 600 }}>{label}</span>
+          <span style={{ opacity: 0.6 }}>Antippen zum Vergrößern</span>
+        </div>
+        <img src={thumb} alt={label} style={{ width: '100%', display: 'block' }} />
+      </div>
+
+      {/* Fullscreen Lightbox mit Pinch-Zoom / Pan / Double-Tap */}
+      {open && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 601,
+          display: 'flex', flexDirection: 'column',
+          background: '#111',
+        }}>
+          {/* Toolbar */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '10px 16px', flexShrink: 0,
+            background: 'rgba(0,0,0,0.6)',
+          }}>
+            <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{label}</span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11 }}>
+                Pinch zum Zoomen · Doppeltippen zum Zurücksetzen
+              </span>
+              <button
+                onClick={() => setOpen(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%',
+                  width: 34, height: 34, color: '#fff', fontSize: 18, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>✕</button>
+            </div>
+          </div>
+
+          {/* Zoom-Container — füllt restlichen Platz */}
+          <TransformWrapper
+            initialScale={1}
+            minScale={0.5}
+            maxScale={6}
+            centerOnInit
+            doubleClick={{ mode: 'reset' }}
+            wheel={{ step: 0.1 }}
+          >
+            <TransformComponent
+              wrapperStyle={{ flex: 1, width: '100%', overflow: 'hidden' }}
+              contentStyle={{ width: '100%', height: '100%', display: 'flex',
+                alignItems: 'center', justifyContent: 'center' }}
+            >
+              <img
+                src={thumb}
+                alt={label}
+                style={{ maxWidth: '100%', maxHeight: '100%', display: 'block', userSelect: 'none' }}
+              />
+            </TransformComponent>
+          </TransformWrapper>
+        </div>
+      )}
+    </>
   )
 }
+
 
 const CALLOUT_STYLE = {
   padding: '8px 12px', borderLeft: '3px solid var(--gelb)',
