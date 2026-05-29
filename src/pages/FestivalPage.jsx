@@ -47,7 +47,6 @@ function buildAnreisetagContent(festivalName) {
       bullets: [
         'Lasst die Produktionsordnung von der Aufbau-Crew unterschreiben und gebt sie bei der Festival-Produktion ab.',
       ],
-      extra: { label: 'Per E-Mail: arbeitsschutz-southside@fkpscorpio.com', email: 'arbeitsschutz-southside@fkpscorpio.com' },
     })
   }
   items.push(
@@ -1159,9 +1158,9 @@ function AnleitungItem({ item, numbered, index, depth = 0 }) {
       return <span style={{ flexShrink: 0, fontWeight: 600, fontSize: 12, color: 'var(--schwarz)', minWidth: 18 }}>{String.fromCharCode(97 + index)})</span>
     }
     if (depth === 0) {
-      return <span style={{ flexShrink: 0, width: 5, height: 5, borderRadius: '50%', background: 'var(--schwarz)', marginTop: 6 }} />
+      return <span style={{ flexShrink: 0, width: 5, height: 5, borderRadius: '50%', background: 'var(--schwarz)', marginTop: 8 }} />
     }
-    return <span style={{ flexShrink: 0, width: 4, height: 4, borderRadius: '50%', background: 'var(--grau-text)', marginTop: 7 }} />
+    return <span style={{ flexShrink: 0, width: 4, height: 4, borderRadius: '50%', background: 'var(--grau-text)', marginTop: 9 }} />
   }
 
   return (
