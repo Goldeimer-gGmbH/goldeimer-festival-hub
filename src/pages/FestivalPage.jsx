@@ -1093,28 +1093,23 @@ function SketchCard({ thumb, label }) {
         <div style={{
           position: 'fixed', inset: 0, zIndex: 601,
           display: 'flex', flexDirection: 'column',
-          background: '#111',
+          background: '#fff',
         }}>
           {/* Toolbar */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '10px 16px', flexShrink: 0,
-            background: 'rgba(0,0,0,0.6)',
+            borderBottom: '1px solid var(--border)',
           }}>
-            <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{label}</span>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11 }}>
-                Pinch zum Zoomen · Doppeltippen zum Zurücksetzen
-              </span>
-              <button
-                onClick={() => setOpen(false)}
-                style={{
-                  background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%',
-                  width: 34, height: 34, color: '#fff', fontSize: 18, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
-                }}>✕</button>
-            </div>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--schwarz)' }}>{label}</span>
+            <button
+              onClick={() => setOpen(false)}
+              style={{
+                background: 'var(--border)', border: 'none', borderRadius: '50%',
+                width: 34, height: 34, color: 'var(--schwarz)', fontSize: 18, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>✕</button>
           </div>
 
           {/* Zoom-Container — füllt restlichen Platz */}
