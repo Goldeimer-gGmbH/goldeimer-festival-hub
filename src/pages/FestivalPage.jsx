@@ -96,15 +96,22 @@ const CONTENT_AUFBAUTAG = [
 ]
 
 const CONTENT_TAG1 = [
-  { text: 'Letzter Feinschliff an den Klos, Toiletten betriebsbereit machen' },
+  { title: 'Letzter Feinschliff' },
+  { text: 'Falls noch nicht geschehen: Toiletten betriebsbereit machen (Toilettenpapier einhängen, Mülltüte in Mülleimer hängen und einmal grundreinigen)' },
+
+  { title: 'Koffer & Zahlgeräte' },
   { text: 'Koffer an Operator für jeden Camp rausgeben' },
-  { text: 'Jedem Standort wurde ein nummeriertes elektronisches Zahlungsgerät zugewiesen → darauf achten, dass immer das gleiche nummerierte Zahlungsgerät pro Standort verwendet wird' },
+  { text: 'Jedem Standort ein nummeriertes elektronisches Zahlungsgerät zuweisen → darauf achten, dass immer das gleiche nummerierte Zahlungsgerät pro Standort verwendet wird' },
+
+  { title: 'Wichtige Zeiten' },
   { text: '10 Uhr: Campingplatz- und Goldeimer-Öffnung' },
   { text: '15 Uhr: Welcome Meeting mit Newbies' },
   { text: '16 Uhr: Erste Supporti-Schichten' },
   { text: '23 Uhr: Crew Briefing' },
-  { text: 'Bargeld abschöpfen' },
-  { text: 'Nach Betriebsschluss: Kassensturz mit allen Orderbirds machen' },
+
+  { title: 'Kassensturz' },
+  { text: 'Nach Betriebsschluss Bargeld abschöpfen' },
+  { text: 'Kassensturz mit allen Orderbirds machen' },
 ]
 
 const CONTENT_TAG2 = [
@@ -1406,143 +1413,102 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
 
       <div className="card">
         {day.content.map((item, i) => {
-          // ── Abschnitts-Überschrift (unverändert) ──
+          // ── Gemeinsamer Abschnitts-Header (section, title, typed items) ──
+          // Kein Aufzählungspunkt — fett als Überschrift, Abstand zur vorherigen Gruppe
+          const SectionHeader = ({ text }) => (
+            <div style={{
+              fontWeight: 700, fontSize: 'var(--text-sm)',
+              color: 'var(--schwarz)', lineHeight: 1.3,
+              marginTop: i > 0 ? 16 : 0, marginBottom: 4,
+            }}>
+              {text}
+            </div>
+          )
+
           if (item.section) {
-            return (
-              <div key={i} style={{
-                fontWeight: 800, fontSize: 10,
-                textTransform: 'uppercase', letterSpacing: '0.1em',
-                color: 'var(--grau-text)', fontFamily: 'var(--font-heading)',
-                marginTop: i > 0 ? 18 : 0, marginBottom: 10,
-              }}>
-                {item.text}
-              </div>
-            )
+            return <SectionHeader key={i} text={item.text} />
           }
-          // ── Anleitung-Item (öffnet Anleitung-Sheet) ──
+
+          // ── Anleitung-Item ──
           if (item.type === 'anleitung') {
             return (
-              <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
-                <span style={{
-                  width: 5, height: 5, borderRadius: '50%',
-                  background: 'var(--schwarz)',
-                  marginTop: 5, flexShrink: 0,
-                }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', lineHeight: 1.4 }}>
-                    {item.title}
-                  </div>
-                  <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2, lineHeight: 1.5 }}>
+              <div key={i} style={{ marginBottom: 12 }}>
+                <SectionHeader text={item.title} />
+                {item.detail && (
+                  <div style={{ fontSize: 13, color: 'var(--grau-text)', marginBottom: 6, lineHeight: 1.5 }}>
                     {item.detail}
                   </div>
-                  <button
-                    onClick={() => setShowAnleitung(true)}
-                    className="button button--yellow button--sm"
-                    style={{ marginTop: 8, width: 'auto' }}
-                  >
-                    Aufbauanleitung öffnen
-                  </button>
-                </div>
+                )}
+                <button onClick={() => setShowAnleitung(true)} className="button button--yellow button--sm" style={{ width: 'auto' }}>
+                  Aufbauanleitung öffnen
+                </button>
               </div>
             )
           }
-          // ── Rückmeldung-Item (öffnet Rückmeldungs-Sheet) ──
+
+          // ── Rückmeldung-Item ──
           if (item.type === 'rueckmeldung') {
             return (
-              <div key={i} style={{ display: 'flex', gap: 10, marginBottom: i < day.content.length - 1 ? 10 : 0, alignItems: 'flex-start' }}>
-                <span style={{
-                  width: 5, height: 5, borderRadius: '50%',
-                  background: 'var(--schwarz)',
-                  marginTop: 5, flexShrink: 0,
-                }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', lineHeight: 1.4 }}>
-                    {item.title}
-                  </div>
-                  <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2, lineHeight: 1.5 }}>
+              <div key={i} style={{ marginBottom: 12 }}>
+                <SectionHeader text={item.title} />
+                {item.detail && (
+                  <div style={{ fontSize: 13, color: 'var(--grau-text)', marginBottom: 6, lineHeight: 1.5 }}>
                     {item.detail}
                   </div>
-                  <button
-                    onClick={() => setShowRueckmeldung(true)}
-                    className="button button--yellow button--sm"
-                    style={{ marginTop: 8, width: 'auto' }}
-                  >
-                    Rückmeldung Aufbau
-                  </button>
-                </div>
+                )}
+                <button onClick={() => setShowRueckmeldung(true)} className="button button--yellow button--sm" style={{ width: 'auto' }}>
+                  Rückmeldung Aufbau
+                </button>
               </div>
             )
           }
-          // ── Sicherheitsbriefing-Item (öffnet Sheet) ──
+
+          // ── Sicherheitsbriefing-Item ──
           if (item.type === 'sicherheitsbriefing') {
             return (
-              <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
-                <span style={{
-                  width: 5, height: 5, borderRadius: '50%',
-                  background: 'var(--schwarz)',
-                  marginTop: 5, flexShrink: 0,
-                }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', lineHeight: 1.4 }}>
-                    {item.title}
+              <div key={i} style={{ marginBottom: 12 }}>
+                <SectionHeader text={item.title} />
+                {item.bullets?.length > 0 && (
+                  <ul style={{ margin: '0 0 6px', paddingLeft: 16, listStyleType: 'disc' }}>
+                    {item.bullets.map((b, bi) => (
+                      <li key={bi} style={{ fontSize: 13, color: 'var(--schwarz)', lineHeight: 1.5, marginBottom: 2 }}>{b}</li>
+                    ))}
+                  </ul>
+                )}
+                {item.detail && !item.bullets && (
+                  <div style={{ fontSize: 13, color: 'var(--grau-text)', marginBottom: 6, lineHeight: 1.5 }}>
+                    {item.detail}
                   </div>
-                  {item.bullets?.length > 0 && (
-                    <ul style={{ margin: '4px 0 0', paddingLeft: 16, listStyleType: 'disc' }}>
-                      {item.bullets.map((b, bi) => (
-                        <li key={bi} style={{ fontSize: 13, color: 'var(--schwarz)', lineHeight: 1.5, marginBottom: 2 }}>{b}</li>
-                      ))}
-                    </ul>
-                  )}
-                  {item.detail && !item.bullets && (
-                    <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2, lineHeight: 1.5 }}>
-                      {item.detail}
-                    </div>
-                  )}
-                  <button
-                    onClick={() => setShowBriefing(true)}
-                    className="button button--yellow button--sm"
-                    style={{ marginTop: 8, width: 'auto' }}
-                  >
-                    Sicherheitsbriefing öffnen
-                  </button>
-                </div>
+                )}
+                <button onClick={() => setShowBriefing(true)} className="button button--yellow button--sm" style={{ width: 'auto' }}>
+                  Sicherheitsbriefing öffnen
+                </button>
               </div>
             )
           }
-          // ── Todo mit Titel + Bullet-Liste oder Detail-Text ──
+
+          // ── Titel-Item (Abschnittsüberschrift mit optionalem Inhalt) ──
           if (item.title) {
             return (
-              <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
-                <span style={{
-                  width: 5, height: 5, borderRadius: '50%',
-                  background: 'var(--schwarz)',
-                  marginTop: 5, flexShrink: 0,
-                }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--schwarz)', lineHeight: 1.4 }}>
-                    {item.title}
+              <div key={i} style={{ marginBottom: item.bullets || item.detail || item.extra ? 10 : 0 }}>
+                <SectionHeader text={item.title} />
+                {item.bullets?.length > 0 && (
+                  <ul style={{ margin: '0 0 4px', paddingLeft: 16, listStyleType: 'disc' }}>
+                    {item.bullets.map((b, bi) => (
+                      <li key={bi} style={{ fontSize: 13, color: 'var(--schwarz)', lineHeight: 1.5, marginBottom: 2 }}>{b}</li>
+                    ))}
+                  </ul>
+                )}
+                {item.detail && !item.bullets && (
+                  <div style={{ fontSize: 13, color: 'var(--grau-text)', lineHeight: 1.5 }}>
+                    {item.detail}
                   </div>
-                  {item.bullets?.length > 0 && (
-                    <ul style={{ margin: '4px 0 0', paddingLeft: 16, listStyleType: 'disc' }}>
-                      {item.bullets.map((b, bi) => (
-                        <li key={bi} style={{ fontSize: 13, color: 'var(--schwarz)', lineHeight: 1.5, marginBottom: 2 }}>{b}</li>
-                      ))}
-                    </ul>
-                  )}
-                  {item.detail && !item.bullets && (
-                    <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2, lineHeight: 1.5 }}>
-                      {item.detail}
-                    </div>
-                  )}
-                  {item.extra && (
-                    <div style={{ marginTop: 4 }}>
-                      <a href={`mailto:${item.extra.email}`}
-                        style={{ fontSize: 13, color: 'var(--grau-text)', wordBreak: 'break-all' }}>
-                        {item.extra.label}
-                      </a>
-                    </div>
-                  )}
-                </div>
+                )}
+                {item.extra && (
+                  <a href={`mailto:${item.extra.email}`} style={{ fontSize: 13, color: 'var(--grau-text)', wordBreak: 'break-all' }}>
+                    {item.extra.label}
+                  </a>
+                )}
               </div>
             )
           }
