@@ -81,17 +81,21 @@ function buildAnreisetagContent(festivalName) {
 const CONTENT_AUFBAUTAG = [
   {
     title: 'Koffer vorbereiten',
-    detail: 'Koffer für jedes Camp checken und vorbereiten.',
+    bullets: ['Koffer für jedes Camp checken und vorbereiten.'],
   },
   {
     type: 'anleitung',
     title: 'Aufbau',
-    detail: 'Baut im Team alle Camps auf.',
+    bullets: ['Baut im Team alle Camps auf.'],
   },
   {
     type: 'rueckmeldung',
     title: 'Nachbereitung',
-    detail: 'Gib Rückmeldung zurück ans Büro, wer alles bei welchen Aufgaben mitgeholfen hat. Auf Basis dessen berechnen wir die Pauschalen. Achtung: Dieses Formular kannst du nur einmal ausfüllen.',
+    bullets: [
+      'Gib Rückmeldung zurück ans Büro, wer alles bei welchen Aufgaben mitgeholfen hat.',
+      'Auf Basis dessen berechnen wir die Pauschalen.',
+      'Achtung: Dieses Formular kannst du nur einmal ausfüllen.',
+    ],
   },
 ]
 
@@ -131,11 +135,19 @@ const CONTENT_TAG2 = [
 ]
 
 const CONTENT_TAG_MITTE = [
+  { section: true, text: 'Morgens' },
   { text: 'Koffer an Frühschicht rausgeben' },
   { text: 'Info in die Crew-Gruppe schreiben mit aktualisierten Preisen (Kreideschilder anpassen) und Infos für den Tag' },
-  { text: 'Bargeld abschöpfen und ggf. einzahlen' },
+  { section: true, text: 'Tagsüber' },
+  { text: 'Bargeld abschöpfen und in beschrifteten Beuteln sichern' },
+  { text: 'Bestell-Listen (Bauzäune, Strom) bei Festival-Produktion unterschreiben' },
+  { text: 'Benötigte IBC-Abpumpungen frühzeitig mit Urin-Dienstleister koordinieren. Spätestens, wenn der erste IBC voll ist und der zweite angebrochen wird.' },
+  { text: 'Bargeld nochmal abschöpfen und in beschrifteten Beuteln sichern' },
+  { text: 'Bargeld bei FKP einzahlen' },
+  { section: true, text: 'Nach Betriebsschluss' },
   { text: 'Koffer entgegennehmen' },
-  { text: 'Kassensturz' },
+  { text: 'Kassensturz mit allen Orderbirds → How-to-Orderbird-Anleitung' },
+  { text: 'Lead-Koffer für den nächsten Tag fertigmachen' },
 ]
 
 const CONTENT_VORLETZTER_TAG = [
@@ -1418,15 +1430,26 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
             return <SectionHeader key={i} text={item.text} />
           }
 
+          // Bullet-Liste als Custom-Dots (einheitlich, kein natives <ul>)
+          const BulletList = ({ bullets, mb = 6 }) => (
+            <div style={{ marginBottom: mb }}>
+              {bullets.map((b, bi) => (
+                <div key={bi} style={{ display: 'flex', gap: 8, marginBottom: 3, alignItems: 'flex-start' }}>
+                  <span style={{ flexShrink: 0, width: 5, height: 5, borderRadius: '50%', background: 'var(--schwarz)', marginTop: 7 }} />
+                  <span style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--schwarz)' }}>{b}</span>
+                </div>
+              ))}
+            </div>
+          )
+
           // ── Anleitung-Item ──
           if (item.type === 'anleitung') {
             return (
               <div key={i} style={{ marginBottom: 12 }}>
                 <SectionHeader text={item.title} />
-                {item.detail && (
-                  <div style={{ fontSize: 13, color: 'var(--grau-text)', marginBottom: 6, lineHeight: 1.5 }}>
-                    {item.detail}
-                  </div>
+                {item.bullets?.length > 0 && <BulletList bullets={item.bullets} />}
+                {item.detail && !item.bullets && (
+                  <div style={{ fontSize: 13, color: 'var(--grau-text)', marginBottom: 6, lineHeight: 1.5 }}>{item.detail}</div>
                 )}
                 <button onClick={() => setShowAnleitung(true)} className="button button--yellow button--sm" style={{ width: 'auto' }}>
                   Aufbauanleitung öffnen
@@ -1440,10 +1463,9 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
             return (
               <div key={i} style={{ marginBottom: 12 }}>
                 <SectionHeader text={item.title} />
-                {item.detail && (
-                  <div style={{ fontSize: 13, color: 'var(--grau-text)', marginBottom: 6, lineHeight: 1.5 }}>
-                    {item.detail}
-                  </div>
+                {item.bullets?.length > 0 && <BulletList bullets={item.bullets} />}
+                {item.detail && !item.bullets && (
+                  <div style={{ fontSize: 13, color: 'var(--grau-text)', marginBottom: 6, lineHeight: 1.5 }}>{item.detail}</div>
                 )}
                 <button onClick={() => setShowRueckmeldung(true)} className="button button--yellow button--sm" style={{ width: 'auto' }}>
                   Rückmeldung Aufbau
@@ -1457,17 +1479,9 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
             return (
               <div key={i} style={{ marginBottom: 12 }}>
                 <SectionHeader text={item.title} />
-                {item.bullets?.length > 0 && (
-                  <ul style={{ margin: '0 0 6px', paddingLeft: 16, listStyleType: 'disc' }}>
-                    {item.bullets.map((b, bi) => (
-                      <li key={bi} style={{ fontSize: 13, color: 'var(--schwarz)', lineHeight: 1.5, marginBottom: 2 }}>{b}</li>
-                    ))}
-                  </ul>
-                )}
+                {item.bullets?.length > 0 && <BulletList bullets={item.bullets} />}
                 {item.detail && !item.bullets && (
-                  <div style={{ fontSize: 13, color: 'var(--grau-text)', marginBottom: 6, lineHeight: 1.5 }}>
-                    {item.detail}
-                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--grau-text)', marginBottom: 6, lineHeight: 1.5 }}>{item.detail}</div>
                 )}
                 <button onClick={() => setShowBriefing(true)} className="button button--yellow button--sm" style={{ width: 'auto' }}>
                   Sicherheitsbriefing öffnen
@@ -1481,13 +1495,7 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
             return (
               <div key={i} style={{ marginBottom: item.bullets || item.detail || item.extra ? 10 : 0 }}>
                 <SectionHeader text={item.title} />
-                {item.bullets?.length > 0 && (
-                  <ul style={{ margin: '0 0 4px', paddingLeft: 16, listStyleType: 'disc' }}>
-                    {item.bullets.map((b, bi) => (
-                      <li key={bi} style={{ fontSize: 13, color: 'var(--schwarz)', lineHeight: 1.5, marginBottom: 2 }}>{b}</li>
-                    ))}
-                  </ul>
-                )}
+                {item.bullets?.length > 0 && <BulletList bullets={item.bullets} mb={4} />}
                 {item.detail && !item.bullets && (
                   <div style={{ fontSize: 13, color: 'var(--grau-text)', lineHeight: 1.5 }}>
                     {item.detail}
@@ -1507,7 +1515,7 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
               <span style={{
                 width: 5, height: 5, borderRadius: '50%',
                 background: 'var(--schwarz)',
-                marginTop: 5, flexShrink: 0,
+                marginTop: 9, flexShrink: 0,
               }} />
               <div style={{ fontSize: 14, lineHeight: 1.65, color: 'var(--schwarz)' }}>
                 {item.text}
