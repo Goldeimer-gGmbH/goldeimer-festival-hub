@@ -848,7 +848,7 @@ const AUFBAUANLEITUNG_CONTENT = [
     'Wo starten wir mit dem ersten Rahmen (achte darauf von links nach rechts aufzubauen)',
     'Wo positionieren wir den IBC, damit das Abpumpfahrzeug bestmöglich Urin abpumpen kann?',
   ]},
-  { type: 'sketch', label: 'Skizze: Standardcamp (Manni)',
+  { type: 'sketch', label: 'Aufbauplan Standard Camp',
     thumb: 'https://wsdkmglkqxszyvomrfim.supabase.co/storage/v1/object/public/assets/anleitung/skizze-standardcamp.thumb.jpg' },
 
   { type: 'h3', text: '2. Hänger vorbereiten' },
@@ -1052,17 +1052,16 @@ function SketchCard({ thumb, label }) {
         <div style={{ marginBottom: 'var(--sp-3)', borderRadius: 8, overflow: 'hidden',
           border: '1px solid var(--border)', cursor: 'zoom-in', background: '#fff' }}
           onClick={() => setOpen(true)}>
-          <img src={thumb} alt={label || 'Skizze'} style={{
-            width: '100%', display: 'block',
-          }} />
           <div style={{
             padding: '6px 10px', fontSize: 11, color: 'var(--grau-text)',
             display: 'flex', alignItems: 'center', gap: 6, background: 'var(--border)',
           }}>
-            <span>🗺</span>
             <span style={{ flex: 1, fontWeight: 600 }}>{label || 'Skizze'}</span>
             <span style={{ opacity: 0.6 }}>Antippen zum Vergrößern</span>
           </div>
+          <img src={thumb} alt={label || 'Skizze'} style={{
+            width: '100%', display: 'block',
+          }} />
         </div>
 
         {open && (
