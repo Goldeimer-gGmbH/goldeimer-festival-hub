@@ -849,8 +849,7 @@ const AUFBAUANLEITUNG_CONTENT = [
     'Wo positionieren wir den IBC, damit das Abpumpfahrzeug bestmöglich Urin abpumpen kann?',
   ]},
   { type: 'sketch', label: 'Skizze: Standardcamp (Manni)',
-    thumb: 'https://wsdkmglkqxszyvomrfim.supabase.co/storage/v1/object/public/assets/anleitung/skizze-standardcamp.thumb.png',
-    src:   'https://wsdkmglkqxszyvomrfim.supabase.co/storage/v1/object/public/assets/anleitung/skizze-standardcamp.pdf' },
+    thumb: 'https://wsdkmglkqxszyvomrfim.supabase.co/storage/v1/object/public/assets/anleitung/skizze-standardcamp.thumb.jpg' },
 
   { type: 'h3', text: '2. Hänger vorbereiten' },
   { type: 'list', items: [
@@ -1043,7 +1042,7 @@ function AnleitungPhoto({ src, alt }) {
 }
 
 // Skizze-Karte — zeigt Thumbnail inline, Tap öffnet Lightbox mit Pinch-to-Zoom
-function SketchCard({ src, thumb, label }) {
+function SketchCard({ thumb, label }) {
   const [open, setOpen] = useState(false)
 
   // Thumbnail vorhanden → Bild inline + Lightbox
@@ -1082,12 +1081,6 @@ function SketchCard({ src, thumb, label }) {
               }}>
                 <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{label}</span>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  {src && (
-                    <a href={src} target="_blank" rel="noopener noreferrer" style={{
-                      color: 'var(--gelb)', fontSize: 12, fontWeight: 700, textDecoration: 'none',
-                      padding: '4px 10px', border: '1px solid var(--gelb)', borderRadius: 20,
-                    }}>PDF öffnen ↗</a>
-                  )}
                   <button onClick={() => setOpen(false)} style={{
                     background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%',
                     width: 34, height: 34, color: '#fff', fontSize: 18, cursor: 'pointer',
@@ -1330,7 +1323,7 @@ function AnleitungSheet({ onClose }) {
               case 'photo':
                 return <AnleitungPhoto key={i} />
               case 'sketch':
-                return <SketchCard key={i} src={block.src} thumb={block.thumb} label={block.label} />
+                return <SketchCard key={i} thumb={block.thumb} label={block.label} />
               default:
                 return null
             }
