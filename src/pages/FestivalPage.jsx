@@ -1823,6 +1823,49 @@ function KontakteTab({ details, role, festivalName, crew }) {
         </>
       )}
 
+      {/* Festival Infos – nur Leads + Operator */}
+      {isLeadOp && (
+        <>
+          <div className="section-title">Festival Infos</div>
+          <div className="card">
+            <ul className="info-list">
+              {details.festival_name && (
+                <li><div>
+                  <div style={lbl}>Name</div>
+                  <div style={val}>{details.festival_name}</div>
+                </div></li>
+              )}
+              {(details.start_official || details.end_official) && (
+                <li><div>
+                  <div style={lbl}>Datum</div>
+                  <div style={val}>
+                    {[details.start_official, details.end_official].filter(Boolean).join(' – ')}
+                  </div>
+                </div></li>
+              )}
+              {details.festival_address && (
+                <li><div>
+                  <div style={lbl}>Anschrift</div>
+                  <div style={valMulti}>{details.festival_address}</div>
+                </div></li>
+              )}
+              {details.count_module && (
+                <li><div>
+                  <div style={lbl}>Anzahl Module</div>
+                  <div style={val}>{details.count_module}</div>
+                </div></li>
+              )}
+              {crewLoaded && (
+                <li><div>
+                  <div style={lbl}>Anzahl Crew</div>
+                  <div style={val}>{sortedCrew.length} Personen</div>
+                </div></li>
+              )}
+            </ul>
+          </div>
+        </>
+      )}
+
       {/* Crew – nur Leads + Operator */}
       {isLeadOp && (
         <>
