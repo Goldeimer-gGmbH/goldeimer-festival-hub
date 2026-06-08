@@ -1743,9 +1743,10 @@ function KontakteTab({ details, role, festivalName, crew }) {
   const val      = { fontSize: 14, fontWeight: 400, color: 'var(--schwarz)' }
   const valMulti = { fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--schwarz)' }
 
-  const hasSpecialContacts =
-    (isLeadOp && details.production_mgmt) || (isLeadOp && details.urin_pump) ||
-    (isLeadOp && details.job_safety) || details.awareness_team || (isLeadOp && details.vca_asp)
+  const hasSpecialContacts = isLeadOp && (
+    details.production_mgmt || details.job_safety || details.urin_pump ||
+    details.fsb_spedition || details.anhaenger_spedition || details.vca_asp || details.awareness_team
+  )
 
   const hasAnyContent = details.telegram_link || hasSpecialContacts || isLeadOp
 
@@ -1772,51 +1773,53 @@ function KontakteTab({ details, role, festivalName, crew }) {
         </>
       )}
 
-      {/* Spezial-Kontakte – alle in einem Kasten */}
+      {/* Spezial-Kontakte – nur Leads + Operator */}
       {hasSpecialContacts && (
         <>
           <div className="section-title">Spezial-Kontakte</div>
           <div className="card">
             <ul className="info-list">
-              {isLeadOp && details.production_mgmt && (
-                <li>
-                  <div>
-                    <div style={lbl}>Produktionsleitung</div>
-                    <div style={valMulti}><PhoneText text={details.production_mgmt} /></div>
-                  </div>
-                </li>
+              {details.production_mgmt && (
+                <li><div>
+                  <div style={lbl}>Produktion</div>
+                  <div style={valMulti}><PhoneText text={details.production_mgmt} /></div>
+                </div></li>
               )}
-              {isLeadOp && details.urin_pump && (
-                <li>
-                  <div>
-                    <div style={lbl}>Urinabpumpung</div>
-                    <div style={valMulti}><PhoneText text={details.urin_pump} /></div>
-                  </div>
-                </li>
+              {details.job_safety && (
+                <li><div>
+                  <div style={lbl}>Arbeitssicherheit</div>
+                  <div style={valMulti}><PhoneText text={details.job_safety} /></div>
+                </div></li>
               )}
-              {isLeadOp && details.job_safety && (
-                <li>
-                  <div>
-                    <div style={lbl}>Arbeitssicherheit</div>
-                    <div style={valMulti}><PhoneText text={details.job_safety} /></div>
-                  </div>
-                </li>
+              {details.urin_pump && (
+                <li><div>
+                  <div style={lbl}>IBC Abpumpung</div>
+                  <div style={valMulti}><PhoneText text={details.urin_pump} /></div>
+                </div></li>
+              )}
+              {details.fsb_spedition && (
+                <li><div>
+                  <div style={lbl}>FSB Spedition</div>
+                  <div style={valMulti}><PhoneText text={details.fsb_spedition} /></div>
+                </div></li>
+              )}
+              {details.anhaenger_spedition && (
+                <li><div>
+                  <div style={lbl}>Anhänger Spedition</div>
+                  <div style={valMulti}><PhoneText text={details.anhaenger_spedition} /></div>
+                </div></li>
+              )}
+              {details.vca_asp && (
+                <li><div>
+                  <div style={lbl}>VcA</div>
+                  <div style={valMulti}><PhoneText text={details.vca_asp} /></div>
+                </div></li>
               )}
               {details.awareness_team && (
-                <li>
-                  <div>
-                    <div style={lbl}>Awareness-Team</div>
-                    <div style={valMulti}><PhoneText text={details.awareness_team} /></div>
-                  </div>
-                </li>
-              )}
-              {isLeadOp && details.vca_asp && (
-                <li>
-                  <div>
-                    <div style={lbl}>VcA-ASP</div>
-                    <div style={valMulti}><PhoneText text={details.vca_asp} /></div>
-                  </div>
-                </li>
+                <li><div>
+                  <div style={lbl}>Awareness-Team</div>
+                  <div style={valMulti}><PhoneText text={details.awareness_team} /></div>
+                </div></li>
               )}
             </ul>
           </div>
