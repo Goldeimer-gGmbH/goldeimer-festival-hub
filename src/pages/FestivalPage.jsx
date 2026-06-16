@@ -474,7 +474,7 @@ export default function FestivalPage() {
         )}
 
         {activeTab === 'kontakte' && (
-          <KontakteTab details={details} role={role} festivalName={festivalName} crew={data.crew} />
+          <KontakteTab details={details} role={role} festivalName={festivalName} crew={data.crew} festivalId={id} attendanceSubmission={data.attendance_submission} />
         )}
 
       </div>
@@ -1731,7 +1731,7 @@ function PersonBlocks({ value }) {
   )
 }
 
-function KontakteTab({ details, role, festivalName, crew }) {
+function KontakteTab({ details, role, festivalName, crew, festivalId, attendanceSubmission }) {
   const isLeadOp = role === 'lead' || role === 'operator'
 
   const crewLoaded = Array.isArray(crew)
@@ -1840,7 +1840,12 @@ function KontakteTab({ details, role, festivalName, crew }) {
               </li>
             </ul>
           </div>
-          <CrewListSection crew={sortedCrew} />
+          <CrewListSection
+            crew={sortedCrew}
+            festivalId={festivalId}
+            festivalName={festivalName}
+            attendanceSubmission={attendanceSubmission}
+          />
         </>
       )}
 
@@ -1860,8 +1865,142 @@ const ROLLE_ORDER = ['lead', 'operator', 'supporti_plus', 'supporti', 'catering'
 
 // Zeigt die bereits geladene Crew-Liste als aufklappbaren Block.
 // Daten kommen aus dem Festival-Info-RPC — kein eigener Fetch.
-function CrewListSection({ crew }) {
-  const [open, setOpen] = useState(false)
+// Leads/Operators können hier außerdem die Anwesenheit beim Festival abhaken
+// (tri-state: offen / anwesend / nicht anwesend). Jede Änderung wird sofort als
+// Entwurf gespeichert (attendance_entries), das Abschicken (→ Crew-Management)
+// ist beliebig oft möglich, auch zur Korrektur.
+function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission }) {
+  const [open, setOpen]               = useState(false)
+  const [attendance, setAttendance]   = useState({})        // assignment_id -> true | false | null
+  const [savingIds, setSavingIds]     = useState(() => new Set())
+  const [submitting, setSubmitting]   = useState(false)
+  const [submitError, setSubmitError] = useState('')
+  const [submission, setSubmission]   = useState(attendanceSubmission || null)
+  const saveTimers = useRef({})
+
+  // Anwesenheits-Stand aus dem Crew-Array initialisieren (kommt aus get_my_festival_info)
+  useEffect(() => {
+    if (!crew) return
+    setAttendance(prev => {
+      const next = { ...prev }
+      crew.forEach(a => {
+        if (!(a.assignment_id in next)) next[a.assignment_id] = a.attendance_present ?? null
+      })
+      return next
+    })
+  }, [crew])
+
+  useEffect(() => { setSubmission(attendanceSubmission || null) }, [attendanceSubmission])
+
+  // Solange die Liste offen ist: alle 20s den aktuellen Stand nachladen, damit
+  // zwei gleichzeitig abhakende Leads sich nicht unbemerkt überschreiben.
+  useEffect(() => {
+    if (!open || !festivalId) return
+    let cancelled = false
+    const refresh = async () => {
+      try {
+        const { data } = await fetchWithTimeout(
+          supabase.from('attendance_entries')
+            .select('assignment_id, present')
+            .eq('festival_id', festivalId),
+          8000
+        )
+        if (cancelled || !data) return
+        setAttendance(prev => {
+          const next = { ...prev }
+          data.forEach(e => { next[e.assignment_id] = e.present })
+          return next
+        })
+      } catch (e) { /* Netzwerkfehler ignorieren, lokaler Stand bleibt erhalten */ }
+    }
+    const interval = setInterval(refresh, 20000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [open, festivalId])
+
+  function cyclePresent(current) {
+    // offen -> anwesend -> nicht anwesend -> offen
+    if (current === null || current === undefined) return true
+    if (current === true) return false
+    return null
+  }
+
+  function setPresent(assignmentId, value) {
+    setAttendance(prev => ({ ...prev, [assignmentId]: value }))
+    setSavingIds(prev => { const next = new Set(prev); next.add(assignmentId); return next })
+    clearTimeout(saveTimers.current[assignmentId])
+    saveTimers.current[assignmentId] = setTimeout(async () => {
+      try {
+        await supabase.from('attendance_entries').upsert({
+          festival_id:   festivalId,
+          assignment_id: assignmentId,
+          present:       value,
+          checked_at:    new Date().toISOString(),
+        }, { onConflict: 'assignment_id' })
+      } catch (e) {
+        console.error('Anwesenheit speichern fehlgeschlagen:', e)
+      } finally {
+        setSavingIds(prev => { const next = new Set(prev); next.delete(assignmentId); return next })
+      }
+    }, 600)
+  }
+
+  async function handleSubmit() {
+    setSubmitting(true)
+    setSubmitError('')
+    try {
+      const entries = (crew || []).map(a => ({
+        assignment_id: a.assignment_id,
+        email:         a.email || '',
+        full_name:     a.full_name || '',
+        role:          a.role,
+        present:       attendance[a.assignment_id] ?? null,
+      }))
+
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) throw new Error('Nicht eingeloggt – bitte Seite neu laden')
+
+      const controller = new AbortController()
+      const timeoutId  = setTimeout(() => controller.abort(), 15000)
+
+      let res
+      try {
+        res = await fetch(
+          'https://wsdkmglkqxszyvomrfim.supabase.co/functions/v1/submit-attendance-report',
+          {
+            method:  'POST',
+            headers: {
+              'Content-Type':  'application/json',
+              'Authorization': `Bearer ${token}`,
+              'apikey':        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzZGttZ2xrcXhzenl2b21yZmltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNTk4NjYsImV4cCI6MjA5MTczNTg2Nn0.CkX010BgVGjJUOs7RSYHlXJSwA-0jL4iPvi4gA59dTM',
+            },
+            body: JSON.stringify({ festival_id: festivalId, festival_name: festivalName, entries }),
+            signal: controller.signal,
+          }
+        )
+      } finally {
+        clearTimeout(timeoutId)
+      }
+
+      const resData = await res.json()
+      if (!res.ok || resData?.error) {
+        setSubmitError(resData?.error || `Fehler ${res.status}`)
+      } else {
+        setSubmission({
+          last_submitted_by_name: resData.submitted_by,
+          last_submitted_at:      new Date().toISOString(),
+          submission_count:       resData.submission_count || 1,
+        })
+      }
+    } catch (e) {
+      setSubmitError(e?.message || 'Unbekannter Fehler beim Abschicken')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const presentCount = Object.values(attendance).filter(v => v === true).length
+  const decidedCount = Object.values(attendance).filter(v => v !== null && v !== undefined).length
 
   return (
     <div>
@@ -1877,53 +2016,132 @@ function CrewListSection({ crew }) {
         <div className="card">
           {crew.length === 0 ? (
             <p style={{ fontSize: 13, color: 'var(--grau-text)' }}>Keine Crew-Mitglieder gefunden.</p>
-          ) : crew.map((a, i) => (
-            <div key={i} style={{
-              paddingBottom: i < crew.length - 1 ? 10 : 0,
-              marginBottom: i < crew.length - 1 ? 10 : 0,
-              borderBottom: i < crew.length - 1 ? '1px solid var(--border)' : 'none',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--schwarz)' }}>
-                  {a.full_name || '—'}
-                  {a.detail_pronouns && (
-                    <span style={{ fontWeight: 400, color: 'var(--grau-text)', marginLeft: 4 }}>
-                      ({a.detail_pronouns})
-                    </span>
+          ) : (
+            <>
+              {festivalId && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{
+                    fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em',
+                    color: 'var(--grau-text)', fontFamily: 'var(--font-heading)', marginBottom: 4,
+                  }}>
+                    Anwesenheit beim Festival
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--grau-text)', lineHeight: 1.5, marginBottom: 8 }}>
+                    Tippe auf den Kreis neben einer Person, um sie als anwesend ✓ oder nicht anwesend ✕
+                    zu markieren. Das wird automatisch zwischengespeichert. Erst nach „Anwesenheit abschicken“
+                    wird der Stand ins Crew-Management übertragen – das geht beliebig oft, auch zur Korrektur.
+                  </p>
+                  {submission?.last_submitted_at && (
+                    <div style={{
+                      background: '#e8f5e9', border: '1.5px solid var(--gruen)', borderRadius: 8,
+                      padding: '8px 12px', fontSize: 12, color: 'var(--gruen)', fontWeight: 600, lineHeight: 1.5,
+                      marginBottom: 8,
+                    }}>
+                      ✓ Zuletzt abgeschickt von <strong>{submission.last_submitted_by_name}</strong> um{' '}
+                      {new Date(submission.last_submitted_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} Uhr
+                      {submission.submission_count > 1 && <> ({submission.submission_count}. Abschicken)</>}
+                    </div>
                   )}
-                </div>
-                <span style={{
-                  fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
-                  background: 'var(--papier)', color: 'var(--schwarz)',
-                  border: '1.5px solid var(--border)',
-                  padding: '2px 7px', borderRadius: 4, flexShrink: 0,
-                }}>
-                  {a.detail_carpass === 'Ja' && (
-                    <span style={{ fontSize: 14, marginRight: 3, display: 'inline-block', verticalAlign: 'middle' }}>🚗</span>
-                  )}
-                  {ROLLE_LABEL[a.role] || a.role}
-                </span>
-              </div>
-              {a.phone && (
-                <a
-                  href={`tel:${a.phone.replace(/[\s\-/]/g, '')}`}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 5,
-                    marginTop: 4,
-                    fontSize: 13, fontWeight: 600, color: 'var(--grau-text)',
-                    textDecoration: 'none',
-                  }}
-                >
-                  <IconTelefon size={13} /> {a.phone}
-                </a>
-              )}
-              {a.detail_arrival && (
-                <div style={{ fontSize: 11, color: 'var(--grau-text)', marginTop: 2, lineHeight: 1.4 }}>
-                  {a.detail_arrival}
+                  <div style={{ fontSize: 11, color: 'var(--grau-text)' }}>
+                    {presentCount} von {crew.length} als anwesend markiert
+                    {decidedCount < crew.length && <> · {crew.length - decidedCount} noch offen</>}
+                  </div>
                 </div>
               )}
-            </div>
-          ))}
+
+              {crew.map((a, i) => {
+                const present  = attendance[a.assignment_id]
+                const isSaving = savingIds.has(a.assignment_id)
+                return (
+                  <div key={a.assignment_id || i} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    paddingBottom: i < crew.length - 1 ? 10 : 0,
+                    marginBottom: i < crew.length - 1 ? 10 : 0,
+                    borderBottom: i < crew.length - 1 ? '1px solid var(--border)' : 'none',
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--schwarz)' }}>
+                          {a.full_name || '—'}
+                          {a.detail_pronouns && (
+                            <span style={{ fontWeight: 400, color: 'var(--grau-text)', marginLeft: 4 }}>
+                              ({a.detail_pronouns})
+                            </span>
+                          )}
+                        </div>
+                        <span style={{
+                          fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
+                          background: 'var(--papier)', color: 'var(--schwarz)',
+                          border: '1.5px solid var(--border)',
+                          padding: '2px 7px', borderRadius: 4, flexShrink: 0,
+                        }}>
+                          {a.detail_carpass === 'Ja' && (
+                            <span style={{ fontSize: 14, marginRight: 3, display: 'inline-block', verticalAlign: 'middle' }}>🚗</span>
+                          )}
+                          {ROLLE_LABEL[a.role] || a.role}
+                        </span>
+                      </div>
+                      {a.phone && (
+                        <a
+                          href={`tel:${a.phone.replace(/[\s\-/]/g, '')}`}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 5,
+                            marginTop: 4,
+                            fontSize: 13, fontWeight: 600, color: 'var(--grau-text)',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <IconTelefon size={13} /> {a.phone}
+                        </a>
+                      )}
+                      {a.detail_arrival && (
+                        <div style={{ fontSize: 11, color: 'var(--grau-text)', marginTop: 2, lineHeight: 1.4 }}>
+                          {a.detail_arrival}
+                        </div>
+                      )}
+                    </div>
+
+                    {festivalId && (
+                      <button
+                        type="button"
+                        onClick={() => setPresent(a.assignment_id, cyclePresent(present))}
+                        disabled={!a.assignment_id}
+                        title={present === true ? 'Anwesend – tippen zum Ändern' : present === false ? 'Nicht anwesend – tippen zum Ändern' : 'Noch offen – tippen zum Markieren'}
+                        style={{
+                          flexShrink: 0, width: 40, height: 40, borderRadius: 8,
+                          border: `1.5px solid ${present === true ? 'var(--gruen)' : present === false ? 'var(--rot)' : 'var(--border)'}`,
+                          background: present === true ? '#e8f5e9' : present === false ? '#FFF0ED' : 'transparent',
+                          color: present === true ? 'var(--gruen)' : present === false ? 'var(--rot)' : 'var(--grau-text)',
+                          fontSize: 18, fontWeight: 700, cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          opacity: isSaving ? 0.5 : 1, transition: 'all 0.1s',
+                          WebkitTapHighlightColor: 'transparent',
+                        }}
+                      >
+                        {present === true ? '✓' : present === false ? '✕' : '–'}
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+
+              {festivalId && (
+                <div style={{ marginTop: 12 }}>
+                  {submitError && (
+                    <div style={{
+                      background: '#FFF0ED', border: '1px solid var(--rot)', borderRadius: 6,
+                      padding: '10px 14px', marginBottom: 10, fontSize: 13, color: 'var(--rot)',
+                    }}>
+                      ⚠ {submitError}
+                    </div>
+                  )}
+                  <button onClick={handleSubmit} disabled={submitting} className="button" style={{ width: '100%' }}>
+                    {submitting ? 'Wird abgeschickt…' : 'Anwesenheit abschicken'}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
