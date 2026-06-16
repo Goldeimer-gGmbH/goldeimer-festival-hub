@@ -1886,6 +1886,11 @@ function CrewListSection({ crew }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--schwarz)' }}>
                   {a.full_name || '—'}
+                  {a.detail_pronouns && (
+                    <span style={{ fontWeight: 400, color: 'var(--grau-text)', marginLeft: 4 }}>
+                      ({a.detail_pronouns})
+                    </span>
+                  )}
                 </div>
                 <span style={{
                   fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
@@ -1893,7 +1898,7 @@ function CrewListSection({ crew }) {
                   border: '1.5px solid var(--border)',
                   padding: '2px 7px', borderRadius: 4, flexShrink: 0,
                 }}>
-                  {ROLLE_LABEL[a.role] || a.role}
+                  {a.detail_carpass === 'Ja' ? '🚗 ' : ''}{ROLLE_LABEL[a.role] || a.role}
                 </span>
               </div>
               {a.phone && (
@@ -1908,6 +1913,11 @@ function CrewListSection({ crew }) {
                 >
                   <IconTelefon size={13} /> {a.phone}
                 </a>
+              )}
+              {a.detail_arrival && (
+                <div style={{ fontSize: 11, color: 'var(--grau-text)', marginTop: 2, lineHeight: 1.4 }}>
+                  {a.detail_arrival}
+                </div>
               )}
             </div>
           ))}
