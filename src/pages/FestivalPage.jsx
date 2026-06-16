@@ -16,6 +16,27 @@ const ROLLE_LABEL = {
   supporti_plus: 'Supporti+', supporti: 'Supporti', catering: 'Catering'
 }
 
+// supabase.auth.getSession() kann in manchen Browsern/PWA-Kontexten (v.a. iOS
+// Safari/Standalone) durch die interne Web-Locks-API auf unbestimmte Zeit
+// blockieren, wenn ein anderer Tab/Worker den Lock hält. Damit Submit-Buttons
+// dann nicht ewig auf "Wird abgeschickt…" stehen bleiben, holen wir den Token
+// mit Timeout — und lesen ihn notfalls direkt aus dem LocalStorage (derselben
+// Quelle, die Supabase intern nutzt).
+async function getAccessTokenFast(timeoutMs = 6000) {
+  const { data } = await fetchWithTimeout(supabase.auth.getSession(), timeoutMs)
+  if (data?.session?.access_token) return data.session.access_token
+
+  try {
+    const raw = localStorage.getItem('sb-wsdkmglkqxszyvomrfim-auth-token')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (parsed?.access_token) return parsed.access_token
+    }
+  } catch (e) { /* ignore */ }
+
+  return null
+}
+
 const FKP_FESTIVALS = ['hurricane', 'southside', 'deichbrand', 'highfield', "m'era luna", 'mera luna']
 function isFkpFestival(name) {
   const lower = (name || '').toLowerCase()
@@ -1956,8 +1977,7 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission 
         present:       attendance[a.assignment_id] ?? null,
       }))
 
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
+      const token = await getAccessTokenFast()
       if (!token) throw new Error('Nicht eingeloggt – bitte Seite neu laden')
 
       const controller = new AbortController()
@@ -2581,10 +2601,10 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew, inSheet = false })
         .map(e => ({ name: e.name.trim(), tasks: e.tasks || [] }))
 
       // Plain fetch statt supabase.functions.invoke — invoke blockiert intern
-      // beim Session-Refresh (Web-Lock-Problem). Mit getSession() + fetch()
-      // holen wir den Token einmal explizit und machen dann direkt den Call.
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
+      // beim Session-Refresh (Web-Lock-Problem). Mit getAccessTokenFast() holen
+      // wir den Token mit Timeout + LocalStorage-Fallback, damit der Button nie
+      // ewig auf "Wird abgeschickt…" hängen bleibt.
+      const token = await getAccessTokenFast()
       if (!token) throw new Error('Nicht eingeloggt – bitte Seite neu laden')
 
       const controller = new AbortController()
