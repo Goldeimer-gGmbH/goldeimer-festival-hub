@@ -1898,7 +1898,10 @@ function CrewListSection({ crew }) {
                   border: '1.5px solid var(--border)',
                   padding: '2px 7px', borderRadius: 4, flexShrink: 0,
                 }}>
-                  {a.detail_carpass === 'Ja' ? '🚗 ' : ''}{ROLLE_LABEL[a.role] || a.role}
+                  {a.detail_carpass === 'Ja' && (
+                    <span style={{ fontSize: 14, marginRight: 3, display: 'inline-block', verticalAlign: 'middle' }}>🚗</span>
+                  )}
+                  {ROLLE_LABEL[a.role] || a.role}
                 </span>
               </div>
               {a.phone && (
