@@ -2305,9 +2305,9 @@ function InfosTab({ details, role, content, festivalId }) {
           padding: '14px var(--sp-4)',
           marginBottom: 'var(--sp-4)',
         }}>
-          <div style={{ fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--rot)', marginBottom: 8 }}>
+          <h3 style={{ fontSize: 'var(--text-h3)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--rot)', marginBottom: 8 }}>
             Besonderheiten {festivalYear}
-          </div>
+          </h3>
           <div style={{ fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.65, color: 'var(--schwarz)' }}>
             {details.special_notes}
           </div>
