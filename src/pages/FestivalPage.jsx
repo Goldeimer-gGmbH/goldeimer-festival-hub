@@ -628,7 +628,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
           const isOpen    = openDayIdx === idx
           const isLast    = idx === days.length - 1
           return (
-            <div key={idx}>
+            <div key={idx} style={{ borderBottom: isLast ? 'none' : '1px solid var(--border)' }}>
               <button
                 className="accordion-btn"
                 onClick={() => setOpenDayIdx(isOpen ? -1 : idx)}
@@ -636,7 +636,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
                   width: '100%',
                   background: '#F3E9D6',
                   border: 'none',
-                  borderBottom: isLast && !isOpen ? 'none' : '1px solid var(--border)',
+                  borderBottom: 'none',
                   padding: '14px var(--sp-4)',
                   cursor: 'pointer',
                   display: 'flex',
