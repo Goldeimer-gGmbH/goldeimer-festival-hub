@@ -411,10 +411,8 @@ export default function FestivalPage() {
     <div style={{ background: 'var(--papier)', minHeight: '100dvh' }}>
       {/* ── Logo-Header (cremefarben) ── */}
       <div className="header">
-        {/* Tag-Detail-View: einen Schritt zurück.
-            Sonst: direkt zur Startseite — Tab-Klicks sollen kein History-Labyrinth erzeugen. */}
         <button
-          onClick={() => selectedDayIdx >= 0 ? navigate(-1) : navigate('/')}
+          onClick={() => navigate(-1)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
         >←</button>
         <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
