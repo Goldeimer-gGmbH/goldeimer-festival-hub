@@ -2147,6 +2147,17 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission 
 
               {festivalId && (
                 <div style={{ marginTop: 12 }}>
+                  {submission?.last_submitted_at && (
+                    <div style={{
+                      background: '#e8f5e9', border: '1.5px solid var(--gruen)', borderRadius: 8,
+                      padding: '8px 12px', fontSize: 12, color: 'var(--gruen)', fontWeight: 600, lineHeight: 1.5,
+                      marginBottom: 10,
+                    }}>
+                      ✓ Zuletzt abgeschickt von <strong>{submission.last_submitted_by_name}</strong> um{' '}
+                      {new Date(submission.last_submitted_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} Uhr
+                      {submission.submission_count > 1 && <> ({submission.submission_count}. Mal)</>}
+                    </div>
+                  )}
                   {submitError && (
                     <div style={{
                       background: '#FFF0ED', border: '1px solid var(--rot)', borderRadius: 6,
