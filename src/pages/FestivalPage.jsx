@@ -1844,14 +1844,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
                   <div>
                     <div style={lbl}>Lead</div>
                     {leadCrew.map((m, i) => (
-                      <div key={i} style={{ marginBottom: i < leadCrew.length - 1 ? 6 : 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--schwarz)' }}>{m.full_name}</div>
-                        {m.phone && (
-                          <a href={`tel:${m.phone.replace(/[\s\-/]/g, '')}`} style={{ fontSize: 13, color: 'var(--grau-text)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            <IconTelefon size={12} /> {m.phone}
-                          </a>
-                        )}
-                      </div>
+                      <div key={i} style={{ fontSize: 14, fontWeight: 600, color: 'var(--schwarz)', marginBottom: i < leadCrew.length - 1 ? 4 : 0 }}>{m.full_name}</div>
                     ))}
                   </div>
                 </li>
@@ -1861,14 +1854,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
                   <div>
                     <div style={lbl}>Operator</div>
                     {opCrew.map((m, i) => (
-                      <div key={i} style={{ marginBottom: i < opCrew.length - 1 ? 6 : 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--schwarz)' }}>{m.full_name}</div>
-                        {m.phone && (
-                          <a href={`tel:${m.phone.replace(/[\s\-/]/g, '')}`} style={{ fontSize: 13, color: 'var(--grau-text)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            <IconTelefon size={12} /> {m.phone}
-                          </a>
-                        )}
-                      </div>
+                      <div key={i} style={{ fontSize: 14, fontWeight: 600, color: 'var(--schwarz)', marginBottom: i < opCrew.length - 1 ? 4 : 0 }}>{m.full_name}</div>
                     ))}
                   </div>
                 </li>
@@ -1878,14 +1864,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
                   <div>
                     <div style={lbl}>Supporti+</div>
                     {suppPlusCrew.map((m, i) => (
-                      <div key={i} style={{ marginBottom: i < suppPlusCrew.length - 1 ? 6 : 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--schwarz)' }}>{m.full_name}</div>
-                        {m.phone && (
-                          <a href={`tel:${m.phone.replace(/[\s\-/]/g, '')}`} style={{ fontSize: 13, color: 'var(--grau-text)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            <IconTelefon size={12} /> {m.phone}
-                          </a>
-                        )}
-                      </div>
+                      <div key={i} style={{ fontSize: 14, fontWeight: 600, color: 'var(--schwarz)', marginBottom: i < suppPlusCrew.length - 1 ? 4 : 0 }}>{m.full_name}</div>
                     ))}
                   </div>
                 </li>
