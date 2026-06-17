@@ -634,7 +634,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
                 onClick={() => setOpenDayIdx(isOpen ? -1 : idx)}
                 style={{
                   width: '100%',
-                  background: isOpen ? 'rgba(0,0,0,0.05)' : 'var(--weiss)',
+                  background: 'rgba(29,29,27,0.05)',
                   border: 'none',
                   borderBottom: isLast && !isOpen ? 'none' : '1px solid var(--border)',
                   padding: '14px var(--sp-4)',
