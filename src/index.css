@@ -265,7 +265,6 @@ h1, h2, h3, h4, h5, h6 {
   height: 2.25rem;
   padding: 0 var(--sp-4);
   font-size: var(--text-sm);
-  width: auto;
 }
 
 .button--lg {
@@ -284,7 +283,7 @@ h1, h2, h3, h4, h5, h6 {
 /* ─── Cards ─────────────────────────────────────────────────── */
 .card {
   background: var(--weiss);
-  border-radius: var(--rounded);
+  border-radius: var(--rounded-lg);
   padding: var(--sp-5);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);

@@ -389,9 +389,9 @@ const COC_CONTENT = [
   },
 ]
 
-// ── Chevron ───────────────────────────────────────────────────────────────────
+// ── ChevronIcon (unified) ─────────────────────────────────────────────────────
 function ChevronIcon({ dir = 'right', size = 16, color = 'currentColor' }) {
-  const deg = { down: 0, up: 180, left: -90, right: 90 }[dir] ?? 0
+  const deg = { down: 0, up: 180, left: 90, right: -90 }[dir] ?? 0
   return (
     <svg width={size} height={size} viewBox="0 0 18 18" fill="none"
       style={{ display: 'block', flexShrink: 0, transform: `rotate(${deg}deg)` }}>
@@ -400,10 +400,12 @@ function ChevronIcon({ dir = 'right', size = 16, color = 'currentColor' }) {
   )
 }
 
+// ── Chevron (FAQ-Akkordeon) ───────────────────────────────────────────────────
 function Chevron({ open }) {
+  const deg = open ? 180 : 0
   return (
     <svg width="16" height="16" viewBox="0 0 18 18" fill="none"
-      style={{ display: 'block', flexShrink: 0, transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>
+      style={{ display: 'block', flexShrink: 0, transform: `rotate(${deg}deg)`, transition: 'transform 0.2s ease' }}>
       <path d="M4 6.5L9 11.5L14 6.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
@@ -663,7 +665,7 @@ export default function InfosPage() {
       <div className="header">
         <button
           onClick={() => navigate(-1)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1, display: 'flex', alignItems: 'center' }}
         ><ChevronIcon dir="left" size={22} color="var(--schwarz)" /></button>
         <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
           <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />

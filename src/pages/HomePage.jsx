@@ -6,19 +6,19 @@ import { cacheGet, cacheSet } from '../lib/cache'
 import { fetchWithTimeout } from '../lib/fetchWithTimeout'
 import { IconStar } from '../components/Icons'
 
+const ROLLE_LABEL = {
+  lead: 'Lead', operator: 'Operator',
+  supporti_plus: 'Supporti+', supporti: 'Supporti', catering: 'Catering'
+}
+
 function ChevronIcon({ dir = 'right', size = 16, color = 'currentColor' }) {
-  const deg = { down: 0, up: 180, left: -90, right: 90 }[dir] ?? 0
+  const deg = { down: 0, up: 180, left: 90, right: -90 }[dir] ?? 0
   return (
     <svg width={size} height={size} viewBox="0 0 18 18" fill="none"
       style={{ display: 'block', flexShrink: 0, transform: `rotate(${deg}deg)` }}>
       <path d="M4 6.5L9 11.5L14 6.5" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
-}
-
-const ROLLE_LABEL = {
-  lead: 'Lead', operator: 'Operator',
-  supporti_plus: 'Supporti+', supporti: 'Supporti', catering: 'Catering'
 }
 
 function IconZollstock() {
@@ -311,7 +311,7 @@ export default function HomePage() {
               <span style={{ flex: 1, fontWeight: 600, fontSize: 'var(--text-sm)' }}>
                 {topic.title}
               </span>
-              <span style={{ fontSize: 18, opacity: 0.4 }}>→</span>
+              <ChevronIcon dir="right" size={16} color="rgba(29,29,27,0.45)" />
             </Link>
           ))}
         </div>

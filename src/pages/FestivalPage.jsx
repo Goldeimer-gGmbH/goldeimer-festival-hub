@@ -12,7 +12,7 @@ import {
 } from '../components/Icons'
 
 function ChevronIcon({ dir = 'right', size = 16, color = 'currentColor' }) {
-  const deg = { down: 0, up: 180, left: -90, right: 90 }[dir] ?? 0
+  const deg = { down: 0, up: 180, left: 90, right: -90 }[dir] ?? 0
   return (
     <svg width={size} height={size} viewBox="0 0 18 18" fill="none"
       style={{ display: 'block', flexShrink: 0, transform: `rotate(${deg}deg)` }}>
@@ -422,8 +422,8 @@ export default function FestivalPage() {
       {/* ── Logo-Header (cremefarben) ── */}
       <div className="header">
         <button
-          onClick={() => navigate(-1)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+          onClick={() => navigate('/')}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1, display: 'flex', alignItems: 'center' }}
         ><ChevronIcon dir="left" size={22} color="var(--schwarz)" /></button>
         <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
           <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
@@ -1506,7 +1506,7 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName, inAccordion = fa
                 {item.detail && !item.bullets && (
                   <div style={{ fontSize: 13, color: 'var(--grau-text)', marginBottom: 6, lineHeight: 1.5 }}>{item.detail}</div>
                 )}
-                <button onClick={() => setShowRueckmeldung(true)} className="button button--yellow button--sm" style={{ width: 'auto' }}>
+                <button onClick={() => setShowRueckmeldung(true)} className="button button--sm" style={{ width: 'auto' }}>
                   Rückmeldung Aufbau
                 </button>
               </div>
@@ -1683,13 +1683,40 @@ const ROLLE_LABEL_KONTAKT = { lead: 'Lead', operator: 'Operator' }
 
 // Telefonnummer aus einem Freitext extrahieren und als klickbaren Link rendern.
 // Alles andere wird als normaler Text angezeigt.
-// Parst Kontakt-Freitext (Name + Telefon) einheitlich.
-// Jede Person: Name in normaler Schrift, Telefon als tel:-Link darunter.
-function ContactText({ text }) {
+function PhoneText({ text }) {
   if (!text) return null
+  // Matcht gängige Nummernformate: +49..., 0..., mit Leerzeichen/Bindestrichen
+  const phoneRegex = /(\+?[\d][\d\s\-/]{6,}[\d])/g
+  const parts = []
+  let last = 0
+  let match
+  while ((match = phoneRegex.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index))
+    const raw = match[1].replace(/[\s\-/]/g, '')
+    parts.push(
+      <a key={match.index} href={`tel:${raw}`}
+        style={{ color: 'var(--schwarz)', fontWeight: 700, textDecoration: 'underline' }}>
+        {match[1]}
+      </a>
+    )
+    last = match.index + match[0].length
+  }
+  if (last < text.length) parts.push(text.slice(last))
+  return <span>{parts}</span>
+}
+
+// Parst Freitext in einzelne Personen-Karten.
+// Neue Person beginnt wenn:
+//   (a) eine reine Namenszeile nach Telefonnummern kommt, ODER
+//   (b) eine Zeile Name+Nummer enthält UND wir bereits eine Nummer haben
+//       (= jede "Name + Nummer auf einer Zeile" ist immer eine eigene Person)
+// So können mehrere Nummern zu einer Person (reiner Nummernblock) trotzdem
+// in einer Karte landen.
+function PersonBlocks({ value }) {
+  if (!value) return null
   const phoneRegex = /(\+?[\d][\d\s\-/]{6,}[\d])/
 
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  const lines = value.split('\n').map(l => l.trim()).filter(Boolean)
   const persons = []
   let current = { nameLines: [], phones: [] }
 
@@ -1697,6 +1724,8 @@ function ContactText({ text }) {
     const match = line.match(phoneRegex)
     if (match) {
       const before = line.slice(0, match.index).trim()
+      // Hat die Zeile einen Namen VOR der Nummer UND wir haben schon eine Nummer
+      // → das ist eine neue Person (z.B. "Mona Lisa +49..." nach "Shia LaBoef +49...")
       if (before && current.phones.length > 0) {
         persons.push(current)
         current = { nameLines: [], phones: [] }
@@ -1704,6 +1733,7 @@ function ContactText({ text }) {
       if (before) current.nameLines.push(before)
       current.phones.push(match[1])
     } else {
+      // Reine Namenszeile — nach Nummern startet immer eine neue Person
       if (current.phones.length > 0) {
         persons.push(current)
         current = { nameLines: [], phones: [] }
@@ -1711,35 +1741,43 @@ function ContactText({ text }) {
       current.nameLines.push(line)
     }
   })
-  if (current.nameLines.length > 0 || current.phones.length > 0) persons.push(current)
+  if (current.nameLines.length > 0 || current.phones.length > 0) {
+    persons.push(current)
+  }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {persons.map((person, i) => (
-        <div key={i}>
-          {person.nameLines.length > 0 && (
-            <div style={{ fontSize: 14, color: 'var(--schwarz)', lineHeight: 1.5 }}>
-              {person.nameLines.join(' ')}
-            </div>
-          )}
-          {person.phones.map((phone, j) => (
-            <a key={j} href={`tel:${phone.replace(/[\s\-/]/g, '')}`}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5,
-                fontSize: 13, color: 'var(--grau-text)',
-                textDecoration: 'none', marginTop: 2,
-              }}>
-              <IconTelefon size={12} /> {phone}
-            </a>
-          ))}
-        </div>
-      ))}
-    </div>
+    <>
+      {persons.map((person, i) => {
+        const name = person.nameLines.join(' ')
+        return (
+          <div key={i} className="card" style={{ marginBottom: 8 }}>
+            {name && (
+              <h4 className="card-title" style={{ margin: 0, marginBottom: person.phones.length ? 8 : 0 }}>
+                {name}
+              </h4>
+            )}
+            {person.phones.map((phone, j) => (
+              <a key={j} href={`tel:${phone.replace(/[\s\-/]/g, '')}`}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: 'var(--schwarz)', color: 'var(--weiss)',
+                  padding: '8px 14px', borderRadius: 8,
+                  fontSize: 13, fontWeight: 700, textDecoration: 'none',
+                  marginRight: 6, marginTop: 4,
+                }}>
+                <IconTelefon size={15} /> {phone}
+              </a>
+            ))}
+          </div>
+        )
+      })}
+    </>
   )
 }
 
 function KontakteTab({ details, role, festivalName, crew, festivalId, attendanceSubmission }) {
   const isLeadOp = role === 'lead' || role === 'operator'
+  const [showCrewSheet, setShowCrewSheet] = useState(false)
 
   const crewLoaded  = Array.isArray(crew)
   const sortedCrew  = crewLoaded
@@ -1757,120 +1795,140 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
   const hasCrewSection = leadCrew.length > 0 || opCrew.length > 0 || suppPlusCrew.length > 0 ||
     details.crew_care || details.social_media_fotos || details.crew_sonstiges
 
-  const hasTelegram = !!(details.telegram_link || (isLeadOp && details.telegram_op_link))
-  const hasCrewCard = !!(details.shift_table_link || (isLeadOp && crewLoaded))
+  // NUR Telegram-Links – shift_table_link kommt in die eigene Crew-Sektion
+  const hasTelegramButtons = details.telegram_link || details.telegram_op_link
 
-  const [showCrewSheet, setShowCrewSheet] = useState(false)
+  // Crew-Sektion: Schichtplan und/oder Crew-Liste (Lead/Op)
+  const hasCrewCard = details.shift_table_link || (isLeadOp && crewLoaded)
 
   return (
     <div>
-      {/* ── Telegram ── */}
-      {hasTelegram && (
+      {/* [1] TELEGRAM */}
+      {hasTelegramButtons && (
         <>
           <h3 className="section-title">Telegram</h3>
           <div className="card">
             <ul className="info-list">
-              <li><div>
-                <div style={lbl}>Telegram-Gruppe(n)</div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
-                  {details.telegram_link && (
-                    <a
-                      href={details.telegram_link.startsWith('http') ? details.telegram_link : `https://${details.telegram_link}`}
-                      className="button button--yellow button--sm"
-                      style={{ textDecoration: 'none', display: 'inline-flex' }}
-                    >
-                      Telegram-Crew
-                    </a>
-                  )}
-                  {isLeadOp && details.telegram_op_link && (
-                    <a
-                      href={details.telegram_op_link.startsWith('http') ? details.telegram_op_link : `https://${details.telegram_op_link}`}
-                      className="button button--yellow button--sm"
-                      style={{ textDecoration: 'none', display: 'inline-flex' }}
-                    >
-                      Telegram-Op
-                    </a>
-                  )}
+              <li>
+                <div>
+                  <div style={lbl}>Telegram-Gruppe(n)</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6, alignItems: 'flex-start' }}>
+                    {details.telegram_link && (
+                      <a
+                        href={details.telegram_link.startsWith('http') ? details.telegram_link : `https://${details.telegram_link}`}
+                        className="button button--yellow button--sm"
+                        style={{ textDecoration: 'none', width: 'auto' }}
+                      >
+                        Telegram-Crew
+                      </a>
+                    )}
+                    {isLeadOp && details.telegram_op_link && (
+                      <a
+                        href={details.telegram_op_link.startsWith('http') ? details.telegram_op_link : `https://${details.telegram_op_link}`}
+                        className="button button--yellow button--sm"
+                        style={{ textDecoration: 'none', width: 'auto' }}
+                      >
+                        Telegram-Op
+                      </a>
+                    )}
+                  </div>
                 </div>
-              </div></li>
+              </li>
             </ul>
           </div>
         </>
       )}
 
-      {/* ── Crew ── */}
+      {/* [2] CREW (Schichtplan + Crew-Liste) */}
       {hasCrewCard && (
         <>
           <h3 className="section-title">Crew</h3>
           <div className="card">
             <ul className="info-list">
               {details.shift_table_link && (
-                <li><div>
-                  <div style={lbl}>Schichtplan</div>
-                  <a href={details.shift_table_link} target="_blank" rel="noopener noreferrer"
-                    className="button button--yellow button--sm"
-                    style={{ textDecoration: 'none', display: 'inline-flex', marginTop: 6 }}>
-                    Schichtplan
-                  </a>
-                </div></li>
+                <li>
+                  <div>
+                    <div style={lbl}>Schichtplan</div>
+                    <div style={{ marginTop: 6 }}>
+                      <a
+                        href={details.shift_table_link}
+                        target="_blank" rel="noopener noreferrer"
+                        className="button button--yellow button--sm"
+                        style={{ textDecoration: 'none', width: 'auto' }}
+                      >
+                        Schichtplan öffnen
+                      </a>
+                    </div>
+                  </div>
+                </li>
               )}
               {isLeadOp && crewLoaded && (
-                <li><div>
-                  <div style={lbl}>Crew-Liste</div>
-                  <button
-                    onClick={() => setShowCrewSheet(true)}
-                    className="button button--yellow button--sm"
-                    style={{ marginTop: 6, border: 'none', cursor: 'pointer' }}
-                  >
-                    Crew anzeigen ({sortedCrew.length})
-                  </button>
-                </div></li>
+                <li>
+                  <div>
+                    <div style={lbl}>Crew-Liste</div>
+                    <div style={{ marginTop: 6 }}>
+                      <button
+                        onClick={() => setShowCrewSheet(true)}
+                        className="button button--sm"
+                        style={{ border: 'none', cursor: 'pointer' }}
+                      >
+                        Crew-Liste öffnen & Anwesenheit feedbacken
+                      </button>
+                    </div>
+                  </div>
+                </li>
               )}
             </ul>
           </div>
         </>
       )}
 
-      {/* ── Special Crew ── */}
+      {/* [3] SPECIAL CREW (Lead/Op/Supporti+/crew_care etc.) */}
       {hasCrewSection && (
         <>
           <h3 className="section-title">Special Crew</h3>
           <div className="card">
             <ul className="info-list">
               {leadCrew.length > 0 && (
-                <li><div>
-                  <div style={lbl}>Lead</div>
-                  {leadCrew.map((m, i) => (
-                    <p key={i}>{m.full_name}</p>
-                  ))}
-                </div></li>
+                <li>
+                  <div>
+                    <div style={lbl}>Lead</div>
+                    {leadCrew.map((m, i) => (
+                      <p key={i}>{m.full_name}</p>
+                    ))}
+                  </div>
+                </li>
               )}
               {opCrew.length > 0 && (
-                <li><div>
-                  <div style={lbl}>Operator</div>
-                  {opCrew.map((m, i) => (
-                    <p key={i}>{m.full_name}</p>
-                  ))}
-                </div></li>
+                <li>
+                  <div>
+                    <div style={lbl}>Operator</div>
+                    {opCrew.map((m, i) => (
+                      <p key={i}>{m.full_name}</p>
+                    ))}
+                  </div>
+                </li>
               )}
               {suppPlusCrew.length > 0 && (
-                <li><div>
-                  <div style={lbl}>Supporti+</div>
-                  {suppPlusCrew.map((m, i) => (
-                    <p key={i}>{m.full_name}</p>
-                  ))}
-                </div></li>
+                <li>
+                  <div>
+                    <div style={lbl}>Supporti+</div>
+                    {suppPlusCrew.map((m, i) => (
+                      <p key={i}>{m.full_name}</p>
+                    ))}
+                  </div>
+                </li>
               )}
               {details.crew_care && (
                 <li><div>
                   <div style={lbl}>Crew Care</div>
-                  <div style={valMulti}><ContactText text={details.crew_care} /></div>
+                  <div style={valMulti}><PhoneText text={details.crew_care} /></div>
                 </div></li>
               )}
               {details.social_media_fotos && (
                 <li><div>
                   <div style={lbl}>Social Media / Fotos</div>
-                  <div style={valMulti}><ContactText text={details.social_media_fotos} /></div>
+                  <div style={valMulti}><PhoneText text={details.social_media_fotos} /></div>
                 </div></li>
               )}
               {details.crew_sonstiges && (
@@ -1884,54 +1942,67 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
         </>
       )}
 
-      {!hasTelegram && !hasCrewCard && !hasCrewSection && (
+      {!hasTelegramButtons && !hasCrewCard && !hasCrewSection && (
         <div className="card" style={{ textAlign: 'center', padding: 32 }}>
           <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconKontakte size={32} /></div>
           <p className="card-sub">Infos werden noch eingetragen.</p>
         </div>
       )}
 
-      {/* ── Crew-Liste Bottom Sheet ── */}
+      {/* [4] CREW-LISTE BOTTOM SHEET */}
       {showCrewSheet && (
-        <>
-          <div onClick={() => setShowCrewSheet(false)}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 400 }} />
-          <div style={{
-            position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-            width: '100%', maxWidth: 480, background: 'var(--weiss)',
-            borderRadius: '16px 16px 0 0', zIndex: 401,
-            maxHeight: '88dvh', display: 'flex', flexDirection: 'column',
-            boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
-          }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '14px var(--sp-4)', borderBottom: '1px solid var(--border)', flexShrink: 0,
-            }}>
-              <div style={{ fontWeight: 800, fontSize: 'var(--text-base)', fontFamily: 'var(--font-heading)' }}>
-                Crew-Liste · {sortedCrew.length} Personen
-              </div>
-              <button onClick={() => setShowCrewSheet(false)} aria-label="Schließen" style={{
-                background: 'var(--papier)', border: 'none', borderRadius: '50%',
-                width: 32, height: 32, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 16, color: 'var(--schwarz)', fontWeight: 700,
-              }}>✕</button>
-            </div>
-            <div style={{
-              overflowY: 'auto', padding: 'var(--sp-4)',
-              paddingBottom: 'calc(var(--sp-8) + env(safe-area-inset-bottom, 0px))',
-            }}>
-              <CrewListSection
-                crew={sortedCrew}
-                festivalId={role === 'lead' ? festivalId : null}
-                festivalName={festivalName}
-                attendanceSubmission={attendanceSubmission}
-              />
-            </div>
-          </div>
-        </>
+        <CrewListSheet
+          crew={sortedCrew}
+          festivalId={role === 'lead' ? festivalId : null}
+          festivalName={festivalName}
+          attendanceSubmission={attendanceSubmission}
+          onClose={() => setShowCrewSheet(false)}
+        />
       )}
     </div>
+  )
+}
+
+// ── CrewListSheet ─────────────────────────────────────────────────────────────
+
+function CrewListSheet({ crew, festivalId, festivalName, attendanceSubmission, onClose }) {
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 400 }} />
+      <div style={{
+        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: 480, background: 'var(--weiss)',
+        borderRadius: '16px 16px 0 0', zIndex: 401,
+        maxHeight: '88dvh', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px var(--sp-4)', borderBottom: '1px solid var(--border)', flexShrink: 0,
+        }}>
+          <div style={{ fontWeight: 800, fontSize: 'var(--text-base)', fontFamily: 'var(--font-heading)' }}>
+            Crew-Liste
+          </div>
+          <button onClick={onClose} aria-label="Schließen" style={{
+            background: 'var(--papier)', border: 'none', borderRadius: '50%',
+            width: 32, height: 32, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, color: 'var(--schwarz)', fontWeight: 700,
+          }}>✕</button>
+        </div>
+        <div style={{ overflowY: 'auto', padding: 'var(--sp-4)', paddingBottom: 'calc(var(--sp-8) + env(safe-area-inset-bottom, 0px))' }}>
+          <div style={{ marginBottom: 'var(--sp-3)', fontSize: 'var(--text-sm)', color: 'var(--grau-text)' }}>
+            {crew.length} Personen
+          </div>
+          <CrewListSection
+            crew={crew}
+            festivalId={festivalId}
+            festivalName={festivalName}
+            attendanceSubmission={attendanceSubmission}
+          />
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -2360,43 +2431,43 @@ function InfosTab({ details, role, content, festivalId }) {
               {details.production_mgmt && (
                 <li><div>
                   <div style={lbl}>Produktion</div>
-                  <div style={valMulti}><ContactText text={details.production_mgmt} /></div>
+                  <div style={valMulti}><PhoneText text={details.production_mgmt} /></div>
                 </div></li>
               )}
               {(details.production_arbeitssicherheit || details.job_safety) && (
                 <li><div>
                   <div style={lbl}>Arbeitssicherheit</div>
-                  <div style={valMulti}><ContactText text={details.production_arbeitssicherheit || details.job_safety} /></div>
+                  <div style={valMulti}><PhoneText text={details.production_arbeitssicherheit || details.job_safety} /></div>
                 </div></li>
               )}
               {details.urin_pump && (
                 <li><div>
                   <div style={lbl}>IBC Abpumpung</div>
-                  <div style={valMulti}><ContactText text={details.urin_pump} /></div>
+                  <div style={valMulti}><PhoneText text={details.urin_pump} /></div>
                 </div></li>
               )}
               {details.fsb_spedition && (
                 <li><div>
                   <div style={lbl}>FSB Spedition</div>
-                  <div style={valMulti}><ContactText text={details.fsb_spedition} /></div>
+                  <div style={valMulti}><PhoneText text={details.fsb_spedition} /></div>
                 </div></li>
               )}
               {details.anhaenger_spedition && (
                 <li><div>
                   <div style={lbl}>Anhänger Spedition</div>
-                  <div style={valMulti}><ContactText text={details.anhaenger_spedition} /></div>
+                  <div style={valMulti}><PhoneText text={details.anhaenger_spedition} /></div>
                 </div></li>
               )}
               {details.vca_asp && (
                 <li><div>
                   <div style={lbl}>VcA</div>
-                  <div style={valMulti}><ContactText text={details.vca_asp} /></div>
+                  <div style={valMulti}><PhoneText text={details.vca_asp} /></div>
                 </div></li>
               )}
               {details.awareness_team && (
                 <li><div>
                   <div style={lbl}>Awareness-Team</div>
-                  <div style={valMulti}><ContactText text={details.awareness_team} /></div>
+                  <div style={valMulti}><PhoneText text={details.awareness_team} /></div>
                 </div></li>
               )}
             </ul>
@@ -2616,8 +2687,7 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew, inSheet = false })
       : [{ name: '', tasks: [] }]
   )
   const [report, setReport]           = useState(() => cachedReport || null)
-  // Kein Ladescreen wenn gecachte Daten vorhanden
-  const [loadingReport, setLoadingReport] = useState(!cachedReport)
+  const [loadingReport, setLoadingReport] = useState(false)
   const [submitting, setSubmitting]   = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [saveStatus, setSaveStatus]   = useState('') // 'saving' | 'saved' | ''
