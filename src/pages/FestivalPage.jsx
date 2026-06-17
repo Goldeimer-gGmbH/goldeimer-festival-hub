@@ -1995,7 +1995,7 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission 
       if (!token) throw new Error('Nicht eingeloggt – bitte Seite neu laden')
 
       const controller = new AbortController()
-      const timeoutId  = setTimeout(() => controller.abort(), 15000)
+      const timeoutId  = setTimeout(() => controller.abort(), 30000)
 
       let res
       try {
@@ -2027,7 +2027,7 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission 
         })
       }
     } catch (e) {
-      setSubmitError(e?.message || 'Unbekannter Fehler beim Abschicken')
+      setSubmitError(e?.name === 'AbortError' ? 'Netz zu langsam – Daten wurden wahrscheinlich trotzdem gespeichert, bitte prüfen.' : (e?.message || 'Unbekannter Fehler beim Abschicken'))
     } finally {
       setSubmitting(false)
     }
@@ -2633,7 +2633,7 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew, inSheet = false })
       if (!token) throw new Error('Nicht eingeloggt – bitte Seite neu laden')
 
       const controller = new AbortController()
-      const timeoutId  = setTimeout(() => controller.abort(), 15000)
+      const timeoutId  = setTimeout(() => controller.abort(), 30000)
 
       let res
       try {
@@ -2675,7 +2675,7 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew, inSheet = false })
         cacheSet(reportCacheKey, updated, 48 * 60 * 60 * 1000)
       }
     } catch (e) {
-      setSubmitError(e?.message || 'Unbekannter Fehler beim Abschicken')
+      setSubmitError(e?.name === 'AbortError' ? 'Netz zu langsam – Daten wurden wahrscheinlich trotzdem gespeichert, bitte prüfen.' : (e?.message || 'Unbekannter Fehler beim Abschicken'))
     } finally {
       setSubmitting(false)
     }
