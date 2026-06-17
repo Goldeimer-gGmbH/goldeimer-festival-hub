@@ -634,7 +634,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
                 onClick={() => setOpenDayIdx(isOpen ? -1 : idx)}
                 style={{
                   width: '100%',
-                  background: isOpen ? 'var(--papier)' : 'var(--weiss)',
+                  background: 'var(--papier)',
                   border: 'none',
                   borderBottom: isLast && !isOpen ? 'none' : '1px solid var(--border)',
                   padding: '14px var(--sp-4)',
@@ -661,17 +661,19 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
                     {day.todo}
                   </div>
                 </div>
-                <svg
-                  width="18" height="18" viewBox="0 0 18 18" fill="none"
-                  style={{
-                    flexShrink: 0,
-                    transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s',
-                    color: 'var(--grau-text)',
-                  }}
-                >
-                  <path d="M4 6.5L9 11.5L14 6.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <div style={{
+                  flexShrink: 0,
+                  width: 28, height: 28,
+                  borderRadius: '50%',
+                  background: 'var(--schwarz)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s',
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 18 18" fill="none">
+                    <path d="M4 6.5L9 11.5L14 6.5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
               </button>
 
               {isOpen && (
