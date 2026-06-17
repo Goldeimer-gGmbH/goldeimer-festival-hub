@@ -301,12 +301,6 @@ export default function FestivalPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // Tag-Drill-down: in URL persistiert (Index), damit Browser-Zurück funktioniert
-  const selectedDayIdx = parseInt(searchParams.get('day') ?? '-1', 10)
-  function onSelectDay(idx) {
-    setSearchParams({ day: String(idx) })
-  }
-
   useEffect(() => { loadFestivalInfo() }, [id])
 
   async function loadFestivalInfo(retryCount = 0) {
@@ -408,9 +402,9 @@ export default function FestivalPage() {
   const festivalName = data.festival?.name || ''
 
   const tabs = [
-    { key: 'ablauf',   label: 'Ablauf',    Icon: TabIconAblauf },
-    { key: 'infos',    label: 'Infos',     Icon: TabIconInfos },
-    { key: 'kontakte', label: 'Kontakte',  Icon: TabIconKontakte },
+    { key: 'ablauf',   label: 'Ablauf',          Icon: TabIconAblauf },
+    { key: 'infos',    label: 'Infos & Kontakte', Icon: TabIconInfos },
+    { key: 'kontakte', label: 'Crew',             Icon: TabIconKontakte },
   ]
 
   return (
@@ -485,8 +479,6 @@ export default function FestivalPage() {
             festivalName={festivalName}
             details={details}
             crew={data.crew}
-            selectedDayIdx={selectedDayIdx}
-            onSelectDay={onSelectDay}
           />
         )}
 
@@ -553,34 +545,34 @@ export default function FestivalPage() {
 
 // ── AblaufTab ─────────────────────────────────────────────────────────────────
 
-function AblaufTab({ role, festivalId, profileId, checklists, festivalName, details, crew, selectedDayIdx, onSelectDay }) {
-  // Supporti bekommt noch keinen Ablauf – alle anderen Rollen schon
+function AblaufTab({ role, festivalId, profileId, checklists, festivalName, details, crew }) {
+  const [openDayIdx, setOpenDayIdx] = useState(-1)
+
   const hasAblauf = role === 'lead' || role === 'operator' || role === 'supporti_plus' || role === 'catering'
 
   const ablaufTitle =
-    role === 'lead'         ? 'Ablauf für Leads' :
-    role === 'operator'     ? 'Ablauf für Operator' :
-    role === 'supporti_plus'? 'Ablauf für Supporti+' :
-    role === 'catering'     ? 'Ablauf für Küchencrew' :
-                              'Ablauf für Supportis'
+    role === 'lead'          ? 'Ablauf für Leads' :
+    role === 'operator'      ? 'Ablauf für Operator' :
+    role === 'supporti_plus' ? 'Ablauf für Supporti+' :
+    role === 'catering'      ? 'Ablauf für Küchencrew' :
+                               'Ablauf für Supportis'
 
   const days = hasAblauf ? generateAblaufDays(details, role, festivalName) : []
-  const selectedDay = selectedDayIdx >= 0 ? days[selectedDayIdx] ?? null : null
 
-  // Drill-down-Ansicht: einzelner Tag (Pfeil = navigate(-1) im Header der Seite)
-  if (selectedDay) {
-    return <AblaufDayDetail day={selectedDay} crew={crew} festivalId={festivalId} festivalName={festivalName} />
-  }
+  const wichtigeTermine = [
+    { lbl: 'Anreise Lead & Operator', val: details.start_leadop },
+    { lbl: 'Beginn Aufbau',           val: details.start_setup,         suffix: ', ab 8 Uhr' },
+    { lbl: 'Open Campingplatz',       val: details.start_campsite },
+    { lbl: 'Welcome Meeting',         val: details.time_welcome_meeting },
+    { lbl: 'Crew Briefing',           val: details.time_crew_briefing },
+    { lbl: 'Abbau',                   val: details.end_takedown,        suffix: ', ab 8 Uhr' },
+    { lbl: 'Close Campingplatz',      val: details.end_campsite },
+  ].filter(t => t.val)
 
   if (!hasAblauf) {
     return (
       <div>
-        <div style={{
-          fontFamily: 'var(--font-statement)',
-          fontSize: 'var(--text-h2)',
-          lineHeight: 1.2,
-          marginBottom: 'var(--sp-5)',
-        }}>
+        <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 'var(--sp-5)' }}>
           {ablaufTitle}
         </div>
         <div className="card" style={{ textAlign: 'center', padding: 32 }}>
@@ -604,72 +596,89 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
 
   return (
     <div>
-      <div style={{
-        fontFamily: 'var(--font-statement)',
-        fontSize: 'var(--text-h2)',
-        lineHeight: 1.2,
-        marginBottom: 'var(--sp-5)',
-      }}>
+      <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 'var(--sp-5)' }}>
         {ablaufTitle}
       </div>
 
-      {days.map((day, idx) => (
-        <button
-          key={idx}
-          onClick={() => onSelectDay(idx)}
-          style={{
-            width: '100%',
-            background: 'var(--weiss)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--rounded)',
-            padding: '13px var(--sp-4)',
-            marginBottom: 8,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            textAlign: 'left',
-            boxShadow: 'var(--shadow-sm)',
-          }}
-        >
-          {/* Zeitpunkt + Datum */}
-          <div style={{ flex: '0 0 100px' }}>
-            <div style={{
-              fontSize: 11,
-              fontWeight: 800,
-              fontFamily: 'var(--font-heading)',
-              color: 'var(--schwarz)',
-              letterSpacing: '0.02em',
-            }}>
-              {day.label}
-            </div>
-            {day.date && (
-              <div style={{ fontSize: 11, color: 'var(--grau-text)', marginTop: 2, fontFamily: 'var(--font-heading)' }}>
-                {formatDateShort(day.date)}
+      {wichtigeTermine.length > 0 && (
+        <>
+          <div className="section-title">Wichtigste Termine</div>
+          <div className="card" style={{ marginBottom: 8 }}>
+            {wichtigeTermine.map((t, i) => (
+              <div key={i} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                paddingBottom: i < wichtigeTermine.length - 1 ? 10 : 0,
+                marginBottom: i < wichtigeTermine.length - 1 ? 10 : 0,
+                borderBottom: i < wichtigeTermine.length - 1 ? '1px solid var(--border)' : 'none',
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--schwarz)', fontFamily: 'var(--font-heading)' }}>
+                  {t.lbl}
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--grau-text)', textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
+                  {formatDateShort(t.val) || t.val}{t.suffix || ''}
+                </div>
               </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {days.map((day, idx) => {
+        const isOpen = openDayIdx === idx
+        return (
+          <div key={idx} style={{ marginBottom: 8 }}>
+            <button
+              onClick={() => setOpenDayIdx(isOpen ? -1 : idx)}
+              style={{
+                width: '100%',
+                background: isOpen ? 'var(--schwarz)' : 'var(--weiss)',
+                border: '1px solid var(--border)',
+                borderRadius: isOpen ? 'var(--rounded) var(--rounded) 0 0' : 'var(--rounded)',
+                padding: '13px var(--sp-4)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                textAlign: 'left',
+                boxShadow: isOpen ? 'none' : 'var(--shadow-sm)',
+              }}
+            >
+              <div style={{ flex: '0 0 100px' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-heading)', color: isOpen ? 'var(--gelb)' : 'var(--schwarz)', letterSpacing: '0.02em' }}>
+                  {day.label}
+                </div>
+                {day.date && (
+                  <div style={{ fontSize: 11, color: isOpen ? 'rgba(255,255,255,0.55)' : 'var(--grau-text)', marginTop: 2, fontFamily: 'var(--font-heading)' }}>
+                    {formatDateShort(day.date)}
+                  </div>
+                )}
+              </div>
+              <div style={{ width: 1, height: 30, background: isOpen ? 'rgba(255,255,255,0.2)' : 'var(--border)', flexShrink: 0 }} />
+              <div style={{ flex: 1, fontWeight: 700, fontSize: 'var(--text-sm)', color: isOpen ? 'var(--weiss)' : 'var(--schwarz)', fontFamily: 'var(--font-heading)' }}>
+                {day.todo}
+              </div>
+              <span style={{
+                color: isOpen ? 'var(--weiss)' : 'var(--grau-text)',
+                fontSize: 16, flexShrink: 0,
+                display: 'inline-block',
+                transform: isOpen ? 'rotate(90deg)' : 'none',
+                transition: 'transform 0.2s',
+              }}>→</span>
+            </button>
+
+            {isOpen && (
+              <AblaufDayDetail
+                day={day}
+                crew={crew}
+                festivalId={festivalId}
+                festivalName={festivalName}
+                inAccordion
+              />
             )}
           </div>
+        )
+      })}
 
-          {/* Trennlinie */}
-          <div style={{ width: 1, height: 30, background: 'var(--border)', flexShrink: 0 }} />
-
-          {/* To-Do */}
-          <div style={{
-            flex: 1,
-            fontWeight: 700,
-            fontSize: 'var(--text-sm)',
-            color: 'var(--schwarz)',
-            fontFamily: 'var(--font-heading)',
-          }}>
-            {day.todo}
-          </div>
-
-          {/* Pfeil */}
-          <span style={{ color: 'var(--grau-text)', fontSize: 16, flexShrink: 0 }}>→</span>
-        </button>
-      ))}
-
-      {/* Checklisten am Ende */}
       {checklists && checklists.length > 0 && (
         <>
           <div className="section-title" style={{ marginTop: 8 }}>Checklisten</div>
@@ -1398,37 +1407,38 @@ function RueckmeldungSheet({ festivalId, festivalName, crew, onClose }) {
 
 // ── Tages-Detailansicht ───────────────────────────────────────────────────────
 
-function AblaufDayDetail({ day, crew, festivalId, festivalName }) {
+function AblaufDayDetail({ day, crew, festivalId, festivalName, inAccordion = false }) {
   const [showBriefing, setShowBriefing]     = useState(false)
   const [showAnleitung, setShowAnleitung]   = useState(false)
   const [showRueckmeldung, setShowRueckmeldung] = useState(false)
 
   return (
     <div>
-      {/* Titel (Pfeil ist im Seiten-Header) */}
-      <div style={{ marginBottom: 'var(--sp-5)' }}>
-        <div style={{
-          fontSize: 10,
-          fontWeight: 800,
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-          color: 'var(--grau-text)',
-          fontFamily: 'var(--font-heading)',
-          marginBottom: 4,
-        }}>
-          {day.label}{day.date ? ` · ${formatDateShort(day.date)}` : ''}
+      {!inAccordion && (
+        <div style={{ marginBottom: 'var(--sp-5)' }}>
+          <div style={{
+            fontSize: 10,
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            color: 'var(--grau-text)',
+            fontFamily: 'var(--font-heading)',
+            marginBottom: 4,
+          }}>
+            {day.label}{day.date ? ` · ${formatDateShort(day.date)}` : ''}
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-statement)',
+            fontSize: 'var(--text-h2)',
+            color: 'var(--schwarz)',
+            lineHeight: 1.2,
+          }}>
+            {day.todo}
+          </div>
         </div>
-        <div style={{
-          fontFamily: 'var(--font-statement)',
-          fontSize: 'var(--text-h2)',
-          color: 'var(--schwarz)',
-          lineHeight: 1.2,
-        }}>
-          {day.todo}
-        </div>
-      </div>
+      )}
 
-      <div className="card">
+      <div className="card" style={inAccordion ? { borderRadius: '0 0 var(--rounded) var(--rounded)', borderTop: 'none' } : {}}>
         {day.content.map((item, i) => {
           // ── Gemeinsamer Abschnitts-Header (section, title, typed items) ──
           // Kein Aufzählungspunkt — fett als Überschrift, Abstand zur vorherigen Gruppe
@@ -1755,91 +1765,139 @@ function PersonBlocks({ value }) {
 function KontakteTab({ details, role, festivalName, crew, festivalId, attendanceSubmission }) {
   const isLeadOp = role === 'lead' || role === 'operator'
 
-  const crewLoaded = Array.isArray(crew)
-  const sortedCrew = crewLoaded
+  const crewLoaded  = Array.isArray(crew)
+  const sortedCrew  = crewLoaded
     ? [...crew].sort((a, b) => ROLLE_ORDER.indexOf(a.role) - ROLLE_ORDER.indexOf(b.role))
     : []
+
+  const leadCrew     = sortedCrew.filter(m => m.role === 'lead')
+  const opCrew       = sortedCrew.filter(m => m.role === 'operator')
+  const suppPlusCrew = sortedCrew.filter(m => m.role === 'supporti_plus')
 
   const lbl      = { fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', marginBottom: 4 }
   const val      = { fontSize: 14, fontWeight: 400, color: 'var(--schwarz)' }
   const valMulti = { fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--schwarz)' }
 
-  const hasSpecialContacts = isLeadOp && (
-    details.production_mgmt || details.job_safety || details.urin_pump ||
-    details.fsb_spedition || details.anhaenger_spedition || details.vca_asp || details.awareness_team
-  )
+  const hasCrewSection = leadCrew.length > 0 || opCrew.length > 0 || suppPlusCrew.length > 0 ||
+    details.crew_care || details.social_media_fotos || details.crew_sonstiges
 
-  const hasAnyContent = details.telegram_link || hasSpecialContacts || isLeadOp
+  const hasTelegramButtons = details.telegram_link || (isLeadOp && details.telegram_op_link) || details.shift_table_link
 
   return (
     <div>
       <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 'var(--sp-5)' }}>
-        Kontakte
+        Crew
       </div>
 
-      {/* Telegramgruppe – alle Rollen */}
-      {details.telegram_link && (
-        <>
-          <div className="section-title">Telegramgruppe</div>
-          <div className="card" style={{ marginBottom: 8 }}>
+      {/* Telegram + Schichtplan – Buttons */}
+      {hasTelegramButtons && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+          {details.telegram_link && (
             <a
               href={details.telegram_link.startsWith('http') ? details.telegram_link : `https://${details.telegram_link}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ fontWeight: 700, fontSize: 14, color: 'var(--schwarz)', textDecoration: 'underline' }}
+              target="_blank" rel="noopener noreferrer"
+              className="button button--yellow"
+              style={{ textDecoration: 'none', textAlign: 'center' }}
             >
-              Telegram-Gruppe zum {festivalName} ↗
+              Telegram-Crew ↗
             </a>
-          </div>
-        </>
+          )}
+          {isLeadOp && details.telegram_op_link && (
+            <a
+              href={details.telegram_op_link.startsWith('http') ? details.telegram_op_link : `https://${details.telegram_op_link}`}
+              target="_blank" rel="noopener noreferrer"
+              className="button button--yellow"
+              style={{ textDecoration: 'none', textAlign: 'center' }}
+            >
+              Telegram-Op ↗
+            </a>
+          )}
+          {details.shift_table_link && (
+            <a
+              href={details.shift_table_link}
+              target="_blank" rel="noopener noreferrer"
+              className="button button--yellow"
+              style={{ textDecoration: 'none', textAlign: 'center' }}
+            >
+              Schichtplan ↗
+            </a>
+          )}
+        </div>
       )}
 
-      {/* Spezial-Kontakte – nur Leads + Operator */}
-      {hasSpecialContacts && (
+      {/* Crew-Übersicht */}
+      {hasCrewSection && (
         <>
-          <div className="section-title">Spezial-Kontakte</div>
+          <div className="section-title">Crew</div>
           <div className="card">
             <ul className="info-list">
-              {details.production_mgmt && (
+              {leadCrew.length > 0 && (
+                <li>
+                  <div>
+                    <div style={lbl}>Lead</div>
+                    {leadCrew.map((m, i) => (
+                      <div key={i} style={{ marginBottom: i < leadCrew.length - 1 ? 6 : 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--schwarz)' }}>{m.full_name}</div>
+                        {m.phone && (
+                          <a href={`tel:${m.phone.replace(/[\s\-/]/g, '')}`} style={{ fontSize: 13, color: 'var(--grau-text)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <IconTelefon size={12} /> {m.phone}
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </li>
+              )}
+              {opCrew.length > 0 && (
+                <li>
+                  <div>
+                    <div style={lbl}>Operator</div>
+                    {opCrew.map((m, i) => (
+                      <div key={i} style={{ marginBottom: i < opCrew.length - 1 ? 6 : 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--schwarz)' }}>{m.full_name}</div>
+                        {m.phone && (
+                          <a href={`tel:${m.phone.replace(/[\s\-/]/g, '')}`} style={{ fontSize: 13, color: 'var(--grau-text)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <IconTelefon size={12} /> {m.phone}
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </li>
+              )}
+              {suppPlusCrew.length > 0 && (
+                <li>
+                  <div>
+                    <div style={lbl}>Supporti+</div>
+                    {suppPlusCrew.map((m, i) => (
+                      <div key={i} style={{ marginBottom: i < suppPlusCrew.length - 1 ? 6 : 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--schwarz)' }}>{m.full_name}</div>
+                        {m.phone && (
+                          <a href={`tel:${m.phone.replace(/[\s\-/]/g, '')}`} style={{ fontSize: 13, color: 'var(--grau-text)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <IconTelefon size={12} /> {m.phone}
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </li>
+              )}
+              {details.crew_care && (
                 <li><div>
-                  <div style={lbl}>Produktion</div>
-                  <div style={valMulti}><PhoneText text={details.production_mgmt} /></div>
+                  <div style={lbl}>Crew Care</div>
+                  <div style={valMulti}><PhoneText text={details.crew_care} /></div>
                 </div></li>
               )}
-              {details.job_safety && (
+              {details.social_media_fotos && (
                 <li><div>
-                  <div style={lbl}>Arbeitssicherheit</div>
-                  <div style={valMulti}><PhoneText text={details.job_safety} /></div>
+                  <div style={lbl}>Social Media / Fotos</div>
+                  <div style={valMulti}><PhoneText text={details.social_media_fotos} /></div>
                 </div></li>
               )}
-              {details.urin_pump && (
+              {details.crew_sonstiges && (
                 <li><div>
-                  <div style={lbl}>IBC Abpumpung</div>
-                  <div style={valMulti}><PhoneText text={details.urin_pump} /></div>
-                </div></li>
-              )}
-              {details.fsb_spedition && (
-                <li><div>
-                  <div style={lbl}>FSB Spedition</div>
-                  <div style={valMulti}><PhoneText text={details.fsb_spedition} /></div>
-                </div></li>
-              )}
-              {details.anhaenger_spedition && (
-                <li><div>
-                  <div style={lbl}>Anhänger Spedition</div>
-                  <div style={valMulti}><PhoneText text={details.anhaenger_spedition} /></div>
-                </div></li>
-              )}
-              {details.vca_asp && (
-                <li><div>
-                  <div style={lbl}>VcA</div>
-                  <div style={valMulti}><PhoneText text={details.vca_asp} /></div>
-                </div></li>
-              )}
-              {details.awareness_team && (
-                <li><div>
-                  <div style={lbl}>Awareness-Team</div>
-                  <div style={valMulti}><PhoneText text={details.awareness_team} /></div>
+                  <div style={lbl}>Sonstiges</div>
+                  <div style={valMulti}>{details.crew_sonstiges}</div>
                 </div></li>
               )}
             </ul>
@@ -1847,16 +1905,16 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
         </>
       )}
 
-      {/* Crew – nur Leads + Operator */}
-      {isLeadOp && (
+      {/* Crew-Liste mit Anwesenheit (nur Leads + Operator) */}
+      {isLeadOp && crewLoaded && (
         <>
-          <div className="section-title">Crew</div>
+          <div className="section-title">Crew-Liste</div>
           <div className="card" style={{ marginBottom: 8 }}>
             <ul className="info-list">
               <li>
                 <div>
                   <div style={lbl}>Crew-Größe</div>
-                  <div style={val}>{crewLoaded ? `${sortedCrew.length} Personen` : '...'}</div>
+                  <div style={val}>{sortedCrew.length} Personen</div>
                 </div>
               </li>
             </ul>
@@ -1870,10 +1928,10 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
         </>
       )}
 
-      {!hasAnyContent && (
+      {!hasTelegramButtons && !hasCrewSection && !isLeadOp && (
         <div className="card" style={{ textAlign: 'center', padding: 32 }}>
           <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconKontakte size={32} /></div>
-          <p className="card-sub">Kontakte werden noch eingetragen.</p>
+          <p className="card-sub">Infos werden noch eingetragen.</p>
         </div>
       )}
     </div>
@@ -2202,22 +2260,32 @@ function InfosTab({ details, role, content, festivalId }) {
   const lbl      = { fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', marginBottom: 4 }
   const val      = { fontSize: 14, fontWeight: 400, color: 'var(--schwarz)' }
   const valMulti = { fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--schwarz)' }
-  const linkStyle = { fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', textDecoration: 'none' }
-  const ghost    = { fontSize: 14, fontWeight: 600, color: 'var(--grau-text)', fontStyle: 'italic' }
 
-  // Jahr aus Festival-Datumfeldern ableiten (DD.MM.YYYY)
   const festivalYear = parseDeDate(
     details.start_supp || details.start_leadop || details.start_setup
   )?.getFullYear() || ''
 
-  // Goldeimer-Toiletten: zeige Sektion wenn mindestens ein Feld befüllt
-  const hasToiletten = details.count_module || details.shift_table_link || details.goldeimer_hours ||
+  const hasKloInfos = details.count_module || details.shift_table_link || details.goldeimer_hours ||
     details.goldeimer_prices || (isKitchenVisible && details.festival_money_info)
+
+  const hasExterneKontakte = isLeadOp && (
+    details.production_mgmt || details.production_arbeitssicherheit || details.job_safety ||
+    details.urin_pump || details.fsb_spedition || details.anhaenger_spedition ||
+    details.vca_asp || details.awareness_team
+  )
+
+  const hasLogistik = isLeadOp && (
+    details.location_info || details.lead_rider_link || details.festival_lageplan || details.logistic_info
+  )
+
+  const hasKueche = isKitchenVisible && (
+    details.kitchen_op || details.kitchen_crew_list || details.kitchen_info || details.kitchen_cost
+  )
 
   return (
     <div>
       <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 'var(--sp-5)' }}>
-        Infos
+        Infos & Kontakte
       </div>
 
       {/* ── Besonderheiten (roter Kasten, ganz oben) ── */}
@@ -2229,10 +2297,7 @@ function InfosTab({ details, role, content, festivalId }) {
           padding: '14px var(--sp-4)',
           marginBottom: 'var(--sp-4)',
         }}>
-          <div style={{
-            fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)',
-            color: 'var(--rot)', marginBottom: 8,
-          }}>
+          <div style={{ fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--rot)', marginBottom: 8 }}>
             Besonderheiten {festivalYear}
           </div>
           <div style={{ fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.65, color: 'var(--schwarz)' }}>
@@ -2245,113 +2310,165 @@ function InfosTab({ details, role, content, festivalId }) {
       <div className="section-title">Festival-Infos</div>
       <div className="card">
         <ul className="info-list">
-          <li>
-            <div>
-              <div style={lbl}>Anreise</div>
-              <div style={val}>{getAnreise(details, role) || 'Wird noch bekannt gegeben'}</div>
-            </div>
-          </li>
-          <li>
-            <div>
-              <div style={lbl}>Abreise</div>
-              <div style={val}>{getAbreise(details, role) || 'Wird noch bekannt gegeben'}</div>
-            </div>
-          </li>
+          <li><div>
+            <div style={lbl}>Anreise</div>
+            <div style={val}>{getAnreise(details, role) || 'Wird noch bekannt gegeben'}</div>
+          </div></li>
+          <li><div>
+            <div style={lbl}>Abreise</div>
+            <div style={val}>{getAbreise(details, role) || 'Wird noch bekannt gegeben'}</div>
+          </div></li>
           {details.festival_address && (
-            <li>
-              <div><div style={lbl}>Anschrift</div><div style={valMulti}>{details.festival_address}</div></div>
-            </li>
+            <li><div><div style={lbl}>Anschrift</div><div style={valMulti}>{details.festival_address}</div></div></li>
           )}
-          <li>
-            <div>
-              <div style={lbl}>Lageplan</div>
-              {details.festival_lageplan
-                ? <a href={details.festival_lageplan} target="_blank" rel="noopener noreferrer" style={linkStyle}>Karte öffnen →</a>
-                : <div style={ghost}>Folgt</div>
-              }
-            </div>
-          </li>
         </ul>
       </div>
 
-      {/* ── Goldeimer-Toiletten ── */}
-      {hasToiletten && (
+      {/* ── Klo-Infos & Schichtplan ── */}
+      {hasKloInfos && (
         <>
-          <div className="section-title">Goldeimer-Toiletten</div>
+          <div className="section-title">Klo-Infos & Schichtplan</div>
+          <div className="card">
+            {details.shift_table_link && (
+              <a href={details.shift_table_link} target="_blank" rel="noopener noreferrer"
+                className="button button--yellow button--sm"
+                style={{ marginBottom: 12, textDecoration: 'none', display: 'inline-block' }}>
+                Schichtplan ↗
+              </a>
+            )}
+            {(details.count_module || details.goldeimer_hours || details.goldeimer_prices || (isKitchenVisible && details.festival_money_info)) && (
+              <ul className="info-list">
+                {details.count_module && (
+                  <li><div><div style={lbl}>Anzahl Module</div><div style={val}>{details.count_module}</div></div></li>
+                )}
+                {details.goldeimer_hours && (
+                  <li><div><div style={lbl}>Öffnungszeiten</div><div style={valMulti}>{details.goldeimer_hours}</div></div></li>
+                )}
+                {details.goldeimer_prices && (
+                  <li><div><div style={lbl}>Preise</div><div style={valMulti}>{details.goldeimer_prices}</div></div></li>
+                )}
+                {isKitchenVisible && details.festival_money_info && (
+                  <li><div><div style={lbl}>Kassensystem</div><div style={valMulti}>{details.festival_money_info}</div></div></li>
+                )}
+              </ul>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ── Externe Ansprechpersonen (nur Leads + Operator) ── */}
+      {hasExterneKontakte && (
+        <>
+          <div className="section-title">Externe Ansprechpersonen</div>
           <div className="card">
             <ul className="info-list">
-              {details.count_module && (
-                <li>
-                  <div><div style={lbl}>Anzahl Module</div><div style={val}>{details.count_module}</div></div>
-                </li>
+              {details.production_mgmt && (
+                <li><div>
+                  <div style={lbl}>Produktion</div>
+                  <div style={valMulti}><PhoneText text={details.production_mgmt} /></div>
+                </div></li>
               )}
-              {details.shift_table_link && (
-                <li>
-                  <div>
-                    <div style={lbl}>Schichtplan</div>
-                    <a href={details.shift_table_link} target="_blank" rel="noopener noreferrer" style={linkStyle}>Plan öffnen →</a>
-                  </div>
-                </li>
+              {(details.production_arbeitssicherheit || details.job_safety) && (
+                <li><div>
+                  <div style={lbl}>Arbeitssicherheit</div>
+                  <div style={valMulti}><PhoneText text={details.production_arbeitssicherheit || details.job_safety} /></div>
+                </div></li>
               )}
-              {details.goldeimer_hours && (
-                <li>
-                  <div><div style={lbl}>Öffnungszeiten</div><div style={valMulti}>{details.goldeimer_hours}</div></div>
-                </li>
+              {details.urin_pump && (
+                <li><div>
+                  <div style={lbl}>IBC Abpumpung</div>
+                  <div style={valMulti}><PhoneText text={details.urin_pump} /></div>
+                </div></li>
               )}
-              {details.goldeimer_prices && (
-                <li>
-                  <div><div style={lbl}>Preise</div><div style={valMulti}>{details.goldeimer_prices}</div></div>
-                </li>
+              {details.fsb_spedition && (
+                <li><div>
+                  <div style={lbl}>FSB Spedition</div>
+                  <div style={valMulti}><PhoneText text={details.fsb_spedition} /></div>
+                </div></li>
               )}
-              {isKitchenVisible && details.festival_money_info && (
-                <li>
-                  <div><div style={lbl}>Kassensystem</div><div style={valMulti}>{details.festival_money_info}</div></div>
-                </li>
+              {details.anhaenger_spedition && (
+                <li><div>
+                  <div style={lbl}>Anhänger Spedition</div>
+                  <div style={valMulti}><PhoneText text={details.anhaenger_spedition} /></div>
+                </div></li>
+              )}
+              {details.vca_asp && (
+                <li><div>
+                  <div style={lbl}>VcA</div>
+                  <div style={valMulti}><PhoneText text={details.vca_asp} /></div>
+                </div></li>
+              )}
+              {details.awareness_team && (
+                <li><div>
+                  <div style={lbl}>Awareness-Team</div>
+                  <div style={valMulti}><PhoneText text={details.awareness_team} /></div>
+                </div></li>
               )}
             </ul>
           </div>
         </>
       )}
 
-      {/* ── Küche (Leads, Operators, Catering) ── */}
-      {isKitchenVisible && (details.kitchen_op || details.kitchen_crew_list || details.kitchen_info) && (
+      {/* ── Standorte, Auf- und Abbau & Logistik (nur Leads + Operator) ── */}
+      {hasLogistik && (
         <>
-          <div className="section-title">Küche</div>
+          <div className="section-title">Standorte, Auf- und Abbau & Logistik</div>
           <div className="card">
-            <ul className="info-list">
-              {details.kitchen_op && (
-                <li>
-                  <div><div style={lbl}>Küche-Operator</div><div style={valMulti}>{details.kitchen_op}</div></div>
-                </li>
-              )}
-              {details.kitchen_crew_list && (
-                <li>
-                  <div>
-                    <div style={lbl}>Küchen-Crew</div>
-                    <a href={details.kitchen_crew_list} target="_blank" rel="noopener noreferrer" style={linkStyle}>Liste öffnen →</a>
-                  </div>
-                </li>
-              )}
-              {details.kitchen_info && (
-                <li>
-                  <div><div style={lbl}>Infos</div><div style={valMulti}>{details.kitchen_info}</div></div>
-                </li>
-              )}
-            </ul>
+            {(details.lead_rider_link || details.festival_lageplan) && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+                {details.lead_rider_link && (
+                  <a href={details.lead_rider_link} target="_blank" rel="noopener noreferrer"
+                    className="button button--yellow button--sm" style={{ textDecoration: 'none' }}>
+                    Aufbauanleitung ↗
+                  </a>
+                )}
+                {details.festival_lageplan && (
+                  <a href={details.festival_lageplan} target="_blank" rel="noopener noreferrer"
+                    className="button button--yellow button--sm" style={{ textDecoration: 'none' }}>
+                    Lageplan ↗
+                  </a>
+                )}
+              </div>
+            )}
+            {(details.location_info || details.logistic_info) && (
+              <ul className="info-list">
+                {details.location_info && (
+                  <li><div><div style={lbl}>Standort-Infos</div><div style={valMulti}>{details.location_info}</div></div></li>
+                )}
+                {details.logistic_info && (
+                  <li><div><div style={lbl}>Logistik</div><div style={valMulti}>{details.logistic_info}</div></div></li>
+                )}
+              </ul>
+            )}
           </div>
         </>
       )}
 
-      {/* ── Logistik (nur L & O) ── */}
-      {isLeadOp && details.logistic_info && (
+      {/* ── Küchen-Info (Leads, Operators, Catering) ── */}
+      {hasKueche && (
         <>
-          <div className="section-title">Logistik</div>
+          <div className="section-title">Küchen-Info</div>
           <div className="card">
-            <ul className="info-list">
-              <li>
-                <div><div style={lbl}>Logistik-Infos</div><div style={valMulti}>{details.logistic_info}</div></div>
-              </li>
-            </ul>
+            {details.kitchen_crew_list && (
+              <a href={details.kitchen_crew_list} target="_blank" rel="noopener noreferrer"
+                className="button button--yellow button--sm"
+                style={{ marginBottom: 12, textDecoration: 'none', display: 'inline-block' }}>
+                Küchen-Crew-Liste ↗
+              </a>
+            )}
+            {(details.kitchen_op || details.kitchen_cost || details.kitchen_info) && (
+              <ul className="info-list">
+                {details.kitchen_op && (
+                  <li><div><div style={lbl}>Küche-Operator</div><div style={valMulti}>{details.kitchen_op}</div></div></li>
+                )}
+                {details.kitchen_cost && (
+                  <li><div><div style={lbl}>Kosten</div><div style={valMulti}>{details.kitchen_cost}</div></div></li>
+                )}
+                {details.kitchen_info && (
+                  <li><div><div style={lbl}>Infos</div><div style={valMulti}>{details.kitchen_info}</div></div></li>
+                )}
+              </ul>
+            )}
           </div>
         </>
       )}
