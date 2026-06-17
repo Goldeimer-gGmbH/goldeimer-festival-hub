@@ -649,13 +649,13 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
                   }}>
                     {formatDateShort(day.date)}
                   </div>
-                  <div style={{
+                  <h4 style={{
                     fontWeight: 700, fontSize: 'var(--text-h4)',
                     color: 'var(--schwarz)', fontFamily: 'var(--font-heading)',
-                    letterSpacing: 'var(--heading-ls)', lineHeight: 1.2,
+                    letterSpacing: 'var(--heading-ls)', lineHeight: 1.2, margin: 0,
                   }}>
                     {day.todo}
-                  </div>
+                  </h4>
                 </div>
                 <div className={`accordion-chevron${isOpen ? ' is-open' : ''}`}>
                   <svg width="14" height="14" viewBox="0 0 18 18" fill="none">
