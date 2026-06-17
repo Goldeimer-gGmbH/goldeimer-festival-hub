@@ -1737,7 +1737,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
   const opCrew       = sortedCrew.filter(m => m.role === 'operator')
   const suppPlusCrew = sortedCrew.filter(m => m.role === 'supporti_plus')
 
-  const lbl      = { fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', marginBottom: 4 }
+  const lbl      = { margin: 0, fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', marginBottom: 4 }
   const val      = { fontSize: 14, fontWeight: 400, color: 'var(--schwarz)' }
   const valMulti = { fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--schwarz)' }
 
@@ -1760,7 +1760,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
             <ul className="info-list">
               <li>
                 <div>
-                  <div style={lbl}>Telegram-Gruppe(n)</div>
+                  <h4 style={lbl}>Telegram-Gruppe(n)</h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6, alignItems: 'flex-start' }}>
                     {details.telegram_link && (
                       <a
@@ -1797,7 +1797,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
               {details.shift_table_link && (
                 <li>
                   <div>
-                    <div style={lbl}>Schichtplan</div>
+                    <h4 style={lbl}>Schichtplan</h4>
                     <div style={{ marginTop: 6 }}>
                       <a
                         href={details.shift_table_link}
@@ -1814,7 +1814,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
               {isLeadOp && crewLoaded && (
                 <li>
                   <div>
-                    <div style={lbl}>Crew-Liste</div>
+                    <h4 style={lbl}>Crew-Liste</h4>
                     <div style={{ marginTop: 6 }}>
                       <button
                         onClick={() => setShowCrewSheet(true)}
@@ -1852,7 +1852,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
               {leadCrew.length > 0 && (
                 <li>
                   <div>
-                    <div style={lbl}>Lead</div>
+                    <h4 style={lbl}>Lead</h4>
                     {leadCrew.map((m, i) => (
                       <p key={i}>{m.full_name}</p>
                     ))}
@@ -1862,7 +1862,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
               {opCrew.length > 0 && (
                 <li>
                   <div>
-                    <div style={lbl}>Operator</div>
+                    <h4 style={lbl}>Operator</h4>
                     {opCrew.map((m, i) => (
                       <p key={i}>{m.full_name}</p>
                     ))}
@@ -1872,7 +1872,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
               {suppPlusCrew.length > 0 && (
                 <li>
                   <div>
-                    <div style={lbl}>Supporti+</div>
+                    <h4 style={lbl}>Supporti+</h4>
                     {suppPlusCrew.map((m, i) => (
                       <p key={i}>{m.full_name}</p>
                     ))}
@@ -1881,19 +1881,19 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
               )}
               {details.crew_care && (
                 <li><div>
-                  <div style={lbl}>Crew Care</div>
+                  <h4 style={lbl}>Crew Care</h4>
                   <div style={valMulti}><ContactText text={details.crew_care} /></div>
                 </div></li>
               )}
               {details.social_media_fotos && (
                 <li><div>
-                  <div style={lbl}>Social Media / Fotos</div>
+                  <h4 style={lbl}>Social Media / Fotos</h4>
                   <div style={valMulti}><ContactText text={details.social_media_fotos} /></div>
                 </div></li>
               )}
               {details.crew_sonstiges && (
                 <li><div>
-                  <div style={lbl}>Sonstiges</div>
+                  <h4 style={lbl}>Sonstiges</h4>
                   <div style={valMulti}>{details.crew_sonstiges}</div>
                 </div></li>
               )}
@@ -2275,7 +2275,7 @@ function InfosTab({ details, role, content, festivalId }) {
   const isLeadOp         = role === 'lead' || role === 'operator'
   const isKitchenVisible = role === 'catering' || role === 'operator' || role === 'lead'
 
-  const lbl      = { fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', marginBottom: 4 }
+  const lbl      = { margin: 0, fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', marginBottom: 4 }
   const val      = { fontSize: 14, fontWeight: 400, color: 'var(--schwarz)' }
   const valMulti = { fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--schwarz)' }
 
@@ -2326,15 +2326,15 @@ function InfosTab({ details, role, content, festivalId }) {
       <div className="card">
         <ul className="info-list">
           <li><div>
-            <div style={lbl}>Anreise</div>
+            <h4 style={lbl}>Anreise</h4>
             <div style={val}>{getAnreise(details, role) || 'Wird noch bekannt gegeben'}</div>
           </div></li>
           <li><div>
-            <div style={lbl}>Abreise</div>
+            <h4 style={lbl}>Abreise</h4>
             <div style={val}>{getAbreise(details, role) || 'Wird noch bekannt gegeben'}</div>
           </div></li>
           {details.festival_address && (
-            <li><div><div style={lbl}>Anschrift</div><div style={valMulti}>{details.festival_address}</div></div></li>
+            <li><div><h4 style={lbl}>Anschrift</h4><div style={valMulti}>{details.festival_address}</div></div></li>
           )}
         </ul>
       </div>
@@ -2347,7 +2347,7 @@ function InfosTab({ details, role, content, festivalId }) {
             <ul className="info-list">
               {details.shift_table_link && (
                 <li><div>
-                  <div style={lbl}>Schichtplan</div>
+                  <h4 style={lbl}>Schichtplan</h4>
                   <a href={details.shift_table_link} target="_blank" rel="noopener noreferrer"
                     className="button button--yellow button--sm"
                     style={{ textDecoration: 'none', display: 'inline-flex', marginTop: 6 }}>
@@ -2356,16 +2356,16 @@ function InfosTab({ details, role, content, festivalId }) {
                 </div></li>
               )}
               {details.count_module && (
-                <li><div><div style={lbl}>Anzahl Module</div><div style={val}>{details.count_module}</div></div></li>
+                <li><div><h4 style={lbl}>Anzahl Module</h4><div style={val}>{details.count_module}</div></div></li>
               )}
               {details.goldeimer_hours && (
-                <li><div><div style={lbl}>Öffnungszeiten</div><div style={valMulti}>{details.goldeimer_hours}</div></div></li>
+                <li><div><h4 style={lbl}>Öffnungszeiten</h4><div style={valMulti}>{details.goldeimer_hours}</div></div></li>
               )}
               {details.goldeimer_prices && (
-                <li><div><div style={lbl}>Preise</div><div style={valMulti}>{details.goldeimer_prices}</div></div></li>
+                <li><div><h4 style={lbl}>Preise</h4><div style={valMulti}>{details.goldeimer_prices}</div></div></li>
               )}
               {isKitchenVisible && details.festival_money_info && (
-                <li><div><div style={lbl}>Kassensystem</div><div style={valMulti}>{details.festival_money_info}</div></div></li>
+                <li><div><h4 style={lbl}>Kassensystem</h4><div style={valMulti}>{details.festival_money_info}</div></div></li>
               )}
             </ul>
           </div>
@@ -2380,43 +2380,43 @@ function InfosTab({ details, role, content, festivalId }) {
             <ul className="info-list">
               {details.production_mgmt && (
                 <li><div>
-                  <div style={lbl}>Produktion</div>
+                  <h4 style={lbl}>Produktion</h4>
                   <div style={valMulti}><ContactText text={details.production_mgmt} /></div>
                 </div></li>
               )}
               {(details.production_arbeitssicherheit || details.job_safety) && (
                 <li><div>
-                  <div style={lbl}>Arbeitssicherheit</div>
+                  <h4 style={lbl}>Arbeitssicherheit</h4>
                   <div style={valMulti}><ContactText text={details.production_arbeitssicherheit || details.job_safety} /></div>
                 </div></li>
               )}
               {details.urin_pump && (
                 <li><div>
-                  <div style={lbl}>IBC Abpumpung</div>
+                  <h4 style={lbl}>IBC Abpumpung</h4>
                   <div style={valMulti}><ContactText text={details.urin_pump} /></div>
                 </div></li>
               )}
               {details.fsb_spedition && (
                 <li><div>
-                  <div style={lbl}>FSB Spedition</div>
+                  <h4 style={lbl}>FSB Spedition</h4>
                   <div style={valMulti}><ContactText text={details.fsb_spedition} /></div>
                 </div></li>
               )}
               {details.anhaenger_spedition && (
                 <li><div>
-                  <div style={lbl}>Anhänger Spedition</div>
+                  <h4 style={lbl}>Anhänger Spedition</h4>
                   <div style={valMulti}><ContactText text={details.anhaenger_spedition} /></div>
                 </div></li>
               )}
               {details.vca_asp && (
                 <li><div>
-                  <div style={lbl}>VcA</div>
+                  <h4 style={lbl}>VcA</h4>
                   <div style={valMulti}><ContactText text={details.vca_asp} /></div>
                 </div></li>
               )}
               {details.awareness_team && (
                 <li><div>
-                  <div style={lbl}>Awareness-Team</div>
+                  <h4 style={lbl}>Awareness-Team</h4>
                   <div style={valMulti}><ContactText text={details.awareness_team} /></div>
                 </div></li>
               )}
@@ -2433,7 +2433,7 @@ function InfosTab({ details, role, content, festivalId }) {
             <ul className="info-list">
               {details.lead_rider_link && (
                 <li><div>
-                  <div style={lbl}>Anleitungen</div>
+                  <h4 style={lbl}>Anleitungen</h4>
                   <a href={details.lead_rider_link} target="_blank" rel="noopener noreferrer"
                     className="button button--yellow button--sm"
                     style={{ textDecoration: 'none', display: 'inline-flex', marginTop: 6 }}>
@@ -2443,7 +2443,7 @@ function InfosTab({ details, role, content, festivalId }) {
               )}
               {details.production_arbeitssicherheit && (
                 <li><div>
-                  <div style={lbl}>Arbeitssicherheit</div>
+                  <h4 style={lbl}>Arbeitssicherheit</h4>
                   <a href={details.production_arbeitssicherheit} target="_blank" rel="noopener noreferrer"
                     className="button button--yellow button--sm"
                     style={{ textDecoration: 'none', display: 'inline-flex', marginTop: 6 }}>
@@ -2452,13 +2452,13 @@ function InfosTab({ details, role, content, festivalId }) {
                 </div></li>
               )}
               {details.location_info && (
-                <li><div><div style={lbl}>Standorte</div><div style={valMulti}>{details.location_info}</div></div></li>
+                <li><div><h4 style={lbl}>Standorte</h4><div style={valMulti}>{details.location_info}</div></div></li>
               )}
               {details.material_order && (
-                <li><div><div style={lbl}>Bestellung</div><div style={valMulti}>{details.material_order}</div></div></li>
+                <li><div><h4 style={lbl}>Bestellung</h4><div style={valMulti}>{details.material_order}</div></div></li>
               )}
               {details.logistic_info && (
-                <li><div><div style={lbl}>Logistik</div><div style={valMulti}>{details.logistic_info}</div></div></li>
+                <li><div><h4 style={lbl}>Logistik</h4><div style={valMulti}>{details.logistic_info}</div></div></li>
               )}
             </ul>
           </div>
@@ -2473,7 +2473,7 @@ function InfosTab({ details, role, content, festivalId }) {
             <ul className="info-list">
               {details.kitchen_crew_list && (
                 <li><div>
-                  <div style={lbl}>Küchen-Liste</div>
+                  <h4 style={lbl}>Küchen-Liste</h4>
                   <a href={details.kitchen_crew_list} target="_blank" rel="noopener noreferrer"
                     className="button button--yellow button--sm"
                     style={{ textDecoration: 'none', display: 'inline-flex', marginTop: 6 }}>
@@ -2482,13 +2482,13 @@ function InfosTab({ details, role, content, festivalId }) {
                 </div></li>
               )}
               {details.kitchen_op && (
-                <li><div><div style={lbl}>Küche-Operator</div><div style={valMulti}>{details.kitchen_op}</div></div></li>
+                <li><div><h4 style={lbl}>Küche-Operator</h4><div style={valMulti}>{details.kitchen_op}</div></div></li>
               )}
               {details.kitchen_cost && (
-                <li><div><div style={lbl}>Pauschale</div><div style={valMulti}>{details.kitchen_cost}</div></div></li>
+                <li><div><h4 style={lbl}>Pauschale</h4><div style={valMulti}>{details.kitchen_cost}</div></div></li>
               )}
               {details.kitchen_info && (
-                <li><div><div style={lbl}>Infos</div><div style={valMulti}>{details.kitchen_info}</div></div></li>
+                <li><div><h4 style={lbl}>Infos</h4><div style={valMulti}>{details.kitchen_info}</div></div></li>
               )}
             </ul>
           </div>
