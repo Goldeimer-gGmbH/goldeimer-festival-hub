@@ -623,7 +623,6 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
         </>
       )}
 
-      <div className="section-title">Tagesablauf</div>
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {days.map((day, idx) => {
           const isOpen    = openDayIdx === idx
