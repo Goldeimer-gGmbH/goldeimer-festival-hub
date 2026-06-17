@@ -1913,27 +1913,41 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission 
 
   useEffect(() => { setSubmission(attendanceSubmission || null) }, [attendanceSubmission])
 
-  // Solange die Liste offen ist: alle 20s den aktuellen Stand nachladen, damit
-  // zwei gleichzeitig abhakende Leads sich nicht unbemerkt überschreiben.
+  // Beim Öffnen sofort frische Daten holen (bypassed Cache), danach alle 20s
+  // wiederholen — so sieht man nach Reload immer den gespeicherten Stand, und
+  // zwei gleichzeitig abhakende Leads überschreiben sich nicht unbemerkt.
   useEffect(() => {
     if (!open || !festivalId) return
     let cancelled = false
     const refresh = async () => {
       try {
-        const { data } = await fetchWithTimeout(
-          supabase.from('attendance_entries')
-            .select('assignment_id, present')
-            .eq('festival_id', festivalId),
-          8000
-        )
-        if (cancelled || !data) return
-        setAttendance(prev => {
-          const next = { ...prev }
-          data.forEach(e => { next[e.assignment_id] = e.present })
-          return next
-        })
+        const [entriesRes, subRes] = await Promise.all([
+          fetchWithTimeout(
+            supabase.from('attendance_entries')
+              .select('assignment_id, present')
+              .eq('festival_id', festivalId),
+            8000
+          ),
+          fetchWithTimeout(
+            supabase.from('attendance_submissions')
+              .select('last_submitted_by_name, last_submitted_at, submission_count')
+              .eq('festival_id', festivalId)
+              .maybeSingle(),
+            8000
+          ),
+        ])
+        if (cancelled) return
+        if (entriesRes.data) {
+          setAttendance(prev => {
+            const next = { ...prev }
+            entriesRes.data.forEach(e => { next[e.assignment_id] = e.present })
+            return next
+          })
+        }
+        if (subRes.data) setSubmission(subRes.data)
       } catch (e) { /* Netzwerkfehler ignorieren, lokaler Stand bleibt erhalten */ }
     }
+    refresh()
     const interval = setInterval(refresh, 20000)
     return () => { cancelled = true; clearInterval(interval) }
   }, [open, festivalId])
