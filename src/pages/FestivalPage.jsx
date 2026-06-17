@@ -429,7 +429,7 @@ export default function FestivalPage() {
         width: '100vw',
         marginLeft: 'calc(-50vw + 50%)',
       }}>
-        <div style={{ maxWidth: 480, margin: '0 auto', padding: '14px var(--sp-4) 0' }}>
+        <div style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--sp-8) var(--sp-4) 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
             <h2 style={{
               fontFamily: 'var(--font-heading)', fontWeight: 700,
@@ -650,8 +650,9 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
                     {formatDateShort(day.date)}
                   </div>
                   <div style={{
-                    fontWeight: 700, fontSize: 'var(--text-base)',
+                    fontWeight: 700, fontSize: 'var(--text-h4)',
                     color: 'var(--schwarz)', fontFamily: 'var(--font-heading)',
+                    letterSpacing: 'var(--heading-ls)', lineHeight: 1.2,
                   }}>
                     {day.todo}
                   </div>
@@ -1791,35 +1792,33 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
     <div>
       {/* Telegram + Schichtplan – Buttons */}
       {hasTelegramButtons && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
           {details.telegram_link && (
             <a
               href={details.telegram_link.startsWith('http') ? details.telegram_link : `https://${details.telegram_link}`}
-              target="_blank" rel="noopener noreferrer"
-              className="button button--yellow"
-              style={{ textDecoration: 'none', textAlign: 'center' }}
+              className="button button--yellow button--sm"
+              style={{ textDecoration: 'none', width: 'auto' }}
             >
-              Telegram-Crew ↗
+              Telegram-Crew
             </a>
           )}
           {isLeadOp && details.telegram_op_link && (
             <a
               href={details.telegram_op_link.startsWith('http') ? details.telegram_op_link : `https://${details.telegram_op_link}`}
-              target="_blank" rel="noopener noreferrer"
-              className="button button--yellow"
-              style={{ textDecoration: 'none', textAlign: 'center' }}
+              className="button button--yellow button--sm"
+              style={{ textDecoration: 'none', width: 'auto' }}
             >
-              Telegram-Op ↗
+              Telegram-Op
             </a>
           )}
           {details.shift_table_link && (
             <a
               href={details.shift_table_link}
               target="_blank" rel="noopener noreferrer"
-              className="button button--yellow"
-              style={{ textDecoration: 'none', textAlign: 'center' }}
+              className="button button--yellow button--sm"
+              style={{ textDecoration: 'none', width: 'auto' }}
             >
-              Schichtplan ↗
+              Schichtplan
             </a>
           )}
         </div>
@@ -2254,7 +2253,8 @@ function InfosTab({ details, role, content, festivalId }) {
   )
 
   const hasLogistik = isLeadOp && (
-    details.location_info || details.lead_rider_link || details.festival_lageplan || details.logistic_info
+    details.location_info || details.lead_rider_link || details.festival_lageplan ||
+    details.logistic_info || details.material_order || details.production_arbeitssicherheit
   )
 
   const hasKueche = isKitchenVisible && (
@@ -2389,26 +2389,29 @@ function InfosTab({ details, role, content, festivalId }) {
         <>
           <h3 className="section-title">Standorte, Auf- und Abbau & Logistik</h3>
           <div className="card">
-            {(details.lead_rider_link || details.festival_lageplan) && (
+            {(details.lead_rider_link || details.production_arbeitssicherheit) && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {details.lead_rider_link && (
                   <a href={details.lead_rider_link} target="_blank" rel="noopener noreferrer"
                     className="button button--yellow button--sm" style={{ textDecoration: 'none', width: 'auto' }}>
-                    Aufbauanleitung ↗
+                    Aufbauanleitung
                   </a>
                 )}
-                {details.festival_lageplan && (
-                  <a href={details.festival_lageplan} target="_blank" rel="noopener noreferrer"
+                {details.production_arbeitssicherheit && (
+                  <a href={details.production_arbeitssicherheit} target="_blank" rel="noopener noreferrer"
                     className="button button--yellow button--sm" style={{ textDecoration: 'none', width: 'auto' }}>
-                    Lageplan ↗
+                    Arbeitssicherheit
                   </a>
                 )}
               </div>
             )}
-            {(details.location_info || details.logistic_info) && (
+            {(details.location_info || details.material_order || details.logistic_info) && (
               <ul className="info-list">
                 {details.location_info && (
-                  <li><div><div style={lbl}>Standort-Infos</div><div style={valMulti}>{details.location_info}</div></div></li>
+                  <li><div><div style={lbl}>Standorte</div><div style={valMulti}>{details.location_info}</div></div></li>
+                )}
+                {details.material_order && (
+                  <li><div><div style={lbl}>Bestellung</div><div style={valMulti}>{details.material_order}</div></div></li>
                 )}
                 {details.logistic_info && (
                   <li><div><div style={lbl}>Logistik</div><div style={valMulti}>{details.logistic_info}</div></div></li>
