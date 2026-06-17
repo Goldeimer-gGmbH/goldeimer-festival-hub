@@ -1863,7 +1863,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
           </div>
           <CrewListSection
             crew={sortedCrew}
-            festivalId={festivalId}
+            festivalId={role === 'lead' ? festivalId : null}
             festivalName={festivalName}
             attendanceSubmission={attendanceSubmission}
           />
