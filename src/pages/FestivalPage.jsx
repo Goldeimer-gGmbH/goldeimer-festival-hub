@@ -603,7 +603,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
       {wichtigeTermine.length > 0 && (
         <>
           <div className="section-title">Wichtigste Termine</div>
-          <div className="card" style={{ marginBottom: 8 }}>
+          <div className="card" style={{ marginBottom: 20 }}>
             {wichtigeTermine.map((t, i) => (
               <div key={i} style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
