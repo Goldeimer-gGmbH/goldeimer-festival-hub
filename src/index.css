@@ -573,6 +573,48 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 500;
 }
 
+/* ─── Accordion ─────────────────────────────────────────────── */
+.accordion-chevron {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(29,29,27,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.2s;
+}
+.accordion-chevron path {
+  stroke: rgba(29,29,27,0.5);
+  transition: stroke 0.15s;
+}
+.accordion-btn:hover .accordion-chevron,
+.accordion-btn:active .accordion-chevron,
+.accordion-chevron.is-open {
+  background: var(--schwarz);
+}
+.accordion-btn:hover .accordion-chevron path,
+.accordion-btn:active .accordion-chevron path,
+.accordion-chevron.is-open path {
+  stroke: white;
+}
+.accordion-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.accordion-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease;
+}
+.accordion-content.is-open {
+  grid-template-rows: 1fr;
+}
+.accordion-content > div {
+  overflow: hidden;
+}
+
 /* ─── Accessibility ─────────────────────────────────────────── */
 :focus-visible {
   outline: 3px solid var(--gelb);

@@ -630,6 +630,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
           return (
             <div key={idx}>
               <button
+                className="accordion-btn"
                 onClick={() => setOpenDayIdx(isOpen ? -1 : idx)}
                 style={{
                   width: '100%',
@@ -660,30 +661,24 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
                     {day.todo}
                   </div>
                 </div>
-                <div style={{
-                  flexShrink: 0,
-                  width: 28, height: 28,
-                  borderRadius: '50%',
-                  background: 'var(--schwarz)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.2s',
-                }}>
+                <div className={`accordion-chevron${isOpen ? ' is-open' : ''}`}>
                   <svg width="14" height="14" viewBox="0 0 18 18" fill="none">
-                    <path d="M4 6.5L9 11.5L14 6.5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M4 6.5L9 11.5L14 6.5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
               </button>
 
-              {isOpen && (
-                <AblaufDayDetail
-                  day={day}
-                  crew={crew}
-                  festivalId={festivalId}
-                  festivalName={festivalName}
-                  inAccordion
-                />
-              )}
+              <div className={`accordion-content${isOpen ? ' is-open' : ''}`}>
+                <div>
+                  <AblaufDayDetail
+                    day={day}
+                    crew={crew}
+                    festivalId={festivalId}
+                    festivalName={festivalName}
+                    inAccordion
+                  />
+                </div>
+              </div>
             </div>
           )
         })}
