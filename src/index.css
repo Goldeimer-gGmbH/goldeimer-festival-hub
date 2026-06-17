@@ -21,8 +21,8 @@
   --weiss:          #FFFFFF;
   --dialog-bg:      #f7f5f1;   /* dialog_background */
   --footer-bg:      #1d1d1b;   /* footer_background */
-  --gruen:          #2ea14f;   /* success_color */
-  --rot:            #e9330c;   /* CTA-Farbe (Zur Anmeldung, primäre Actions) */
+  --gruen:          #61cd8b;   /* success_color (settings_data.json) */
+  --rot:            #FF3B36;   /* Aktions-Buttons (Daten absenden, Anmelden) */
 
   /* Subtile Farben */
   --grau-text:      #1d1d1b;              /* = schwarz, überall lesbare Schrift */
