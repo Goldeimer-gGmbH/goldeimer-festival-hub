@@ -2389,35 +2389,37 @@ function InfosTab({ details, role, content, festivalId }) {
         <>
           <h3 className="section-title">Standorte, Auf- und Abbau & Logistik</h3>
           <div className="card">
-            {(details.lead_rider_link || details.production_arbeitssicherheit) && (
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-                {details.lead_rider_link && (
+            <ul className="info-list">
+              {details.lead_rider_link && (
+                <li><div>
+                  <div style={lbl}>Anleitungen</div>
                   <a href={details.lead_rider_link} target="_blank" rel="noopener noreferrer"
-                    className="button button--yellow button--sm" style={{ textDecoration: 'none', width: 'auto' }}>
-                    Aufbauanleitung
+                    className="button button--yellow button--sm"
+                    style={{ textDecoration: 'none', display: 'inline-flex', marginTop: 6 }}>
+                    Auf- und Abbauanleitung
                   </a>
-                )}
-                {details.production_arbeitssicherheit && (
+                </div></li>
+              )}
+              {details.production_arbeitssicherheit && (
+                <li><div>
+                  <div style={lbl}>Arbeitssicherheit</div>
                   <a href={details.production_arbeitssicherheit} target="_blank" rel="noopener noreferrer"
-                    className="button button--yellow button--sm" style={{ textDecoration: 'none', width: 'auto' }}>
-                    Arbeitssicherheit
+                    className="button button--yellow button--sm"
+                    style={{ textDecoration: 'none', display: 'inline-flex', marginTop: 6 }}>
+                    Sicherheitsbriefing
                   </a>
-                )}
-              </div>
-            )}
-            {(details.location_info || details.material_order || details.logistic_info) && (
-              <ul className="info-list">
-                {details.location_info && (
-                  <li><div><div style={lbl}>Standorte</div><div style={valMulti}>{details.location_info}</div></div></li>
-                )}
-                {details.material_order && (
-                  <li><div><div style={lbl}>Bestellung</div><div style={valMulti}>{details.material_order}</div></div></li>
-                )}
-                {details.logistic_info && (
-                  <li><div><div style={lbl}>Logistik</div><div style={valMulti}>{details.logistic_info}</div></div></li>
-                )}
-              </ul>
-            )}
+                </div></li>
+              )}
+              {details.location_info && (
+                <li><div><div style={lbl}>Standorte</div><div style={valMulti}>{details.location_info}</div></div></li>
+              )}
+              {details.material_order && (
+                <li><div><div style={lbl}>Bestellung</div><div style={valMulti}>{details.material_order}</div></div></li>
+              )}
+              {details.logistic_info && (
+                <li><div><div style={lbl}>Logistik</div><div style={valMulti}>{details.logistic_info}</div></div></li>
+              )}
+            </ul>
           </div>
         </>
       )}
