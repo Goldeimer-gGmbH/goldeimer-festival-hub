@@ -2304,29 +2304,30 @@ function InfosTab({ details, role, content, festivalId }) {
         <>
           <h3 className="section-title">Klo-Infos & Schichtplan</h3>
           <div className="card">
-            {details.shift_table_link && (
-              <a href={details.shift_table_link} target="_blank" rel="noopener noreferrer"
-                className="button button--yellow button--sm"
-                style={{ marginBottom: 12, textDecoration: 'none', width: 'auto', display: 'inline-flex' }}>
-                Schichtplan ↗
-              </a>
-            )}
-            {(details.count_module || details.goldeimer_hours || details.goldeimer_prices || (isKitchenVisible && details.festival_money_info)) && (
-              <ul className="info-list">
-                {details.count_module && (
-                  <li><div><div style={lbl}>Anzahl Module</div><div style={val}>{details.count_module}</div></div></li>
-                )}
-                {details.goldeimer_hours && (
-                  <li><div><div style={lbl}>Öffnungszeiten</div><div style={valMulti}>{details.goldeimer_hours}</div></div></li>
-                )}
-                {details.goldeimer_prices && (
-                  <li><div><div style={lbl}>Preise</div><div style={valMulti}>{details.goldeimer_prices}</div></div></li>
-                )}
-                {isKitchenVisible && details.festival_money_info && (
-                  <li><div><div style={lbl}>Kassensystem</div><div style={valMulti}>{details.festival_money_info}</div></div></li>
-                )}
-              </ul>
-            )}
+            <ul className="info-list">
+              {details.shift_table_link && (
+                <li><div>
+                  <div style={lbl}>Schichtplan</div>
+                  <a href={details.shift_table_link} target="_blank" rel="noopener noreferrer"
+                    className="button button--yellow button--sm"
+                    style={{ textDecoration: 'none', display: 'inline-flex', marginTop: 6 }}>
+                    Schichtplan
+                  </a>
+                </div></li>
+              )}
+              {details.count_module && (
+                <li><div><div style={lbl}>Anzahl Module</div><div style={val}>{details.count_module}</div></div></li>
+              )}
+              {details.goldeimer_hours && (
+                <li><div><div style={lbl}>Öffnungszeiten</div><div style={valMulti}>{details.goldeimer_hours}</div></div></li>
+              )}
+              {details.goldeimer_prices && (
+                <li><div><div style={lbl}>Preise</div><div style={valMulti}>{details.goldeimer_prices}</div></div></li>
+              )}
+              {isKitchenVisible && details.festival_money_info && (
+                <li><div><div style={lbl}>Kassensystem</div><div style={valMulti}>{details.festival_money_info}</div></div></li>
+              )}
+            </ul>
           </div>
         </>
       )}
