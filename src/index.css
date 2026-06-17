@@ -283,7 +283,7 @@ h1, h2, h3, h4, h5, h6 {
 /* ─── Cards ─────────────────────────────────────────────────── */
 .card {
   background: var(--weiss);
-  border-radius: var(--rounded-lg);
+  border-radius: var(--rounded);
   padding: var(--sp-5);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);

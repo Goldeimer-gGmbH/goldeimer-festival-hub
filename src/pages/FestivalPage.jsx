@@ -1683,40 +1683,13 @@ const ROLLE_LABEL_KONTAKT = { lead: 'Lead', operator: 'Operator' }
 
 // Telefonnummer aus einem Freitext extrahieren und als klickbaren Link rendern.
 // Alles andere wird als normaler Text angezeigt.
-function PhoneText({ text }) {
+// Parst Kontakt-Freitext (Name + Telefon) einheitlich.
+// Jede Person: Name in normaler Schrift, Telefon als tel:-Link darunter.
+function ContactText({ text }) {
   if (!text) return null
-  // Matcht gängige Nummernformate: +49..., 0..., mit Leerzeichen/Bindestrichen
-  const phoneRegex = /(\+?[\d][\d\s\-/]{6,}[\d])/g
-  const parts = []
-  let last = 0
-  let match
-  while ((match = phoneRegex.exec(text)) !== null) {
-    if (match.index > last) parts.push(text.slice(last, match.index))
-    const raw = match[1].replace(/[\s\-/]/g, '')
-    parts.push(
-      <a key={match.index} href={`tel:${raw}`}
-        style={{ color: 'var(--schwarz)', fontWeight: 700, textDecoration: 'underline' }}>
-        {match[1]}
-      </a>
-    )
-    last = match.index + match[0].length
-  }
-  if (last < text.length) parts.push(text.slice(last))
-  return <span>{parts}</span>
-}
-
-// Parst Freitext in einzelne Personen-Karten.
-// Neue Person beginnt wenn:
-//   (a) eine reine Namenszeile nach Telefonnummern kommt, ODER
-//   (b) eine Zeile Name+Nummer enthält UND wir bereits eine Nummer haben
-//       (= jede "Name + Nummer auf einer Zeile" ist immer eine eigene Person)
-// So können mehrere Nummern zu einer Person (reiner Nummernblock) trotzdem
-// in einer Karte landen.
-function PersonBlocks({ value }) {
-  if (!value) return null
   const phoneRegex = /(\+?[\d][\d\s\-/]{6,}[\d])/
 
-  const lines = value.split('\n').map(l => l.trim()).filter(Boolean)
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
   const persons = []
   let current = { nameLines: [], phones: [] }
 
@@ -1724,8 +1697,6 @@ function PersonBlocks({ value }) {
     const match = line.match(phoneRegex)
     if (match) {
       const before = line.slice(0, match.index).trim()
-      // Hat die Zeile einen Namen VOR der Nummer UND wir haben schon eine Nummer
-      // → das ist eine neue Person (z.B. "Mona Lisa +49..." nach "Shia LaBoef +49...")
       if (before && current.phones.length > 0) {
         persons.push(current)
         current = { nameLines: [], phones: [] }
@@ -1733,7 +1704,6 @@ function PersonBlocks({ value }) {
       if (before) current.nameLines.push(before)
       current.phones.push(match[1])
     } else {
-      // Reine Namenszeile — nach Nummern startet immer eine neue Person
       if (current.phones.length > 0) {
         persons.push(current)
         current = { nameLines: [], phones: [] }
@@ -1741,37 +1711,30 @@ function PersonBlocks({ value }) {
       current.nameLines.push(line)
     }
   })
-  if (current.nameLines.length > 0 || current.phones.length > 0) {
-    persons.push(current)
-  }
+  if (current.nameLines.length > 0 || current.phones.length > 0) persons.push(current)
 
   return (
-    <>
-      {persons.map((person, i) => {
-        const name = person.nameLines.join(' ')
-        return (
-          <div key={i} className="card" style={{ marginBottom: 8 }}>
-            {name && (
-              <h4 className="card-title" style={{ margin: 0, marginBottom: person.phones.length ? 8 : 0 }}>
-                {name}
-              </h4>
-            )}
-            {person.phones.map((phone, j) => (
-              <a key={j} href={`tel:${phone.replace(/[\s\-/]/g, '')}`}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  background: 'var(--schwarz)', color: 'var(--weiss)',
-                  padding: '8px 14px', borderRadius: 8,
-                  fontSize: 13, fontWeight: 700, textDecoration: 'none',
-                  marginRight: 6, marginTop: 4,
-                }}>
-                <IconTelefon size={15} /> {phone}
-              </a>
-            ))}
-          </div>
-        )
-      })}
-    </>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {persons.map((person, i) => (
+        <div key={i}>
+          {person.nameLines.length > 0 && (
+            <div style={{ fontSize: 14, color: 'var(--schwarz)', lineHeight: 1.5 }}>
+              {person.nameLines.join(' ')}
+            </div>
+          )}
+          {person.phones.map((phone, j) => (
+            <a key={j} href={`tel:${phone.replace(/[\s\-/]/g, '')}`}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                fontSize: 13, color: 'var(--grau-text)',
+                textDecoration: 'none', marginTop: 2,
+              }}>
+              <IconTelefon size={12} /> {phone}
+            </a>
+          ))}
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -1901,13 +1864,13 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
               {details.crew_care && (
                 <li><div>
                   <div style={lbl}>Crew Care</div>
-                  <div style={valMulti}><PhoneText text={details.crew_care} /></div>
+                  <div style={valMulti}><ContactText text={details.crew_care} /></div>
                 </div></li>
               )}
               {details.social_media_fotos && (
                 <li><div>
                   <div style={lbl}>Social Media / Fotos</div>
-                  <div style={valMulti}><PhoneText text={details.social_media_fotos} /></div>
+                  <div style={valMulti}><ContactText text={details.social_media_fotos} /></div>
                 </div></li>
               )}
               {details.crew_sonstiges && (
@@ -2397,43 +2360,43 @@ function InfosTab({ details, role, content, festivalId }) {
               {details.production_mgmt && (
                 <li><div>
                   <div style={lbl}>Produktion</div>
-                  <div style={valMulti}><PhoneText text={details.production_mgmt} /></div>
+                  <div style={valMulti}><ContactText text={details.production_mgmt} /></div>
                 </div></li>
               )}
               {(details.production_arbeitssicherheit || details.job_safety) && (
                 <li><div>
                   <div style={lbl}>Arbeitssicherheit</div>
-                  <div style={valMulti}><PhoneText text={details.production_arbeitssicherheit || details.job_safety} /></div>
+                  <div style={valMulti}><ContactText text={details.production_arbeitssicherheit || details.job_safety} /></div>
                 </div></li>
               )}
               {details.urin_pump && (
                 <li><div>
                   <div style={lbl}>IBC Abpumpung</div>
-                  <div style={valMulti}><PhoneText text={details.urin_pump} /></div>
+                  <div style={valMulti}><ContactText text={details.urin_pump} /></div>
                 </div></li>
               )}
               {details.fsb_spedition && (
                 <li><div>
                   <div style={lbl}>FSB Spedition</div>
-                  <div style={valMulti}><PhoneText text={details.fsb_spedition} /></div>
+                  <div style={valMulti}><ContactText text={details.fsb_spedition} /></div>
                 </div></li>
               )}
               {details.anhaenger_spedition && (
                 <li><div>
                   <div style={lbl}>Anhänger Spedition</div>
-                  <div style={valMulti}><PhoneText text={details.anhaenger_spedition} /></div>
+                  <div style={valMulti}><ContactText text={details.anhaenger_spedition} /></div>
                 </div></li>
               )}
               {details.vca_asp && (
                 <li><div>
                   <div style={lbl}>VcA</div>
-                  <div style={valMulti}><PhoneText text={details.vca_asp} /></div>
+                  <div style={valMulti}><ContactText text={details.vca_asp} /></div>
                 </div></li>
               )}
               {details.awareness_team && (
                 <li><div>
                   <div style={lbl}>Awareness-Team</div>
-                  <div style={valMulti}><PhoneText text={details.awareness_team} /></div>
+                  <div style={valMulti}><ContactText text={details.awareness_team} /></div>
                 </div></li>
               )}
             </ul>
