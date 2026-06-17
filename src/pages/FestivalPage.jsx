@@ -624,7 +624,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
       )}
 
       <div className="section-title">{ablaufTitle}</div>
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="card" style={{ padding: 0, overflow: 'hidden', border: 'none', boxShadow: 'none' }}>
         {days.map((day, idx) => {
           const isOpen    = openDayIdx === idx
           const isLast    = idx === days.length - 1
