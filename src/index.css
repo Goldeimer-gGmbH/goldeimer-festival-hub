@@ -607,6 +607,7 @@ h1, h2, h3, h4, h5, h6 {
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 0.3s ease;
+  background: #F3E9D6;
 }
 .accordion-content.is-open {
   grid-template-rows: 1fr;

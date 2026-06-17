@@ -1443,7 +1443,7 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName, inAccordion = fa
       )}
 
       <div style={inAccordion
-        ? { padding: 'var(--sp-3) var(--sp-5) var(--sp-5)', background: 'rgba(0,0,0,0.05)' }
+        ? { padding: 'var(--sp-3) var(--sp-5) var(--sp-5)', background: '#F3E9D6' }
         : { background: 'var(--weiss)', border: '1px solid var(--border)', borderRadius: 'var(--rounded)', padding: 'var(--sp-4)', boxShadow: 'var(--shadow-sm)' }
       }>
         {day.content.map((item, i) => {
