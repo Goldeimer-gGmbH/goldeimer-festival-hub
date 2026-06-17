@@ -199,7 +199,7 @@ function generateAblaufDays(details, role, festivalName) {
         type: 'anreisetag',
         label: 'Anreisetag',
         date: details.start_leadop,
-        todo: 'Vorbereitung',
+        todo: 'Anreise & Vorbereitung',
         content: buildAnreisetagContent(festivalName),
       })
     }
@@ -209,7 +209,7 @@ function generateAblaufDays(details, role, festivalName) {
         type: 'aufbautag',
         label: 'Aufbautag',
         date: details.start_setup,
-        todo: 'Aufbau',
+        todo: 'Aufbautag',
         content: CONTENT_AUFBAUTAG,
       })
     }
@@ -220,7 +220,7 @@ function generateAblaufDays(details, role, festivalName) {
         type: 'aufbautag',
         label: 'Aufbautag',
         date: details.start_setup,
-        todo: 'Aufbau',
+        todo: 'Aufbautag',
         content: CONTENT_AUFBAUTAG,
       })
     }
@@ -262,7 +262,7 @@ function generateAblaufDays(details, role, festivalName) {
       if (i === 0) {
         type = 'tag1'; todo = 'Betriebsstart'; content = CONTENT_TAG1
       } else if (i === totalDays - 1) {
-        type = 'letzter'; todo = 'Letzte Schicht & Abbau'; content = CONTENT_LETZTER_TAG
+        type = 'letzter'; todo = 'Abreise & Abbau'; content = CONTENT_LETZTER_TAG
       } else if (totalDays > 2 && i === totalDays - 2) {
         type = 'vorletzter'; todo = 'Regelbetrieb vorletzter Tag'; content = CONTENT_VORLETZTER_TAG
       } else if (i === 1) {
@@ -648,14 +648,13 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
               >
                 <div style={{ flex: 1 }}>
                   <div style={{
-                    fontSize: 10, fontWeight: 800, fontFamily: 'var(--font-heading)',
-                    color: 'var(--grau-text)', letterSpacing: '0.08em',
-                    textTransform: 'uppercase', marginBottom: 2,
+                    fontSize: 12, fontWeight: 500,
+                    color: 'var(--grau-text)', marginBottom: 3,
                   }}>
-                    {day.label}{day.date ? ` · ${formatDateShort(day.date)}` : ''}
+                    {formatDateShort(day.date)}
                   </div>
                   <div style={{
-                    fontWeight: 700, fontSize: 'var(--text-sm)',
+                    fontWeight: 700, fontSize: 'var(--text-base)',
                     color: 'var(--schwarz)', fontFamily: 'var(--font-heading)',
                   }}>
                     {day.todo}
