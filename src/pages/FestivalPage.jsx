@@ -623,61 +623,70 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
         </>
       )}
 
-      {days.map((day, idx) => {
-        const isOpen = openDayIdx === idx
-        return (
-          <div key={idx} style={{ marginBottom: 8 }}>
-            <button
-              onClick={() => setOpenDayIdx(isOpen ? -1 : idx)}
-              style={{
-                width: '100%',
-                background: isOpen ? 'var(--schwarz)' : 'var(--weiss)',
-                border: '1px solid var(--border)',
-                borderRadius: isOpen ? 'var(--rounded) var(--rounded) 0 0' : 'var(--rounded)',
-                padding: '13px var(--sp-4)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                textAlign: 'left',
-                boxShadow: isOpen ? 'none' : 'var(--shadow-sm)',
-              }}
-            >
-              <div style={{ flex: '0 0 100px' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-heading)', color: isOpen ? 'var(--gelb)' : 'var(--schwarz)', letterSpacing: '0.02em' }}>
-                  {day.label}
-                </div>
-                {day.date && (
-                  <div style={{ fontSize: 11, color: isOpen ? 'rgba(255,255,255,0.55)' : 'var(--grau-text)', marginTop: 2, fontFamily: 'var(--font-heading)' }}>
-                    {formatDateShort(day.date)}
+      <div className="section-title">Tagesablauf</div>
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        {days.map((day, idx) => {
+          const isOpen    = openDayIdx === idx
+          const isLast    = idx === days.length - 1
+          return (
+            <div key={idx}>
+              <button
+                onClick={() => setOpenDayIdx(isOpen ? -1 : idx)}
+                style={{
+                  width: '100%',
+                  background: isOpen ? 'var(--papier)' : 'var(--weiss)',
+                  border: 'none',
+                  borderBottom: isLast && !isOpen ? 'none' : '1px solid var(--border)',
+                  padding: '14px var(--sp-4)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  textAlign: 'left',
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <div style={{
+                    fontSize: 10, fontWeight: 800, fontFamily: 'var(--font-heading)',
+                    color: 'var(--grau-text)', letterSpacing: '0.08em',
+                    textTransform: 'uppercase', marginBottom: 2,
+                  }}>
+                    {day.label}{day.date ? ` · ${formatDateShort(day.date)}` : ''}
                   </div>
-                )}
-              </div>
-              <div style={{ width: 1, height: 30, background: isOpen ? 'rgba(255,255,255,0.2)' : 'var(--border)', flexShrink: 0 }} />
-              <div style={{ flex: 1, fontWeight: 700, fontSize: 'var(--text-sm)', color: isOpen ? 'var(--weiss)' : 'var(--schwarz)', fontFamily: 'var(--font-heading)' }}>
-                {day.todo}
-              </div>
-              <span style={{
-                color: isOpen ? 'var(--weiss)' : 'var(--grau-text)',
-                fontSize: 16, flexShrink: 0,
-                display: 'inline-block',
-                transform: isOpen ? 'rotate(90deg)' : 'none',
-                transition: 'transform 0.2s',
-              }}>→</span>
-            </button>
+                  <div style={{
+                    fontWeight: 700, fontSize: 'var(--text-sm)',
+                    color: 'var(--schwarz)', fontFamily: 'var(--font-heading)',
+                  }}>
+                    {day.todo}
+                  </div>
+                </div>
+                <svg
+                  width="18" height="18" viewBox="0 0 18 18" fill="none"
+                  style={{
+                    flexShrink: 0,
+                    transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s',
+                    color: 'var(--grau-text)',
+                  }}
+                >
+                  <path d="M4 6.5L9 11.5L14 6.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
 
-            {isOpen && (
-              <AblaufDayDetail
-                day={day}
-                crew={crew}
-                festivalId={festivalId}
-                festivalName={festivalName}
-                inAccordion
-              />
-            )}
-          </div>
-        )
-      })}
+              {isOpen && (
+                <AblaufDayDetail
+                  day={day}
+                  crew={crew}
+                  festivalId={festivalId}
+                  festivalName={festivalName}
+                  inAccordion
+                />
+              )}
+            </div>
+          )
+        })}
+      </div>
 
       {checklists && checklists.length > 0 && (
         <>
@@ -1438,7 +1447,10 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName, inAccordion = fa
         </div>
       )}
 
-      <div className="card" style={inAccordion ? { borderRadius: '0 0 var(--rounded) var(--rounded)', borderTop: 'none' } : {}}>
+      <div style={inAccordion
+        ? { padding: '4px var(--sp-4) var(--sp-4)', background: 'var(--papier)' }
+        : { background: 'var(--weiss)', border: '1px solid var(--border)', borderRadius: 'var(--rounded)', padding: 'var(--sp-4)', boxShadow: 'var(--shadow-sm)' }
+      }>
         {day.content.map((item, i) => {
           // ── Gemeinsamer Abschnitts-Header (section, title, typed items) ──
           // Kein Aufzählungspunkt — fett als Überschrift, Abstand zur vorherigen Gruppe
