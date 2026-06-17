@@ -2088,13 +2088,13 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission 
                 const isSaving = savingIds.has(a.assignment_id)
                 return (
                   <div key={a.assignment_id || i} style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
+                    display: 'flex', alignItems: 'flex-start', gap: 10,
                     paddingBottom: i < crew.length - 1 ? 10 : 0,
                     marginBottom: i < crew.length - 1 ? 10 : 0,
                     borderBottom: i < crew.length - 1 ? '1px solid var(--border)' : 'none',
                   }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                         <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--schwarz)' }}>
                           {a.full_name || '—'}
                           {a.detail_pronouns && (
