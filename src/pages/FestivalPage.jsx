@@ -2429,26 +2429,27 @@ function InfosTab({ details, role, content, festivalId }) {
         <>
           <h3 className="section-title">Küchen-Info</h3>
           <div className="card">
-            {details.kitchen_crew_list && (
-              <a href={details.kitchen_crew_list} target="_blank" rel="noopener noreferrer"
-                className="button button--yellow button--sm"
-                style={{ marginBottom: 12, textDecoration: 'none', width: 'auto', display: 'inline-flex' }}>
-                Küchen-Crew-Liste ↗
-              </a>
-            )}
-            {(details.kitchen_op || details.kitchen_cost || details.kitchen_info) && (
-              <ul className="info-list">
-                {details.kitchen_op && (
-                  <li><div><div style={lbl}>Küche-Operator</div><div style={valMulti}>{details.kitchen_op}</div></div></li>
-                )}
-                {details.kitchen_cost && (
-                  <li><div><div style={lbl}>Kosten</div><div style={valMulti}>{details.kitchen_cost}</div></div></li>
-                )}
-                {details.kitchen_info && (
-                  <li><div><div style={lbl}>Infos</div><div style={valMulti}>{details.kitchen_info}</div></div></li>
-                )}
-              </ul>
-            )}
+            <ul className="info-list">
+              {details.kitchen_crew_list && (
+                <li><div>
+                  <div style={lbl}>Küchen-Liste</div>
+                  <a href={details.kitchen_crew_list} target="_blank" rel="noopener noreferrer"
+                    className="button button--yellow button--sm"
+                    style={{ textDecoration: 'none', display: 'inline-flex', marginTop: 6 }}>
+                    Küchen-Liste
+                  </a>
+                </div></li>
+              )}
+              {details.kitchen_op && (
+                <li><div><div style={lbl}>Küche-Operator</div><div style={valMulti}>{details.kitchen_op}</div></div></li>
+              )}
+              {details.kitchen_cost && (
+                <li><div><div style={lbl}>Pauschale</div><div style={valMulti}>{details.kitchen_cost}</div></div></li>
+              )}
+              {details.kitchen_info && (
+                <li><div><div style={lbl}>Infos</div><div style={valMulti}>{details.kitchen_info}</div></div></li>
+              )}
+            </ul>
           </div>
         </>
       )}
