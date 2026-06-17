@@ -1941,14 +1941,12 @@ function CrewListSheet({ crew, festivalId, festivalName, attendanceSubmission, o
           }}>✕</button>
         </div>
         <div style={{ overflowY: 'auto', padding: 'var(--sp-4)', paddingBottom: 'calc(var(--sp-8) + env(safe-area-inset-bottom, 0px))' }}>
-          <div style={{ marginBottom: 'var(--sp-3)', fontSize: 'var(--text-sm)', color: 'var(--grau-text)' }}>
-            {crew.length} Personen
-          </div>
           <CrewListSection
             crew={crew}
             festivalId={festivalId}
             festivalName={festivalName}
             attendanceSubmission={attendanceSubmission}
+            defaultOpen
           />
         </div>
       </div>
@@ -1966,8 +1964,8 @@ const ROLLE_ORDER = ['lead', 'operator', 'supporti_plus', 'supporti', 'catering'
 // (tri-state: offen / anwesend / nicht anwesend). Jede Änderung wird sofort als
 // Entwurf gespeichert (attendance_entries), das Abschicken (→ Crew-Management)
 // ist beliebig oft möglich, auch zur Korrektur.
-function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission }) {
-  const [open, setOpen]               = useState(false)
+function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission, defaultOpen = false }) {
+  const [open, setOpen]               = useState(defaultOpen)
   const [attendance, setAttendance]   = useState({})        // assignment_id -> true | false | null
   const [savingIds, setSavingIds]     = useState(() => new Set())
   const [submitting, setSubmitting]   = useState(false)
@@ -2114,13 +2112,15 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission 
 
   return (
     <div>
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="button button--yellow"
-        style={{ width: '100%', marginBottom: open ? 8 : 0 }}
-      >
-        {open ? 'Crew-Liste schließen' : 'Crew-Liste anzeigen'}
-      </button>
+      {!defaultOpen && (
+        <button
+          onClick={() => setOpen(o => !o)}
+          className="button button--yellow"
+          style={{ width: '100%', marginBottom: open ? 8 : 0 }}
+        >
+          {open ? 'Crew-Liste schließen' : 'Crew-Liste anzeigen'}
+        </button>
+      )}
 
       {open && crew && (
         <div className="card">
