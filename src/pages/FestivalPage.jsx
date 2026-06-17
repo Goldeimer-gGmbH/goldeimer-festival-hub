@@ -430,27 +430,29 @@ export default function FestivalPage() {
         marginLeft: 'calc(-50vw + 50%)',
       }}>
         <div style={{ maxWidth: 480, margin: '0 auto', padding: '14px var(--sp-4) 0' }}>
-          <div
-            className="statement"
-            style={{ fontSize: 'var(--text-h1)', color: 'var(--papier)', lineHeight: 1.05, letterSpacing: '-0.01em' }}
-          >
-            {festivalName.toUpperCase()}
-          </div>
-          <div style={{ marginTop: 10, marginBottom: 'var(--sp-5)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+            <h2 style={{
+              fontFamily: 'var(--font-heading)', fontWeight: 700,
+              fontSize: 'var(--text-sm)', color: 'var(--papier)',
+              letterSpacing: '0.06em', textTransform: 'uppercase', margin: 0,
+            }}>
+              {festivalName}
+            </h2>
             <span style={{
-              background: 'var(--gruen)',
-              color: 'var(--weiss)',
-              padding: '3px 10px',
-              borderRadius: 'var(--rounded-full)',
-              fontSize: 11,
-              fontWeight: 800,
-              fontFamily: 'var(--font-heading)',
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
+              background: 'var(--gruen)', color: 'var(--weiss)',
+              padding: '2px 8px', borderRadius: 'var(--rounded-full)',
+              fontSize: 10, fontWeight: 800, fontFamily: 'var(--font-heading)',
+              letterSpacing: '0.06em', textTransform: 'uppercase', flexShrink: 0,
             }}>
               {ROLLE_LABEL[role] || role}
             </span>
           </div>
+          <h1 className="statement" style={{
+            fontSize: 'var(--text-h1)', color: 'var(--papier)',
+            lineHeight: 1.05, letterSpacing: '-0.01em', marginBottom: 'var(--sp-5)',
+          }}>
+            {tabs.find(t => t.key === activeTab)?.label}
+          </h1>
         </div>
         <svg viewBox="0 0 480 48" preserveAspectRatio="none"
           style={{ display: 'block', width: '100%', height: 40, marginBottom: -2 }}>
@@ -572,9 +574,6 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
   if (!hasAblauf) {
     return (
       <div>
-        <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 'var(--sp-5)' }}>
-          {ablaufTitle}
-        </div>
         <div className="card" style={{ textAlign: 'center', padding: 32 }}>
           <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center' }}>
             <IconAblauf size={36} />
@@ -596,10 +595,6 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
 
   return (
     <div>
-      <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 'var(--sp-5)' }}>
-        Ablauf
-      </div>
-
       {wichtigeTermine.length > 0 && (
         <>
           <h3 className="section-title">Wichtigste Termine</h3>
@@ -1794,10 +1789,6 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
 
   return (
     <div>
-      <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 'var(--sp-5)' }}>
-        Crew
-      </div>
-
       {/* Telegram + Schichtplan – Buttons */}
       {hasTelegramButtons && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
@@ -2272,10 +2263,6 @@ function InfosTab({ details, role, content, festivalId }) {
 
   return (
     <div>
-      <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 'var(--sp-5)' }}>
-        Infos & Kontakte
-      </div>
-
       {/* ── Besonderheiten (roter Kasten, ganz oben) ── */}
       {details.special_notes && (
         <div style={{
