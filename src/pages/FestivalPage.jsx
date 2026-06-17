@@ -2332,7 +2332,7 @@ function InfosTab({ details, role, content, festivalId }) {
             {details.shift_table_link && (
               <a href={details.shift_table_link} target="_blank" rel="noopener noreferrer"
                 className="button button--yellow button--sm"
-                style={{ marginBottom: 12, textDecoration: 'none', display: 'inline-block' }}>
+                style={{ marginBottom: 12, textDecoration: 'none', width: 'auto', display: 'inline-flex' }}>
                 Schichtplan ↗
               </a>
             )}
@@ -2418,13 +2418,13 @@ function InfosTab({ details, role, content, festivalId }) {
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {details.lead_rider_link && (
                   <a href={details.lead_rider_link} target="_blank" rel="noopener noreferrer"
-                    className="button button--yellow button--sm" style={{ textDecoration: 'none' }}>
+                    className="button button--yellow button--sm" style={{ textDecoration: 'none', width: 'auto' }}>
                     Aufbauanleitung ↗
                   </a>
                 )}
                 {details.festival_lageplan && (
                   <a href={details.festival_lageplan} target="_blank" rel="noopener noreferrer"
-                    className="button button--yellow button--sm" style={{ textDecoration: 'none' }}>
+                    className="button button--yellow button--sm" style={{ textDecoration: 'none', width: 'auto' }}>
                     Lageplan ↗
                   </a>
                 )}
@@ -2452,7 +2452,7 @@ function InfosTab({ details, role, content, festivalId }) {
             {details.kitchen_crew_list && (
               <a href={details.kitchen_crew_list} target="_blank" rel="noopener noreferrer"
                 className="button button--yellow button--sm"
-                style={{ marginBottom: 12, textDecoration: 'none', display: 'inline-block' }}>
+                style={{ marginBottom: 12, textDecoration: 'none', width: 'auto', display: 'inline-flex' }}>
                 Küchen-Crew-Liste ↗
               </a>
             )}
