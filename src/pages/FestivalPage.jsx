@@ -634,7 +634,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
                 onClick={() => setOpenDayIdx(isOpen ? -1 : idx)}
                 style={{
                   width: '100%',
-                  background: 'var(--papier)',
+                  background: isOpen ? 'rgba(0,0,0,0.05)' : 'var(--weiss)',
                   border: 'none',
                   borderBottom: isLast && !isOpen ? 'none' : '1px solid var(--border)',
                   padding: '14px var(--sp-4)',
@@ -1450,7 +1450,7 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName, inAccordion = fa
       )}
 
       <div style={inAccordion
-        ? { padding: '4px var(--sp-4) var(--sp-4)', background: 'var(--papier)' }
+        ? { padding: '4px var(--sp-4) var(--sp-4)', background: 'rgba(0,0,0,0.05)' }
         : { background: 'var(--weiss)', border: '1px solid var(--border)', borderRadius: 'var(--rounded)', padding: 'var(--sp-4)', boxShadow: 'var(--shadow-sm)' }
       }>
         {day.content.map((item, i) => {
