@@ -11,6 +11,16 @@ import {
   IconStar, IconPin, IconBrief, IconTelefon,
 } from '../components/Icons'
 
+function ChevronIcon({ dir = 'right', size = 16, color = 'currentColor' }) {
+  const deg = { down: 0, up: 180, left: -90, right: 90 }[dir] ?? 0
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none"
+      style={{ display: 'block', flexShrink: 0, transform: `rotate(${deg}deg)` }}>
+      <path d="M4 6.5L9 11.5L14 6.5" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 const ROLLE_LABEL = {
   lead: 'Lead', operator: 'Operator',
   supporti_plus: 'Supporti+', supporti: 'Supporti', catering: 'Catering'
@@ -372,14 +382,14 @@ export default function FestivalPage() {
       <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconStar size={36} /></div>
       <p className="card-sub" style={{ marginBottom: 20 }}>Deine Sitzung ist abgelaufen. Bitte melde dich neu an.</p>
       <button className="button" onClick={signOut}>Neu anmelden</button>
-      <div style={{ marginTop: 20 }}><Link to="/">← Zurück</Link></div>
+      <div style={{ marginTop: 20 }}><Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ChevronIcon dir="left" size={16} />Zurück</Link></div>
     </div>
   )
   if (notFound) return (
     <div className="page" style={{ paddingTop: 'var(--sp-8)', textAlign: 'center' }}>
       <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconLupe size={36} /></div>
       <p className="card-sub" style={{ marginBottom: 20 }}>Festival nicht gefunden oder kein Zugriff.</p>
-      <div style={{ marginTop: 20 }}><Link to="/">← Zurück</Link></div>
+      <div style={{ marginTop: 20 }}><Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ChevronIcon dir="left" size={16} />Zurück</Link></div>
     </div>
   )
   if (fetchError || (data && data.error)) return (
@@ -392,7 +402,7 @@ export default function FestivalPage() {
         </p>
       )}
       <button className="button" onClick={loadFestivalInfo}>Nochmal versuchen</button>
-      <div style={{ marginTop: 20 }}><Link to="/">← Zurück</Link></div>
+      <div style={{ marginTop: 20 }}><Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ChevronIcon dir="left" size={16} />Zurück</Link></div>
     </div>
   )
   if (!data) return null
@@ -413,8 +423,8 @@ export default function FestivalPage() {
       <div className="header">
         <button
           onClick={() => navigate(-1)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
-        >←</button>
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1, display: 'flex', alignItems: 'center' }}
+        ><ChevronIcon dir="left" size={22} color="var(--schwarz)" /></button>
         <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
           <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
         </Link>
@@ -1767,6 +1777,7 @@ function PersonBlocks({ value }) {
 
 function KontakteTab({ details, role, festivalName, crew, festivalId, attendanceSubmission }) {
   const isLeadOp = role === 'lead' || role === 'operator'
+  const [showCrewSheet, setShowCrewSheet] = useState(false)
 
   const crewLoaded  = Array.isArray(crew)
   const sortedCrew  = crewLoaded
@@ -1784,48 +1795,98 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
   const hasCrewSection = leadCrew.length > 0 || opCrew.length > 0 || suppPlusCrew.length > 0 ||
     details.crew_care || details.social_media_fotos || details.crew_sonstiges
 
-  const hasTelegramButtons = details.telegram_link || (isLeadOp && details.telegram_op_link) || details.shift_table_link
+  // NUR Telegram-Links – shift_table_link kommt in die eigene Crew-Sektion
+  const hasTelegramButtons = details.telegram_link || details.telegram_op_link
+
+  // Crew-Sektion: Schichtplan und/oder Crew-Liste (Lead/Op)
+  const hasCrewCard = details.shift_table_link || (isLeadOp && crewLoaded)
 
   return (
     <div>
-      {/* Telegram + Schichtplan – Buttons */}
+      {/* [1] TELEGRAM */}
       {hasTelegramButtons && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-          {details.telegram_link && (
-            <a
-              href={details.telegram_link.startsWith('http') ? details.telegram_link : `https://${details.telegram_link}`}
-              className="button button--yellow button--sm"
-              style={{ textDecoration: 'none', width: 'auto' }}
-            >
-              Telegram-Crew
-            </a>
-          )}
-          {isLeadOp && details.telegram_op_link && (
-            <a
-              href={details.telegram_op_link.startsWith('http') ? details.telegram_op_link : `https://${details.telegram_op_link}`}
-              className="button button--yellow button--sm"
-              style={{ textDecoration: 'none', width: 'auto' }}
-            >
-              Telegram-Op
-            </a>
-          )}
-          {details.shift_table_link && (
-            <a
-              href={details.shift_table_link}
-              target="_blank" rel="noopener noreferrer"
-              className="button button--yellow button--sm"
-              style={{ textDecoration: 'none', width: 'auto' }}
-            >
-              Schichtplan
-            </a>
-          )}
-        </div>
+        <>
+          <h3 className="section-title">Telegram</h3>
+          <div className="card">
+            <ul className="info-list">
+              <li>
+                <div>
+                  <div style={lbl}>Telegram-Gruppe(n)</div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                    {details.telegram_link && (
+                      <a
+                        href={details.telegram_link.startsWith('http') ? details.telegram_link : `https://${details.telegram_link}`}
+                        className="button button--yellow button--sm"
+                        style={{ textDecoration: 'none', width: 'auto' }}
+                      >
+                        Telegram-Crew
+                      </a>
+                    )}
+                    {isLeadOp && details.telegram_op_link && (
+                      <a
+                        href={details.telegram_op_link.startsWith('http') ? details.telegram_op_link : `https://${details.telegram_op_link}`}
+                        className="button button--yellow button--sm"
+                        style={{ textDecoration: 'none', width: 'auto' }}
+                      >
+                        Telegram-Op
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </>
       )}
 
-      {/* Crew-Übersicht */}
-      {hasCrewSection && (
+      {/* [2] CREW (Schichtplan + Crew-Liste) */}
+      {hasCrewCard && (
         <>
           <h3 className="section-title">Crew</h3>
+          <div className="card">
+            <ul className="info-list">
+              {details.shift_table_link && (
+                <li>
+                  <div>
+                    <div style={lbl}>Schichtplan</div>
+                    <div style={{ marginTop: 6 }}>
+                      <a
+                        href={details.shift_table_link}
+                        target="_blank" rel="noopener noreferrer"
+                        className="button button--yellow button--sm"
+                        style={{ textDecoration: 'none', width: 'auto' }}
+                      >
+                        Schichtplan öffnen
+                      </a>
+                    </div>
+                  </div>
+                </li>
+              )}
+              {isLeadOp && crewLoaded && (
+                <li>
+                  <div>
+                    <div style={lbl}>Crew-Liste</div>
+                    <div style={{ marginTop: 6 }}>
+                      <button
+                        onClick={() => setShowCrewSheet(true)}
+                        className="button button--yellow button--sm"
+                        style={{ border: 'none', cursor: 'pointer' }}
+                      >
+                        Crew anzeigen
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              )}
+            </ul>
+          </div>
+        </>
+      )}
+
+      {/* [3] SPECIAL CREW (Lead/Op/Supporti+/crew_care etc.) */}
+      {hasCrewSection && (
+        <>
+          <h3 className="section-title">Special Crew</h3>
           <div className="card">
             <ul className="info-list">
               {leadCrew.length > 0 && (
@@ -1881,36 +1942,67 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
         </>
       )}
 
-      {/* Crew-Liste mit Anwesenheit (nur Leads + Operator) */}
-      {isLeadOp && crewLoaded && (
-        <>
-          <h3 className="section-title">Crew-Liste</h3>
-          <div className="card" style={{ marginBottom: 8 }}>
-            <ul className="info-list">
-              <li>
-                <div>
-                  <div style={lbl}>Crew-Größe</div>
-                  <div style={val}>{sortedCrew.length} Personen</div>
-                </div>
-              </li>
-            </ul>
-          </div>
-          <CrewListSection
-            crew={sortedCrew}
-            festivalId={role === 'lead' ? festivalId : null}
-            festivalName={festivalName}
-            attendanceSubmission={attendanceSubmission}
-          />
-        </>
-      )}
-
-      {!hasTelegramButtons && !hasCrewSection && !isLeadOp && (
+      {!hasTelegramButtons && !hasCrewCard && !hasCrewSection && (
         <div className="card" style={{ textAlign: 'center', padding: 32 }}>
           <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconKontakte size={32} /></div>
           <p className="card-sub">Infos werden noch eingetragen.</p>
         </div>
       )}
+
+      {/* [4] CREW-LISTE BOTTOM SHEET */}
+      {showCrewSheet && (
+        <CrewListSheet
+          crew={sortedCrew}
+          festivalId={role === 'lead' ? festivalId : null}
+          festivalName={festivalName}
+          attendanceSubmission={attendanceSubmission}
+          onClose={() => setShowCrewSheet(false)}
+        />
+      )}
     </div>
+  )
+}
+
+// ── CrewListSheet ─────────────────────────────────────────────────────────────
+
+function CrewListSheet({ crew, festivalId, festivalName, attendanceSubmission, onClose }) {
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 400 }} />
+      <div style={{
+        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: 480, background: 'var(--weiss)',
+        borderRadius: '16px 16px 0 0', zIndex: 401,
+        maxHeight: '88dvh', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px var(--sp-4)', borderBottom: '1px solid var(--border)', flexShrink: 0,
+        }}>
+          <div style={{ fontWeight: 800, fontSize: 'var(--text-base)', fontFamily: 'var(--font-heading)' }}>
+            Crew-Liste
+          </div>
+          <button onClick={onClose} aria-label="Schließen" style={{
+            background: 'var(--papier)', border: 'none', borderRadius: '50%',
+            width: 32, height: 32, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, color: 'var(--schwarz)', fontWeight: 700,
+          }}>✕</button>
+        </div>
+        <div style={{ overflowY: 'auto', padding: 'var(--sp-4)', paddingBottom: 'calc(var(--sp-8) + env(safe-area-inset-bottom, 0px))' }}>
+          <div style={{ marginBottom: 'var(--sp-3)', fontSize: 'var(--text-sm)', color: 'var(--grau-text)' }}>
+            {crew.length} Personen
+          </div>
+          <CrewListSection
+            crew={crew}
+            festivalId={festivalId}
+            festivalName={festivalName}
+            attendanceSubmission={attendanceSubmission}
+          />
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -2939,7 +3031,7 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew, inSheet = false })
         {/* Abschicken-Button (nicht gesperrt) */}
         {!isLocked && (
           <button onClick={handleSubmit} disabled={submitting} className="button" style={{ width: '100%' }}>
-            {submitting ? 'Wird abgeschickt…' : 'Rückmeldung abschicken →'}
+            {submitting ? 'Wird abgeschickt…' : 'Rückmeldung abschicken'}
           </button>
         )}
 

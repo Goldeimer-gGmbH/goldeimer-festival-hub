@@ -279,7 +279,7 @@ export default function LoginPage() {
             ? 'Wird gesendet...'
             : cooldown > 0
               ? `Bitte warten (${fmtCooldown(cooldown)})`
-              : 'Login-Link anfordern →'}
+              : 'Login-Link anfordern'}
         </button>
       </form>
     </PageShell>
