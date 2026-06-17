@@ -1930,9 +1930,9 @@ function CrewListSheet({ crew, festivalId, festivalName, attendanceSubmission, o
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '14px var(--sp-4)', borderBottom: '1px solid var(--border)', flexShrink: 0,
         }}>
-          <div style={{ fontWeight: 800, fontSize: 'var(--text-base)', fontFamily: 'var(--font-heading)' }}>
+          <h3 style={{ margin: 0, fontWeight: 800, fontSize: 'var(--text-base)', fontFamily: 'var(--font-heading)' }}>
             Crew-Liste
-          </div>
+          </h3>
           <button onClick={onClose} aria-label="Schließen" style={{
             background: 'var(--papier)', border: 'none', borderRadius: '50%',
             width: 32, height: 32, cursor: 'pointer',
@@ -2130,12 +2130,13 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission,
             <>
               {festivalId && (
                 <div style={{ marginBottom: 12 }}>
-                  <div style={{
+                  <h4 style={{
+                    margin: 0, marginBottom: 4,
                     fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em',
-                    color: 'var(--grau-text)', fontFamily: 'var(--font-heading)', marginBottom: 4,
+                    color: 'var(--grau-text)', fontFamily: 'var(--font-heading)',
                   }}>
                     Anwesenheit beim Festival
-                  </div>
+                  </h4>
                   <p style={{ fontSize: 12, color: 'var(--grau-text)', lineHeight: 1.5, marginBottom: 8 }}>
                     Tippe auf den Kreis neben einer Person, um sie als anwesend ✓ oder nicht anwesend ✕
                     zu markieren. Das wird automatisch zwischengespeichert. Erst nach „Anwesenheit abschicken“
