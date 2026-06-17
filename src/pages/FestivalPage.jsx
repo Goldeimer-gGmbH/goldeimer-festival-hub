@@ -1845,7 +1845,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
                   <div>
                     <div style={lbl}>Lead</div>
                     {leadCrew.map((m, i) => (
-                      <div key={i} style={{ fontSize: 14, fontWeight: 600, color: 'var(--schwarz)', marginBottom: i < leadCrew.length - 1 ? 4 : 0 }}>{m.full_name}</div>
+                      <p key={i}>{m.full_name}</p>
                     ))}
                   </div>
                 </li>
@@ -1855,7 +1855,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
                   <div>
                     <div style={lbl}>Operator</div>
                     {opCrew.map((m, i) => (
-                      <div key={i} style={{ fontSize: 14, fontWeight: 600, color: 'var(--schwarz)', marginBottom: i < opCrew.length - 1 ? 4 : 0 }}>{m.full_name}</div>
+                      <p key={i}>{m.full_name}</p>
                     ))}
                   </div>
                 </li>
@@ -1865,7 +1865,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
                   <div>
                     <div style={lbl}>Supporti+</div>
                     {suppPlusCrew.map((m, i) => (
-                      <div key={i} style={{ fontSize: 14, fontWeight: 600, color: 'var(--schwarz)', marginBottom: i < suppPlusCrew.length - 1 ? 4 : 0 }}>{m.full_name}</div>
+                      <p key={i}>{m.full_name}</p>
                     ))}
                   </div>
                 </li>
