@@ -757,7 +757,7 @@ function ContentCard({ item }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <span style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{typeIcon}</span>
         <div style={{ flex: 1 }}>
-          <div className="card-title">{item.title}</div>
+          <h4 className="card-title">{item.title}</h4>
         </div>
         {item.body && (
           <span style={{ color: 'var(--grau-dunkel)', flexShrink: 0, display: 'flex', alignItems: 'center' }}>

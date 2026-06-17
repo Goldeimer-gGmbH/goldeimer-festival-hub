@@ -579,7 +579,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
           <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center' }}>
             <IconAblauf size={36} />
           </div>
-          <div className="card-title" style={{ marginBottom: 6 }}>Kommt bald</div>
+          <h4 className="card-title" style={{ marginBottom: 6 }}>Kommt bald</h4>
           <p className="card-sub">
             Der Ablauf für {role === 'catering' ? 'Küchencrew' : 'Supportis'} folgt in Kürze.
           </p>
@@ -1451,13 +1451,14 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName, inAccordion = fa
           // ── Gemeinsamer Abschnitts-Header (section, title, typed items) ──
           // Kein Aufzählungspunkt — fett als Überschrift, Abstand zur vorherigen Gruppe
           const SectionHeader = ({ text }) => (
-            <div style={{
-              fontWeight: 700, fontSize: 'var(--text-sm)',
+            <h4 style={{
+              fontWeight: 700, fontSize: 'var(--text-h4)',
+              fontFamily: 'var(--font-heading)',
               color: 'var(--schwarz)', lineHeight: 1.3,
               marginTop: i > 0 ? 16 : 0, marginBottom: 4,
             }}>
               {text}
-            </div>
+            </h4>
           )
 
           if (item.section) {
@@ -1637,7 +1638,7 @@ function ChecklistSection({ festivalId, profileId, checklists }) {
         return (
           <div key={cl.id} className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <div className="card-title">{cl.title}</div>
+              <h4 className="card-title">{cl.title}</h4>
               <span style={{
                 background: doneCount === clItems.length && clItems.length > 0 ? 'var(--gruen)' : 'var(--gelb)',
                 color: doneCount === clItems.length && clItems.length > 0 ? 'var(--weiss)' : 'var(--schwarz)',
@@ -1747,9 +1748,9 @@ function PersonBlocks({ value }) {
         return (
           <div key={i} className="card" style={{ marginBottom: 8 }}>
             {name && (
-              <div className="card-title" style={{ margin: 0, marginBottom: person.phones.length ? 8 : 0 }}>
+              <h4 className="card-title" style={{ margin: 0, marginBottom: person.phones.length ? 8 : 0 }}>
                 {name}
-              </div>
+              </h4>
             )}
             {person.phones.map((phone, j) => (
               <a key={j} href={`tel:${phone.replace(/[\s\-/]/g, '')}`}
@@ -2466,7 +2467,7 @@ function InfosTab({ details, role, content, festivalId }) {
           <h3 className="section-title">Dokumente</h3>
           {content.map(c => (
             <div key={c.id} className="card">
-              <div className="card-title">{c.title}</div>
+              <h4 className="card-title">{c.title}</h4>
               {c.body && (
                 <div style={{ fontSize: 14, lineHeight: 1.65, marginTop: 8, color: 'var(--schwarz)', whiteSpace: 'pre-wrap' }}>
                   {c.body}
@@ -2808,7 +2809,7 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew, inSheet = false })
       )}
 
       <div className="card" style={ inSheet ? { borderRadius: 0, boxShadow: 'none', border: 'none' } : {} }>
-        {!inSheet && <div className="card-title" style={{ marginBottom: 6 }}>Rückmeldung Aufbau</div>}
+        {!inSheet && <h4 className="card-title" style={{ marginBottom: 6 }}>Rückmeldung Aufbau</h4>}
         <p style={{ fontSize: 13, color: 'var(--grau-text)', lineHeight: 1.6, marginBottom: 'var(--sp-4)' }}>
           Bitte gib uns am Ende des Aufbaus Rückmeldung über Anwesenheiten und Aufgabenverteilungen,
           damit wir im Büro die richtigen Pauschalen berechnen können.
