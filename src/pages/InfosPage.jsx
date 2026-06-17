@@ -390,11 +390,21 @@ const COC_CONTENT = [
 ]
 
 // ── Chevron ───────────────────────────────────────────────────────────────────
+function ChevronIcon({ dir = 'right', size = 16, color = 'currentColor' }) {
+  const deg = { down: 0, up: 180, left: -90, right: 90 }[dir] ?? 0
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none"
+      style={{ display: 'block', flexShrink: 0, transform: `rotate(${deg}deg)` }}>
+      <path d="M4 6.5L9 11.5L14 6.5" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 function Chevron({ open }) {
   return (
-    <svg role="presentation" focusable="false" width="10" height="7" viewBox="0 0 10 7"
-      style={{ display: 'block', flexShrink: 0, transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s ease' }}>
-      <path d="m1 1.5 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    <svg width="16" height="16" viewBox="0 0 18 18" fill="none"
+      style={{ display: 'block', flexShrink: 0, transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>
+      <path d="M4 6.5L9 11.5L14 6.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -415,7 +425,7 @@ function FaqSection() {
             {group.group}
           </div>
 
-          <div style={{ background: 'var(--weiss)', borderRadius: 'var(--rounded)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ background: 'var(--weiss)', borderRadius: 'var(--rounded)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border)' }}>
             {group.items.map((item, ii) => {
               const key = `${gi}-${ii}`
               const isOpen = openItem === key
@@ -653,8 +663,8 @@ export default function InfosPage() {
       <div className="header">
         <button
           onClick={() => navigate(-1)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
-        >←</button>
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+        ><ChevronIcon dir="left" size={22} color="var(--schwarz)" /></button>
         <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
           <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
         </Link>

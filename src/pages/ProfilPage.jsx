@@ -2,6 +2,16 @@
 import { useAuth } from '../components/AuthContext'
 import { IconStar, IconBrief } from '../components/Icons'
 
+function ChevronIcon({ dir = 'right', size = 16, color = 'currentColor' }) {
+  const deg = { down: 0, up: 180, left: -90, right: 90 }[dir] ?? 0
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none"
+      style={{ display: 'block', flexShrink: 0, transform: `rotate(${deg}deg)` }}>
+      <path d="M4 6.5L9 11.5L14 6.5" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export default function ProfilPage() {
   const { profile, signOut } = useAuth()
 
@@ -9,7 +19,9 @@ export default function ProfilPage() {
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', background: 'var(--schwarz)' }}>
       {/* Header */}
       <div className="header">
-        <Link to="/" style={{ textDecoration: 'none', fontSize: 20, color: 'var(--schwarz)', fontWeight: 700 }}>←</Link>
+        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+          <ChevronIcon dir="left" size={22} color="var(--schwarz)" />
+        </Link>
         <span className="header-logo" style={{ fontSize: '0.9rem' }}>Mein Profil</span>
         <span style={{ width: 20 }} />
       </div>

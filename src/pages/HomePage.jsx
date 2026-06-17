@@ -6,6 +6,16 @@ import { cacheGet, cacheSet } from '../lib/cache'
 import { fetchWithTimeout } from '../lib/fetchWithTimeout'
 import { IconStar } from '../components/Icons'
 
+function ChevronIcon({ dir = 'right', size = 16, color = 'currentColor' }) {
+  const deg = { down: 0, up: 180, left: -90, right: 90 }[dir] ?? 0
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none"
+      style={{ display: 'block', flexShrink: 0, transform: `rotate(${deg}deg)` }}>
+      <path d="M4 6.5L9 11.5L14 6.5" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 const ROLLE_LABEL = {
   lead: 'Lead', operator: 'Operator',
   supporti_plus: 'Supporti+', supporti: 'Supporti', catering: 'Catering'
@@ -259,7 +269,7 @@ export default function HomePage() {
                 <div className="festival-card-meta">
                   {formatDateRange(start, end)}{town ? ` | ${town}` : ''}
                 </div>
-                <span style={{ fontSize: 16, opacity: 0.45 }}>→</span>
+                <ChevronIcon dir="right" size={16} color="rgba(29,29,27,0.45)" />
               </div>
             </Link>
           )
@@ -429,7 +439,7 @@ function FeedbackSection({ assignments, senderName }) {
           </div>
         )}
         <button className="button" type="submit" disabled={sending}>
-          {sending ? 'Wird gesendet…' : 'Feedback senden →'}
+          {sending ? 'Wird gesendet…' : 'Feedback senden'}
         </button>
       </form>
     </div>

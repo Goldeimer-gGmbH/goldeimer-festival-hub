@@ -11,6 +11,16 @@ import {
   IconStar, IconPin, IconBrief, IconTelefon,
 } from '../components/Icons'
 
+function ChevronIcon({ dir = 'right', size = 16, color = 'currentColor' }) {
+  const deg = { down: 0, up: 180, left: -90, right: 90 }[dir] ?? 0
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none"
+      style={{ display: 'block', flexShrink: 0, transform: `rotate(${deg}deg)` }}>
+      <path d="M4 6.5L9 11.5L14 6.5" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 const ROLLE_LABEL = {
   lead: 'Lead', operator: 'Operator',
   supporti_plus: 'Supporti+', supporti: 'Supporti', catering: 'Catering'
@@ -372,14 +382,14 @@ export default function FestivalPage() {
       <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconStar size={36} /></div>
       <p className="card-sub" style={{ marginBottom: 20 }}>Deine Sitzung ist abgelaufen. Bitte melde dich neu an.</p>
       <button className="button" onClick={signOut}>Neu anmelden</button>
-      <div style={{ marginTop: 20 }}><Link to="/">← Zurück</Link></div>
+      <div style={{ marginTop: 20 }}><Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ChevronIcon dir="left" size={16} />Zurück</Link></div>
     </div>
   )
   if (notFound) return (
     <div className="page" style={{ paddingTop: 'var(--sp-8)', textAlign: 'center' }}>
       <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><IconLupe size={36} /></div>
       <p className="card-sub" style={{ marginBottom: 20 }}>Festival nicht gefunden oder kein Zugriff.</p>
-      <div style={{ marginTop: 20 }}><Link to="/">← Zurück</Link></div>
+      <div style={{ marginTop: 20 }}><Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ChevronIcon dir="left" size={16} />Zurück</Link></div>
     </div>
   )
   if (fetchError || (data && data.error)) return (
@@ -392,7 +402,7 @@ export default function FestivalPage() {
         </p>
       )}
       <button className="button" onClick={loadFestivalInfo}>Nochmal versuchen</button>
-      <div style={{ marginTop: 20 }}><Link to="/">← Zurück</Link></div>
+      <div style={{ marginTop: 20 }}><Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ChevronIcon dir="left" size={16} />Zurück</Link></div>
     </div>
   )
   if (!data) return null
@@ -413,8 +423,8 @@ export default function FestivalPage() {
       <div className="header">
         <button
           onClick={() => navigate(-1)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 700, color: 'var(--schwarz)', padding: 0, lineHeight: 1 }}
-        >←</button>
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+        ><ChevronIcon dir="left" size={22} color="var(--schwarz)" /></button>
         <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
           <img src="/goldeimer-logo.png" alt="Goldeimer" style={{ height: 36 }} />
         </Link>
@@ -1784,79 +1794,109 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
   const hasCrewSection = leadCrew.length > 0 || opCrew.length > 0 || suppPlusCrew.length > 0 ||
     details.crew_care || details.social_media_fotos || details.crew_sonstiges
 
-  const hasTelegramButtons = details.telegram_link || (isLeadOp && details.telegram_op_link) || details.shift_table_link
+  const hasTelegram = !!(details.telegram_link || (isLeadOp && details.telegram_op_link))
+  const hasCrewCard = !!(details.shift_table_link || (isLeadOp && crewLoaded))
+
+  const [showCrewSheet, setShowCrewSheet] = useState(false)
 
   return (
     <div>
-      {/* Telegram + Schichtplan – Buttons */}
-      {hasTelegramButtons && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-          {details.telegram_link && (
-            <a
-              href={details.telegram_link.startsWith('http') ? details.telegram_link : `https://${details.telegram_link}`}
-              className="button button--yellow button--sm"
-              style={{ textDecoration: 'none', width: 'auto' }}
-            >
-              Telegram-Crew
-            </a>
-          )}
-          {isLeadOp && details.telegram_op_link && (
-            <a
-              href={details.telegram_op_link.startsWith('http') ? details.telegram_op_link : `https://${details.telegram_op_link}`}
-              className="button button--yellow button--sm"
-              style={{ textDecoration: 'none', width: 'auto' }}
-            >
-              Telegram-Op
-            </a>
-          )}
-          {details.shift_table_link && (
-            <a
-              href={details.shift_table_link}
-              target="_blank" rel="noopener noreferrer"
-              className="button button--yellow button--sm"
-              style={{ textDecoration: 'none', width: 'auto' }}
-            >
-              Schichtplan
-            </a>
-          )}
-        </div>
+      {/* ── Telegram ── */}
+      {hasTelegram && (
+        <>
+          <h3 className="section-title">Telegram</h3>
+          <div className="card">
+            <ul className="info-list">
+              <li><div>
+                <div style={lbl}>Telegram-Gruppe(n)</div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                  {details.telegram_link && (
+                    <a
+                      href={details.telegram_link.startsWith('http') ? details.telegram_link : `https://${details.telegram_link}`}
+                      className="button button--yellow button--sm"
+                      style={{ textDecoration: 'none', display: 'inline-flex' }}
+                    >
+                      Telegram-Crew
+                    </a>
+                  )}
+                  {isLeadOp && details.telegram_op_link && (
+                    <a
+                      href={details.telegram_op_link.startsWith('http') ? details.telegram_op_link : `https://${details.telegram_op_link}`}
+                      className="button button--yellow button--sm"
+                      style={{ textDecoration: 'none', display: 'inline-flex' }}
+                    >
+                      Telegram-Op
+                    </a>
+                  )}
+                </div>
+              </div></li>
+            </ul>
+          </div>
+        </>
       )}
 
-      {/* Crew-Übersicht */}
-      {hasCrewSection && (
+      {/* ── Crew ── */}
+      {hasCrewCard && (
         <>
           <h3 className="section-title">Crew</h3>
           <div className="card">
             <ul className="info-list">
+              {details.shift_table_link && (
+                <li><div>
+                  <div style={lbl}>Schichtplan</div>
+                  <a href={details.shift_table_link} target="_blank" rel="noopener noreferrer"
+                    className="button button--yellow button--sm"
+                    style={{ textDecoration: 'none', display: 'inline-flex', marginTop: 6 }}>
+                    Schichtplan
+                  </a>
+                </div></li>
+              )}
+              {isLeadOp && crewLoaded && (
+                <li><div>
+                  <div style={lbl}>Crew-Liste</div>
+                  <button
+                    onClick={() => setShowCrewSheet(true)}
+                    className="button button--yellow button--sm"
+                    style={{ marginTop: 6, border: 'none', cursor: 'pointer' }}
+                  >
+                    Crew anzeigen ({sortedCrew.length})
+                  </button>
+                </div></li>
+              )}
+            </ul>
+          </div>
+        </>
+      )}
+
+      {/* ── Special Crew ── */}
+      {hasCrewSection && (
+        <>
+          <h3 className="section-title">Special Crew</h3>
+          <div className="card">
+            <ul className="info-list">
               {leadCrew.length > 0 && (
-                <li>
-                  <div>
-                    <div style={lbl}>Lead</div>
-                    {leadCrew.map((m, i) => (
-                      <p key={i}>{m.full_name}</p>
-                    ))}
-                  </div>
-                </li>
+                <li><div>
+                  <div style={lbl}>Lead</div>
+                  {leadCrew.map((m, i) => (
+                    <p key={i}>{m.full_name}</p>
+                  ))}
+                </div></li>
               )}
               {opCrew.length > 0 && (
-                <li>
-                  <div>
-                    <div style={lbl}>Operator</div>
-                    {opCrew.map((m, i) => (
-                      <p key={i}>{m.full_name}</p>
-                    ))}
-                  </div>
-                </li>
+                <li><div>
+                  <div style={lbl}>Operator</div>
+                  {opCrew.map((m, i) => (
+                    <p key={i}>{m.full_name}</p>
+                  ))}
+                </div></li>
               )}
               {suppPlusCrew.length > 0 && (
-                <li>
-                  <div>
-                    <div style={lbl}>Supporti+</div>
-                    {suppPlusCrew.map((m, i) => (
-                      <p key={i}>{m.full_name}</p>
-                    ))}
-                  </div>
-                </li>
+                <li><div>
+                  <div style={lbl}>Supporti+</div>
+                  {suppPlusCrew.map((m, i) => (
+                    <p key={i}>{m.full_name}</p>
+                  ))}
+                </div></li>
               )}
               {details.crew_care && (
                 <li><div>
@@ -1881,34 +1921,52 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
         </>
       )}
 
-      {/* Crew-Liste mit Anwesenheit (nur Leads + Operator) */}
-      {isLeadOp && crewLoaded && (
-        <>
-          <h3 className="section-title">Crew-Liste</h3>
-          <div className="card" style={{ marginBottom: 8 }}>
-            <ul className="info-list">
-              <li>
-                <div>
-                  <div style={lbl}>Crew-Größe</div>
-                  <div style={val}>{sortedCrew.length} Personen</div>
-                </div>
-              </li>
-            </ul>
-          </div>
-          <CrewListSection
-            crew={sortedCrew}
-            festivalId={role === 'lead' ? festivalId : null}
-            festivalName={festivalName}
-            attendanceSubmission={attendanceSubmission}
-          />
-        </>
-      )}
-
-      {!hasTelegramButtons && !hasCrewSection && !isLeadOp && (
+      {!hasTelegram && !hasCrewCard && !hasCrewSection && (
         <div className="card" style={{ textAlign: 'center', padding: 32 }}>
           <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconKontakte size={32} /></div>
           <p className="card-sub">Infos werden noch eingetragen.</p>
         </div>
+      )}
+
+      {/* ── Crew-Liste Bottom Sheet ── */}
+      {showCrewSheet && (
+        <>
+          <div onClick={() => setShowCrewSheet(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 400 }} />
+          <div style={{
+            position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+            width: '100%', maxWidth: 480, background: 'var(--weiss)',
+            borderRadius: '16px 16px 0 0', zIndex: 401,
+            maxHeight: '88dvh', display: 'flex', flexDirection: 'column',
+            boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '14px var(--sp-4)', borderBottom: '1px solid var(--border)', flexShrink: 0,
+            }}>
+              <div style={{ fontWeight: 800, fontSize: 'var(--text-base)', fontFamily: 'var(--font-heading)' }}>
+                Crew-Liste · {sortedCrew.length} Personen
+              </div>
+              <button onClick={() => setShowCrewSheet(false)} aria-label="Schließen" style={{
+                background: 'var(--papier)', border: 'none', borderRadius: '50%',
+                width: 32, height: 32, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 16, color: 'var(--schwarz)', fontWeight: 700,
+              }}>✕</button>
+            </div>
+            <div style={{
+              overflowY: 'auto', padding: 'var(--sp-4)',
+              paddingBottom: 'calc(var(--sp-8) + env(safe-area-inset-bottom, 0px))',
+            }}>
+              <CrewListSection
+                crew={sortedCrew}
+                festivalId={role === 'lead' ? festivalId : null}
+                festivalName={festivalName}
+                attendanceSubmission={attendanceSubmission}
+              />
+            </div>
+          </div>
+        </>
       )}
     </div>
   )
@@ -2939,7 +2997,7 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew, inSheet = false })
         {/* Abschicken-Button (nicht gesperrt) */}
         {!isLocked && (
           <button onClick={handleSubmit} disabled={submitting} className="button" style={{ width: '100%' }}>
-            {submitting ? 'Wird abgeschickt…' : 'Rückmeldung abschicken →'}
+            {submitting ? 'Wird abgeschickt…' : 'Rückmeldung abschicken'}
           </button>
         )}
 
