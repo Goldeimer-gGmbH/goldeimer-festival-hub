@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+﻿import { useEffect, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
@@ -268,13 +268,13 @@ export default function HomePage() {
         {/* Feedback */}
         {!loading && !authError && !fetchError && sorted.length > 0 && (
           <>
-            <div className="section-title" style={{ marginTop: 'var(--sp-8)', fontSize: 'var(--text-base)' }}>Feedback</div>
+            <h3 className="section-title" style={{ marginTop: 'var(--sp-8)' }}>Feedback</h3>
             <FeedbackSection assignments={sorted} senderName={profile?.full_name} />
           </>
         )}
 
         {/* FAQ & Code of Conduct */}
-        <div className="section-title" style={{ marginTop: 'var(--sp-8)', fontSize: 'var(--text-base)' }}>Infos</div>
+        <h3 className="section-title" style={{ marginTop: 'var(--sp-8)' }}>Infos</h3>
         <div style={{
           background: 'var(--weiss)',
           borderRadius: 'var(--rounded)',

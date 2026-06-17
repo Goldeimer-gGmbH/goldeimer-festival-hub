@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { cacheGet, cacheSet } from '../lib/cache'
@@ -523,7 +523,7 @@ function CocPlainText() {
           case 'h2':
             return (
               <h2 key={i} style={{
-                fontSize: 'var(--text-base)', fontWeight: 700,
+                fontWeight: 700,
                 color: 'var(--schwarz)',
                 marginTop: i === 0 ? 0 : 'var(--sp-7)',
                 marginBottom: 'var(--sp-3)',
@@ -711,12 +711,12 @@ export default function InfosPage() {
             {content.map(c => <ContentCard key={c.id} item={c} />)}
 
             <div ref={faqRef} style={{ scrollMarginTop: 72, marginTop: content.length > 0 ? 'var(--sp-8)' : 0 }}>
-              <div className="section-title" style={{ marginBottom: 'var(--sp-4)', fontSize: 'var(--text-base)' }}>FAQ</div>
+              <h3 className="section-title" style={{ marginBottom: 'var(--sp-4)' }}>FAQ</h3>
               <FaqSection />
             </div>
 
             <div ref={cocRef} style={{ scrollMarginTop: 72, marginTop: 'var(--sp-8)' }}>
-              <div className="section-title" style={{ marginBottom: 'var(--sp-4)', fontSize: 'var(--text-base)' }}>Code of Conduct</div>
+              <h3 className="section-title" style={{ marginBottom: 'var(--sp-4)' }}>Code of Conduct</h3>
               <div style={{ background: 'var(--weiss)', borderRadius: 'var(--rounded)', padding: 'var(--sp-5)', boxShadow: 'var(--shadow-sm)' }}>
                 <CocPlainText />
               </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+﻿import { useEffect, useState, useRef } from 'react'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -586,7 +586,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
         </div>
         {checklists && checklists.length > 0 && (
           <>
-            <div className="section-title" style={{ marginTop: 8 }}>Checklisten</div>
+            <h3 className="section-title" style={{ marginTop: 8 }}>Checklisten</h3>
             <ChecklistSection festivalId={festivalId} profileId={profileId} checklists={checklists} />
           </>
         )}
@@ -602,7 +602,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
 
       {wichtigeTermine.length > 0 && (
         <>
-          <div className="section-title">Wichtigste Termine</div>
+          <h3 className="section-title">Wichtigste Termine</h3>
           <div className="card" style={{ marginBottom: 20 }}>
             {wichtigeTermine.map((t, i) => (
               <div key={i} style={{
@@ -623,7 +623,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
         </>
       )}
 
-      <div className="section-title">{ablaufTitle}</div>
+      <h3 className="section-title">{ablaufTitle}</h3>
       <div className="card" style={{ padding: 0, overflow: 'hidden', border: 'none', boxShadow: 'none' }}>
         {days.map((day, idx) => {
           const isOpen    = openDayIdx === idx
@@ -686,7 +686,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
 
       {checklists && checklists.length > 0 && (
         <>
-          <div className="section-title" style={{ marginTop: 8 }}>Checklisten</div>
+          <h3 className="section-title" style={{ marginTop: 8 }}>Checklisten</h3>
           <ChecklistSection festivalId={festivalId} profileId={profileId} checklists={checklists} />
         </>
       )}
@@ -1836,7 +1836,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
       {/* Crew-Übersicht */}
       {hasCrewSection && (
         <>
-          <div className="section-title">Crew</div>
+          <h3 className="section-title">Crew</h3>
           <div className="card">
             <ul className="info-list">
               {leadCrew.length > 0 && (
@@ -1916,7 +1916,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
       {/* Crew-Liste mit Anwesenheit (nur Leads + Operator) */}
       {isLeadOp && crewLoaded && (
         <>
-          <div className="section-title">Crew-Liste</div>
+          <h3 className="section-title">Crew-Liste</h3>
           <div className="card" style={{ marginBottom: 8 }}>
             <ul className="info-list">
               <li>
@@ -2315,7 +2315,7 @@ function InfosTab({ details, role, content, festivalId }) {
       )}
 
       {/* ── Festival-Infos ── */}
-      <div className="section-title">Festival-Infos</div>
+      <h3 className="section-title">Festival-Infos</h3>
       <div className="card">
         <ul className="info-list">
           <li><div>
@@ -2335,7 +2335,7 @@ function InfosTab({ details, role, content, festivalId }) {
       {/* ── Klo-Infos & Schichtplan ── */}
       {hasKloInfos && (
         <>
-          <div className="section-title">Klo-Infos & Schichtplan</div>
+          <h3 className="section-title">Klo-Infos & Schichtplan</h3>
           <div className="card">
             {details.shift_table_link && (
               <a href={details.shift_table_link} target="_blank" rel="noopener noreferrer"
@@ -2367,7 +2367,7 @@ function InfosTab({ details, role, content, festivalId }) {
       {/* ── Externe Ansprechpersonen (nur Leads + Operator) ── */}
       {hasExterneKontakte && (
         <>
-          <div className="section-title">Externe Ansprechpersonen</div>
+          <h3 className="section-title">Externe Ansprechpersonen</h3>
           <div className="card">
             <ul className="info-list">
               {details.production_mgmt && (
@@ -2420,7 +2420,7 @@ function InfosTab({ details, role, content, festivalId }) {
       {/* ── Standorte, Auf- und Abbau & Logistik (nur Leads + Operator) ── */}
       {hasLogistik && (
         <>
-          <div className="section-title">Standorte, Auf- und Abbau & Logistik</div>
+          <h3 className="section-title">Standorte, Auf- und Abbau & Logistik</h3>
           <div className="card">
             {(details.lead_rider_link || details.festival_lageplan) && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
@@ -2455,7 +2455,7 @@ function InfosTab({ details, role, content, festivalId }) {
       {/* ── Küchen-Info (Leads, Operators, Catering) ── */}
       {hasKueche && (
         <>
-          <div className="section-title">Küchen-Info</div>
+          <h3 className="section-title">Küchen-Info</h3>
           <div className="card">
             {details.kitchen_crew_list && (
               <a href={details.kitchen_crew_list} target="_blank" rel="noopener noreferrer"
@@ -2484,7 +2484,7 @@ function InfosTab({ details, role, content, festivalId }) {
       {/* ── Dokumente ── */}
       {content && content.length > 0 && (
         <>
-          <div className="section-title">Dokumente</div>
+          <h3 className="section-title">Dokumente</h3>
           {content.map(c => (
             <div key={c.id} className="card">
               <div className="card-title">{c.title}</div>

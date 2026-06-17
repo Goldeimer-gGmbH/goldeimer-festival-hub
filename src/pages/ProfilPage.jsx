@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+﻿import { Link } from 'react-router-dom'
 import { useAuth } from '../components/AuthContext'
 import { IconStar, IconBrief } from '../components/Icons'
 
@@ -32,7 +32,7 @@ export default function ProfilPage() {
 
       {/* Inhalt */}
       <div style={{ flex: 1, background: 'var(--papier)', padding: 'var(--sp-6) var(--sp-4) var(--sp-10)' }}>
-        <div className="section-title">Meine Daten</div>
+        <h3 className="section-title">Meine Daten</h3>
         <div className="card">
           <ul className="info-list">
             <li>

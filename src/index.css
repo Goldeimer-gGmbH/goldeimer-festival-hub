@@ -398,10 +398,9 @@ h1, h2, h3, h4, h5, h6 {
 .section-title {
   font-family: var(--font-heading);
   font-weight: var(--heading-weight);
-  font-size: var(--text-xs);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--grau-text);
+  font-size: var(--text-h3);
+  letter-spacing: var(--heading-ls);
+  color: var(--schwarz);
   margin: var(--sp-6) 0 var(--sp-3);
 }
 
