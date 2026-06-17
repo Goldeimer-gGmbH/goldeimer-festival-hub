@@ -1726,6 +1726,7 @@ function ContactText({ text }) {
 
 function KontakteTab({ details, role, festivalName, crew, festivalId, attendanceSubmission }) {
   const isLeadOp = role === 'lead' || role === 'operator'
+  const [showCrewSheet, setShowCrewSheet] = useState(false)
 
   const crewLoaded  = Array.isArray(crew)
   const sortedCrew  = crewLoaded
@@ -1746,8 +1747,8 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
   // NUR Telegram-Links – shift_table_link kommt in die eigene Crew-Sektion
   const hasTelegramButtons = details.telegram_link || details.telegram_op_link
 
-  // Crew-Sektion: nur noch Schichtplan
-  const hasCrewCard = !!details.shift_table_link
+  // Crew-Sektion: Schichtplan und/oder Crew-Liste (Lead/Op)
+  const hasCrewCard = details.shift_table_link || (isLeadOp && crewLoaded)
 
   return (
     <div>
@@ -1810,22 +1811,36 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
                   </div>
                 </li>
               )}
+              {isLeadOp && crewLoaded && (
+                <li>
+                  <div>
+                    <div style={lbl}>Crew-Liste</div>
+                    <div style={{ marginTop: 6 }}>
+                      <button
+                        onClick={() => setShowCrewSheet(true)}
+                        className="button button--sm"
+                        style={{ border: 'none', cursor: 'pointer' }}
+                      >
+                        Crew-Liste & Anwesenheit feedbacken
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              )}
             </ul>
           </div>
         </>
       )}
 
-      {/* [2b] CREW-LISTE inline */}
-      {isLeadOp && crewLoaded && sortedCrew.length > 0 && (
-        <>
-          <h3 className="section-title">Crew-Liste</h3>
-          <CrewListSection
-            crew={sortedCrew}
-            festivalId={role === 'lead' ? festivalId : null}
-            festivalName={festivalName}
-            attendanceSubmission={attendanceSubmission}
-          />
-        </>
+      {/* CREW-LISTE SHEET */}
+      {showCrewSheet && (
+        <CrewListSheet
+          crew={sortedCrew}
+          festivalId={role === 'lead' ? festivalId : null}
+          festivalName={festivalName}
+          attendanceSubmission={attendanceSubmission}
+          onClose={() => setShowCrewSheet(false)}
+        />
       )}
 
       {/* [3] SPECIAL CREW (Lead/Op/Supporti+/crew_care etc.) */}
