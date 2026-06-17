@@ -597,7 +597,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
   return (
     <div>
       <div style={{ fontFamily: 'var(--font-statement)', fontSize: 'var(--text-h2)', lineHeight: 1.2, marginBottom: 'var(--sp-5)' }}>
-        {ablaufTitle}
+        Ablauf
       </div>
 
       {wichtigeTermine.length > 0 && (
@@ -623,6 +623,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
         </>
       )}
 
+      <div className="section-title">{ablaufTitle}</div>
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {days.map((day, idx) => {
           const isOpen    = openDayIdx === idx
