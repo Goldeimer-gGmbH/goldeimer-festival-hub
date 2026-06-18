@@ -1737,7 +1737,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
   const opCrew       = sortedCrew.filter(m => m.role === 'operator')
   const suppPlusCrew = sortedCrew.filter(m => m.role === 'supporti_plus')
 
-  const lbl      = { margin: 0, fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', marginBottom: 4 }
+  const lbl      = { margin: 0, fontSize: 'var(--text-h4)', color: 'var(--schwarz)', marginBottom: 4 }
   const val      = { fontSize: 14, fontWeight: 400, color: 'var(--schwarz)' }
   const valMulti = { fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--schwarz)' }
 
@@ -1930,7 +1930,7 @@ function CrewListSheet({ crew, festivalId, festivalName, attendanceSubmission, o
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '14px var(--sp-4)', borderBottom: '1px solid var(--border)', flexShrink: 0,
         }}>
-          <h3 style={{ margin: 0, fontWeight: 800, fontSize: 'var(--text-base)', fontFamily: 'var(--font-heading)' }}>
+          <h3 style={{ margin: 0, fontSize: 'var(--text-h3)' }}>
             Crew-Liste
           </h3>
           <button onClick={onClose} aria-label="Schließen" style={{
@@ -2276,7 +2276,7 @@ function InfosTab({ details, role, content, festivalId }) {
   const isLeadOp         = role === 'lead' || role === 'operator'
   const isKitchenVisible = role === 'catering' || role === 'operator' || role === 'lead'
 
-  const lbl      = { margin: 0, fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', marginBottom: 4 }
+  const lbl      = { margin: 0, fontSize: 'var(--text-h4)', color: 'var(--schwarz)', marginBottom: 4 }
   const val      = { fontSize: 14, fontWeight: 400, color: 'var(--schwarz)' }
   const valMulti = { fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--schwarz)' }
 
