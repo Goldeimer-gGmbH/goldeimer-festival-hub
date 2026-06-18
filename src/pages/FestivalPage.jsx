@@ -1965,33 +1965,25 @@ const ROLLE_ORDER = ['lead', 'operator', 'supporti_plus', 'supporti', 'catering'
 // Entwurf gespeichert (attendance_entries), das Abschicken (→ Crew-Management)
 // ist beliebig oft möglich, auch zur Korrektur.
 function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission, defaultOpen = false }) {
-  const [open, setOpen]               = useState(defaultOpen)
-  const [attendance, setAttendance]   = useState({})        // assignment_id -> true | false | null
-  const [savingIds, setSavingIds]     = useState(() => new Set())
-  const [submitting, setSubmitting]   = useState(false)
-  const [submitError, setSubmitError] = useState('')
-  const [submission, setSubmission]   = useState(attendanceSubmission || null)
-  const saveTimers = useRef({})
-
-  // Anwesenheits-Stand aus dem Crew-Array initialisieren (kommt aus get_my_festival_info)
-  useEffect(() => {
-    if (!crew) return
-    setAttendance(prev => {
-      const next = { ...prev }
-      crew.forEach(a => {
-        if (!(a.assignment_id in next)) next[a.assignment_id] = a.attendance_present ?? null
-      })
-      return next
-    })
-  }, [crew])
+  const [open, setOpen]                       = useState(defaultOpen)
+  const [attendance, setAttendance]           = useState({})
+  const [loadingAttendance, setLoadingAttendance] = useState(false)
+  const [savingIds, setSavingIds]             = useState(() => new Set())
+  const [submitting, setSubmitting]           = useState(false)
+  const [submitError, setSubmitError]         = useState('')
+  const [submission, setSubmission]           = useState(attendanceSubmission || null)
+  const saveTimers  = useRef({})
+  const fetchedOnce = useRef(false)
 
   useEffect(() => { setSubmission(attendanceSubmission || null) }, [attendanceSubmission])
 
-  // Beim Öffnen sofort frische Daten holen (bypassed Cache), danach alle 20s
-  // wiederholen — so sieht man nach Reload immer den gespeicherten Stand, und
-  // zwei gleichzeitig abhakende Leads überschreiben sich nicht unbemerkt.
+  // Beim Öffnen sofort frische DB-Daten holen (bypassed Cache), danach alle 20s
+  // wiederholen — so sieht man immer den aktuellen Stand, auch wenn ein Kollege
+  // zwischenzeitlich Einträge gemacht hat.
   useEffect(() => {
     if (!open || !festivalId) return
+    fetchedOnce.current = false
+    setLoadingAttendance(true)
     let cancelled = false
     const refresh = async () => {
       try {
@@ -2020,6 +2012,9 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission,
         }
         if (subRes.data) setSubmission(subRes.data)
       } catch (e) { /* Netzwerkfehler ignorieren, lokaler Stand bleibt erhalten */ }
+      finally {
+        if (!fetchedOnce.current) { fetchedOnce.current = true; setLoadingAttendance(false) }
+      }
     }
     refresh()
     const interval = setInterval(refresh, 20000)
@@ -2124,7 +2119,9 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission,
 
       {open && crew && (
         <div className="card">
-          {crew.length === 0 ? (
+          {loadingAttendance ? (
+            <div className="loading" style={{ height: 80 }}>Lade aktuelle Einträge…</div>
+          ) : crew.length === 0 ? (
             <p style={{ fontSize: 13, color: 'var(--grau-text)' }}>Keine Crew-Mitglieder gefunden.</p>
           ) : (
             <>
