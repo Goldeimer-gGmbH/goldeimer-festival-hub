@@ -223,6 +223,7 @@ const CONTENT_SUPPORTI_TAG1 = [
       '23 Uhr: Crew Briefing',
     ],
   },
+  { title: 'Erste Schichten' },
   { type: 'putzen_button' },
 ]
 
