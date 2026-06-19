@@ -629,8 +629,10 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
 
   const wichtigeTermine = role === 'supporti' ? [
     { lbl: 'Open Campingplatz / Anreise',  val: details.start_campsite || details.start_supp },
-    { lbl: 'Welcome Meeting',              val: details.time_welcome_meeting },
-    { lbl: 'Crew Briefing',               val: details.time_crew_briefing },
+    { lbl: 'Welcome Meeting',              val: details.time_welcome_meeting || details.start_supp,
+      suffix: details.time_welcome_meeting ? '' : ', 15 Uhr' },
+    { lbl: 'Crew Briefing',               val: details.time_crew_briefing || details.start_supp,
+      suffix: details.time_crew_briefing ? '' : ', 23 Uhr' },
     { lbl: 'Close Campingplatz / Abreise', val: details.end_campsite || details.end_supp },
   ].filter(t => t.val) : [
     { lbl: 'Anreise Lead & Operator', val: details.start_leadop },
