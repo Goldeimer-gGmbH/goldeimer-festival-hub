@@ -233,9 +233,8 @@ const CONTENT_SUPPORTI_MITTE = [
 ]
 
 const CONTENT_SUPPORTI_VORLETZTER = [
-  { type: 'preisaenderung' },
   { type: 'putzen_button' },
-  { type: 'preise' },
+  { type: 'preise', withWarning: true },
 ]
 
 const CONTENT_SUPPORTI_LETZTER = [
@@ -630,12 +629,10 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
 
   const wichtigeTermine = role === 'supporti' ? [
     { lbl: 'Open Campingplatz / Anreise',  val: details.start_campsite || details.start_supp },
-    { lbl: 'Welcome Meeting',              val: details.time_welcome_meeting || details.start_supp,
-      suffix: details.time_welcome_meeting ? '' : ', 15 Uhr' },
-    { lbl: 'Crew Briefing',               val: details.time_crew_briefing || details.start_supp,
-      suffix: details.time_crew_briefing ? '' : ', 23 Uhr' },
+    { lbl: 'Welcome Meeting',              val: details.time_welcome_meeting, always: true },
+    { lbl: 'Crew Briefing',               val: details.time_crew_briefing,    always: true },
     { lbl: 'Close Campingplatz / Abreise', val: details.end_campsite || details.end_supp },
-  ].filter(t => t.val) : [
+  ].filter(t => t.val || t.always) : [
     { lbl: 'Anreise Lead & Operator', val: details.start_leadop },
     { lbl: 'Beginn Aufbau',           val: details.start_setup,         suffix: ', ab 8 Uhr' },
     { lbl: 'Open Campingplatz',       val: details.start_campsite },
@@ -684,7 +681,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
                   {t.lbl}
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--grau-text)', textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-                  {formatDateShort(t.val) || t.val}{t.suffix || ''}
+                  {t.val ? (formatDateShort(t.val) || t.val) : '–'}{t.suffix || ''}
                 </div>
               </div>
             ))}
@@ -1652,14 +1649,16 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName, details, inAccor
             )
           }
 
-          // ── Preisänderungs-Warnung (roter Kasten) ──
+          // ── Preisänderungs-Warnung (schmale Inline-Box) ──
           if (item.type === 'preisaenderung') {
             return (
-              <div key={i} style={{
-                background: '#fde8e3', border: '2px solid var(--rot)',
-                borderRadius: 'var(--rounded)', padding: '12px var(--sp-4)', marginBottom: 12,
-              }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--rot)', fontFamily: 'var(--font-heading)' }}>
+              <div key={i} style={{ marginBottom: 12 }}>
+                <div style={{
+                  display: 'inline-block',
+                  background: '#fde8e3', border: '1.5px solid var(--rot)',
+                  borderRadius: 6, padding: '5px 10px',
+                  fontSize: 13, fontWeight: 700, color: 'var(--rot)', fontFamily: 'var(--font-heading)',
+                }}>
                   Achtung Preisänderung!
                 </div>
               </div>
@@ -1672,6 +1671,16 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName, details, inAccor
             return (
               <div key={i} style={{ marginBottom: 12 }}>
                 <SectionHeader text="Preise" />
+                {item.withWarning && (
+                  <div style={{
+                    display: 'inline-block',
+                    background: '#fde8e3', border: '1.5px solid var(--rot)',
+                    borderRadius: 6, padding: '5px 10px', marginBottom: 6, marginTop: 2,
+                    fontSize: 13, fontWeight: 700, color: 'var(--rot)', fontFamily: 'var(--font-heading)',
+                  }}>
+                    Achtung Preisänderung!
+                  </div>
+                )}
                 <div style={{ fontSize: 13, color: 'var(--schwarz)', whiteSpace: 'pre-wrap', lineHeight: 1.6, marginTop: 4 }}>
                   {details.goldeimer_prices}
                 </div>
