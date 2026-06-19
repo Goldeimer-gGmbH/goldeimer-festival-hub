@@ -1927,7 +1927,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
   const val      = { fontSize: 14, fontWeight: 400, color: 'var(--schwarz)' }
   const valMulti = { fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--schwarz)' }
 
-  const hasCrewSection = leadCrew.length > 0 || opCrew.length > 0 ||
+  const hasCrewSection = isSupporti || leadCrew.length > 0 || opCrew.length > 0 ||
     (!isSupporti && suppPlusCrew.length > 0) ||
     details.crew_care ||
     (!isSupporti && (details.social_media_fotos || details.crew_sonstiges))
@@ -1936,7 +1936,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
   const hasTelegramButtons = details.telegram_link || details.telegram_op_link
 
   // Crew-Sektion: Schichtplan und/oder Crew-Liste (Lead/Op)
-  const hasCrewCard = details.shift_table_link || (isLeadOp && crewLoaded)
+  const hasCrewCard = isSupporti || details.shift_table_link || (isLeadOp && crewLoaded)
 
   return (
     <div>
@@ -1982,20 +1982,24 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
           <h3 className="section-title">Crew</h3>
           <div className="card">
             <ul className="info-list">
-              {details.shift_table_link && (
+              {(details.shift_table_link || isSupporti) && (
                 <li>
                   <div>
                     <h4 style={lbl}>Schichtplan</h4>
-                    <div style={{ marginTop: 6 }}>
-                      <a
-                        href={details.shift_table_link}
-                        target="_blank" rel="noopener noreferrer"
-                        className="button button--yellow button--sm"
-                        style={{ textDecoration: 'none', width: 'auto' }}
-                      >
-                        Schichtplan öffnen
-                      </a>
-                    </div>
+                    {details.shift_table_link ? (
+                      <div style={{ marginTop: 6 }}>
+                        <a
+                          href={details.shift_table_link}
+                          target="_blank" rel="noopener noreferrer"
+                          className="button button--yellow button--sm"
+                          style={{ textDecoration: 'none', width: 'auto' }}
+                        >
+                          Schichtplan öffnen
+                        </a>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2 }}>Wird noch bekannt gegeben</div>
+                    )}
                   </div>
                 </li>
               )}
@@ -2037,11 +2041,11 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
           <h3 className="section-title">Special Crew</h3>
           <div className="card">
             <ul className="info-list">
-              {leadCrew.length > 0 && (
+              {(leadCrew.length > 0 || isSupporti) && (
                 <li>
                   <div>
                     <h4 style={lbl}>Lead</h4>
-                    {leadCrew.map((m, i) => (
+                    {leadCrew.length > 0 ? leadCrew.map((m, i) => (
                       <div key={i} style={{ marginTop: i === 0 ? 2 : 6 }}>
                         <div style={{ fontSize: 14, color: 'var(--schwarz)' }}>{m.full_name}</div>
                         {m.phone && (
@@ -2052,15 +2056,17 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
                           </a>
                         )}
                       </div>
-                    ))}
+                    )) : (
+                      <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2 }}>Wird noch bekannt gegeben</div>
+                    )}
                   </div>
                 </li>
               )}
-              {opCrew.length > 0 && (
+              {(opCrew.length > 0 || isSupporti) && (
                 <li>
                   <div>
                     <h4 style={lbl}>Operator</h4>
-                    {opCrew.map((m, i) => (
+                    {opCrew.length > 0 ? opCrew.map((m, i) => (
                       <div key={i} style={{ marginTop: i === 0 ? 2 : 6 }}>
                         <div style={{ fontSize: 14, color: 'var(--schwarz)' }}>{m.full_name}</div>
                         {m.phone && (
@@ -2071,7 +2077,9 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
                           </a>
                         )}
                       </div>
-                    ))}
+                    )) : (
+                      <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2 }}>Wird noch bekannt gegeben</div>
+                    )}
                   </div>
                 </li>
               )}
@@ -2085,10 +2093,13 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
                   </div>
                 </li>
               )}
-              {details.crew_care && (
+              {(details.crew_care || isSupporti) && (
                 <li><div>
                   <h4 style={lbl}>Crew Care</h4>
-                  <div style={valMulti}><ContactText text={details.crew_care} /></div>
+                  {details.crew_care
+                    ? <div style={valMulti}><ContactText text={details.crew_care} /></div>
+                    : <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2 }}>Wird noch bekannt gegeben</div>
+                  }
                 </div></li>
               )}
               {!isSupporti && details.social_media_fotos && (
