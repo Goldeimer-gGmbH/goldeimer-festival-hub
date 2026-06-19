@@ -238,7 +238,7 @@ const CONTENT_SUPPORTI_VORLETZTER = [
 ]
 
 const CONTENT_SUPPORTI_LETZTER = [
-  { type: 'preisaenderung' },
+  { type: 'preise', withWarning: true },
   { type: 'danke_text' },
 ]
 
