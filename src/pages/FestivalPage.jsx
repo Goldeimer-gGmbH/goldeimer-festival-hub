@@ -412,9 +412,9 @@ export default function FestivalPage() {
   const festivalName = data.festival?.name || ''
 
   const tabs = [
-    { key: 'ablauf',   label: 'Ablauf',          Icon: TabIconAblauf },
-    { key: 'infos',    label: 'Infos & Kontakte', Icon: TabIconInfos },
-    { key: 'kontakte', label: 'Crew',             Icon: TabIconKontakte },
+    { key: 'ablauf',   label: 'Ablauf',                                      Icon: TabIconAblauf },
+    { key: 'infos',    label: role === 'supporti' ? 'Infos' : 'Infos & Kontakte', Icon: TabIconInfos },
+    { key: 'kontakte', label: 'Crew',                                         Icon: TabIconKontakte },
   ]
 
   return (
@@ -1725,7 +1725,8 @@ function ContactText({ text }) {
 }
 
 function KontakteTab({ details, role, festivalName, crew, festivalId, attendanceSubmission }) {
-  const isLeadOp = role === 'lead' || role === 'operator'
+  const isLeadOp   = role === 'lead' || role === 'operator'
+  const isSupporti = role === 'supporti'
   const [showCrewSheet, setShowCrewSheet] = useState(false)
 
   const crewLoaded  = Array.isArray(crew)
@@ -1741,8 +1742,10 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
   const val      = { fontSize: 14, fontWeight: 400, color: 'var(--schwarz)' }
   const valMulti = { fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--schwarz)' }
 
-  const hasCrewSection = leadCrew.length > 0 || opCrew.length > 0 || suppPlusCrew.length > 0 ||
-    details.crew_care || details.social_media_fotos || details.crew_sonstiges
+  const hasCrewSection = leadCrew.length > 0 || opCrew.length > 0 ||
+    (!isSupporti && suppPlusCrew.length > 0) ||
+    details.crew_care ||
+    (!isSupporti && (details.social_media_fotos || details.crew_sonstiges))
 
   // NUR Telegram-Links – shift_table_link kommt in die eigene Crew-Sektion
   const hasTelegramButtons = details.telegram_link || details.telegram_op_link
@@ -1854,7 +1857,16 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
                   <div>
                     <h4 style={lbl}>Lead</h4>
                     {leadCrew.map((m, i) => (
-                      <p key={i}>{m.full_name}</p>
+                      <div key={i} style={{ marginTop: i === 0 ? 2 : 6 }}>
+                        <div style={{ fontSize: 14, color: 'var(--schwarz)' }}>{m.full_name}</div>
+                        {m.phone && (
+                          <a href={`tel:${m.phone.replace(/[\s\-/]/g, '')}`}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
+                              fontSize: 13, color: 'var(--grau-text)', textDecoration: 'none', marginTop: 2 }}>
+                            <IconTelefon size={12} /> {m.phone}
+                          </a>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </li>
@@ -1864,12 +1876,21 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
                   <div>
                     <h4 style={lbl}>Operator</h4>
                     {opCrew.map((m, i) => (
-                      <p key={i}>{m.full_name}</p>
+                      <div key={i} style={{ marginTop: i === 0 ? 2 : 6 }}>
+                        <div style={{ fontSize: 14, color: 'var(--schwarz)' }}>{m.full_name}</div>
+                        {m.phone && (
+                          <a href={`tel:${m.phone.replace(/[\s\-/]/g, '')}`}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
+                              fontSize: 13, color: 'var(--grau-text)', textDecoration: 'none', marginTop: 2 }}>
+                            <IconTelefon size={12} /> {m.phone}
+                          </a>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </li>
               )}
-              {suppPlusCrew.length > 0 && (
+              {!isSupporti && suppPlusCrew.length > 0 && (
                 <li>
                   <div>
                     <h4 style={lbl}>Supporti+</h4>
@@ -1885,13 +1906,13 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
                   <div style={valMulti}><ContactText text={details.crew_care} /></div>
                 </div></li>
               )}
-              {details.social_media_fotos && (
+              {!isSupporti && details.social_media_fotos && (
                 <li><div>
                   <h4 style={lbl}>Social Media / Fotos</h4>
                   <div style={valMulti}><ContactText text={details.social_media_fotos} /></div>
                 </div></li>
               )}
-              {details.crew_sonstiges && (
+              {!isSupporti && details.crew_sonstiges && (
                 <li><div>
                   <h4 style={lbl}>Sonstiges</h4>
                   <div style={valMulti}>{details.crew_sonstiges}</div>
@@ -2306,8 +2327,8 @@ function InfosTab({ details, role, content, festivalId }) {
 
   return (
     <div>
-      {/* ── Besonderheiten (roter Kasten, ganz oben) ── */}
-      {details.special_notes && (
+      {/* ── Besonderheiten (roter Kasten, ganz oben) — nicht für Supportis ── */}
+      {details.special_notes && role !== 'supporti' && (
         <div style={{
           background: '#fde8e3',
           border: '2px solid var(--rot)',
