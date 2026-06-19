@@ -196,6 +196,52 @@ const CONTENT_LETZTER_TAG = [
   { text: 'Abbau' },
 ]
 
+// ── Supporti-spezifische Ablauf-Inhalte ───────────────────────────────────────
+
+const PUTZEN_STEPS = [
+  { n: 1,   text: 'Handschuhe an! Wichtig!' },
+  { n: 2,   text: 'Zum Putzen brauchst du Flächendesinfektionsmittel – meist in blauen Sprühflaschen – und einen Handfeger.' },
+  { tip: true, text: 'Nimm dir ein Stück Kreide aus dem Koffer mit, um auf den Treppen zu markieren, welche Kabine du schon geputzt hast.' },
+  { n: 3,   text: 'Beim Reingehen in die Kabine kannst du direkt den Türgriff desinfizieren, damit das gut einwirken kann.' },
+  { n: 4,   text: 'Jetzt heißt\'s: Fegen! Erstmal die Kabine von Einstreu befreien. Smart ist, wenn du von oben nach unten fegst – also erst die Sitzplatte, dann den Boden.' },
+  { n: 5,   text: 'Als nächstes sprühst du die Oberflächen mit Desi ein, um sie dann mit Klopapier sauber zu wischen. Auch hier am besten erst einmal die Klobrille komplett einsprühen, damit das Desi gut einwirken kann.' },
+  { n: 6,   text: 'Dann Sitzplatte desinfizieren und abwischen, die Klobrille gründlich oben und auch unterhalb sauber machen.' },
+  { n: 7,   text: 'Achte darauf, dass du nicht direkt in die Tonne sprühst – möglichst keine Chemie in die Toilette.' },
+  { n: 8,   text: 'Das Klopapier auch nicht ins Klo werfen, sondern immer in den Mülleimer!' },
+  { tip: true, text: 'Wenn der Spritzschutz unter der Klobrille hinten vollgekackt ist, dreh ihn um 180 Grad – dann wird er sauber gepinkelt!' },
+  { n: 9,   text: 'Wisch zum Schluss gern nochmal über den Mülleimer und den Türgriff.' },
+  { n: 10,  text: 'Für das Extra-Sternchen fegst du beim Rausgehen noch kurz die Treppe, wenn hier viel Streu liegt. Und fertig!' },
+]
+
+const CONTENT_SUPPORTI_TAG1 = [
+  {
+    title: 'Wichtige Zeiten',
+    bullets: [
+      '10 Uhr: Campingplatz- und Goldeimer-Öffnung',
+      '15 Uhr: Welcome Meeting mit Newbies',
+      '16 Uhr: Erste Supporti-Schichten',
+      '23 Uhr: Crew Briefing',
+    ],
+  },
+  { type: 'putzen_button' },
+]
+
+const CONTENT_SUPPORTI_MITTE = [
+  { type: 'putzen_button' },
+  { type: 'preise' },
+]
+
+const CONTENT_SUPPORTI_VORLETZTER = [
+  { type: 'preisaenderung' },
+  { type: 'putzen_button' },
+  { type: 'preise' },
+]
+
+const CONTENT_SUPPORTI_LETZTER = [
+  { type: 'preisaenderung' },
+  { type: 'danke_text' },
+]
+
 // Erzeugt die Tages-Liste dynamisch aus den Festival-Datumfeldern
 function generateAblaufDays(details, role, festivalName) {
   const days = []
@@ -269,19 +315,31 @@ function generateAblaufDays(details, role, festivalName) {
 
       let type, label, todo, content
 
-      if (i === 0) {
-        type = 'tag1'; todo = 'Betriebsstart'; content = CONTENT_TAG1
-      } else if (i === totalDays - 1) {
-        type = 'letzter'; todo = 'Abreise & Abbau'; content = CONTENT_LETZTER_TAG
-      } else if (totalDays > 2 && i === totalDays - 2) {
-        type = 'vorletzter'; todo = 'Regelbetrieb vorletzter Tag'; content = CONTENT_VORLETZTER_TAG
-      } else if (i === 1) {
-        type = 'tag2'; todo = 'Regelbetrieb'; content = CONTENT_TAG2
+      if (role === 'supporti') {
+        if (i === 0) {
+          type = 'tag1_supp'; todo = 'Anreise & 1. Tag'; content = CONTENT_SUPPORTI_TAG1
+        } else if (i === totalDays - 1) {
+          type = 'letzter_supp'; todo = 'Letzte Schicht & Abreise'; content = CONTENT_SUPPORTI_LETZTER
+        } else if (totalDays > 2 && i === totalDays - 2) {
+          type = 'vorletzter_supp'; todo = 'Regelbetrieb vorletzter Tag'; content = CONTENT_SUPPORTI_VORLETZTER
+        } else {
+          type = 'mitte_supp'; todo = 'Regelbetrieb'; content = CONTENT_SUPPORTI_MITTE
+        }
+        label = i === 0 ? 'Anreisetag' : i === totalDays - 1 ? 'Letzter Tag' : `Goldeimer-Tag ${i + 1}`
       } else {
-        type = 'mitte'; todo = 'Regelbetrieb'; content = CONTENT_TAG_MITTE
+        if (i === 0) {
+          type = 'tag1'; todo = 'Betriebsstart'; content = CONTENT_TAG1
+        } else if (i === totalDays - 1) {
+          type = 'letzter'; todo = 'Abreise & Abbau'; content = CONTENT_LETZTER_TAG
+        } else if (totalDays > 2 && i === totalDays - 2) {
+          type = 'vorletzter'; todo = 'Regelbetrieb vorletzter Tag'; content = CONTENT_VORLETZTER_TAG
+        } else if (i === 1) {
+          type = 'tag2'; todo = 'Regelbetrieb'; content = CONTENT_TAG2
+        } else {
+          type = 'mitte'; todo = 'Regelbetrieb'; content = CONTENT_TAG_MITTE
+        }
+        label = i === totalDays - 1 ? 'Abreisetag' : `Goldeimer-Tag ${i + 1}`
       }
-
-      label = i === totalDays - 1 ? 'Abreisetag' : `Goldeimer-Tag ${i + 1}`
 
       days.push({ type, label, date: dateStr, todo, content })
     }
@@ -558,7 +616,7 @@ export default function FestivalPage() {
 function AblaufTab({ role, festivalId, profileId, checklists, festivalName, details, crew }) {
   const [openDayIdx, setOpenDayIdx] = useState(-1)
 
-  const hasAblauf = role === 'lead' || role === 'operator' || role === 'supporti_plus' || role === 'catering'
+  const hasAblauf = role === 'lead' || role === 'operator' || role === 'supporti_plus' || role === 'catering' || role === 'supporti'
 
   const ablaufTitle =
     role === 'lead'          ? 'Ablauf für Leads' :
@@ -569,7 +627,12 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
 
   const days = hasAblauf ? generateAblaufDays(details, role, festivalName) : []
 
-  const wichtigeTermine = [
+  const wichtigeTermine = role === 'supporti' ? [
+    { lbl: 'Open Campingplatz / Anreise',  val: details.start_campsite || details.start_supp },
+    { lbl: 'Welcome Meeting',              val: details.time_welcome_meeting },
+    { lbl: 'Crew Briefing',               val: details.time_crew_briefing },
+    { lbl: 'Close Campingplatz / Abreise', val: details.end_campsite || details.end_supp },
+  ].filter(t => t.val) : [
     { lbl: 'Anreise Lead & Operator', val: details.start_leadop },
     { lbl: 'Beginn Aufbau',           val: details.start_setup,         suffix: ', ab 8 Uhr' },
     { lbl: 'Open Campingplatz',       val: details.start_campsite },
@@ -679,6 +742,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
                     crew={crew}
                     festivalId={festivalId}
                     festivalName={festivalName}
+                    details={details}
                     inAccordion
                   />
                 </div>
@@ -1239,6 +1303,66 @@ function AnleitungItem({ item, numbered, index, depth = 0 }) {
   )
 }
 
+// ── How-to-Putzen Sheet ───────────────────────────────────────────────────────
+
+function PutzenSheet({ onClose }) {
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 400 }} />
+      <div style={{
+        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: 480, background: 'var(--weiss)',
+        borderRadius: '16px 16px 0 0', zIndex: 401,
+        maxHeight: '88dvh', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px var(--sp-4)', borderBottom: '1px solid var(--border)', flexShrink: 0,
+        }}>
+          <div style={{ fontWeight: 800, fontSize: 'var(--text-base)', fontFamily: 'var(--font-heading)' }}>
+            How to Putzen
+          </div>
+          <button onClick={onClose} aria-label="Schließen" style={{
+            background: 'var(--papier)', border: 'none', borderRadius: '50%',
+            width: 32, height: 32, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, color: 'var(--schwarz)', fontWeight: 700,
+          }}>✕</button>
+        </div>
+        <div style={{ overflowY: 'auto', padding: 'var(--sp-4)', paddingBottom: 'calc(var(--sp-6) + env(safe-area-inset-bottom, 0px))' }}>
+          <p style={{ fontSize: 13, color: 'var(--grau-text)', lineHeight: 1.65, marginBottom: 16 }}>
+            Bevor es losgeht: Gute Laune Lieblingssong in die Warteschlange packen. Jetzt wird geputzt!
+          </p>
+          {PUTZEN_STEPS.map((step, i) => (
+            <div key={i} style={{ marginBottom: 12 }}>
+              {step.tip ? (
+                <div style={{
+                  background: '#FFF9D6', border: '1.5px solid var(--gelb)',
+                  borderRadius: 8, padding: '10px 12px',
+                  fontSize: 13, lineHeight: 1.6, color: 'var(--schwarz)',
+                }}>
+                  <strong>Pro-Tipp:</strong> {step.text}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <span style={{
+                    flexShrink: 0, width: 22, height: 22, borderRadius: '50%',
+                    background: 'var(--schwarz)', color: 'var(--gelb)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-heading)', marginTop: 1,
+                  }}>{step.n}</span>
+                  <span style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--schwarz)' }}>{step.text}</span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ── Aufbauanleitung Sheet ─────────────────────────────────────────────────────
 
 function AnleitungSheet({ onClose }) {
@@ -1416,10 +1540,11 @@ function RueckmeldungSheet({ festivalId, festivalName, crew, onClose }) {
 
 // ── Tages-Detailansicht ───────────────────────────────────────────────────────
 
-function AblaufDayDetail({ day, crew, festivalId, festivalName, inAccordion = false }) {
-  const [showBriefing, setShowBriefing]     = useState(false)
-  const [showAnleitung, setShowAnleitung]   = useState(false)
+function AblaufDayDetail({ day, crew, festivalId, festivalName, details, inAccordion = false }) {
+  const [showBriefing, setShowBriefing]         = useState(false)
+  const [showAnleitung, setShowAnleitung]       = useState(false)
   const [showRueckmeldung, setShowRueckmeldung] = useState(false)
+  const [showPutzen, setShowPutzen]             = useState(false)
 
   return (
     <div>
@@ -1513,6 +1638,53 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName, inAccordion = fa
             )
           }
 
+          // ── Putzen-Button ──
+          if (item.type === 'putzen_button') {
+            return (
+              <div key={i} style={{ marginBottom: 12 }}>
+                <button onClick={() => setShowPutzen(true)} className="button button--yellow button--sm" style={{ width: 'auto' }}>
+                  How to Putzen
+                </button>
+              </div>
+            )
+          }
+
+          // ── Preisänderungs-Warnung (roter Kasten) ──
+          if (item.type === 'preisaenderung') {
+            return (
+              <div key={i} style={{
+                background: '#fde8e3', border: '2px solid var(--rot)',
+                borderRadius: 'var(--rounded)', padding: '12px var(--sp-4)', marginBottom: 12,
+              }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--rot)', fontFamily: 'var(--font-heading)' }}>
+                  Achtung Preisänderung!
+                </div>
+              </div>
+            )
+          }
+
+          // ── Preise aus Festival-Details ──
+          if (item.type === 'preise') {
+            if (!details?.goldeimer_prices) return null
+            return (
+              <div key={i} style={{ marginBottom: 12 }}>
+                <SectionHeader text="Preise" />
+                <div style={{ fontSize: 13, color: 'var(--schwarz)', whiteSpace: 'pre-wrap', lineHeight: 1.6, marginTop: 4 }}>
+                  {details.goldeimer_prices}
+                </div>
+              </div>
+            )
+          }
+
+          // ── Abschluss-Text (letzter Tag Supporti) ──
+          if (item.type === 'danke_text') {
+            return (
+              <div key={i} style={{ fontSize: 14, color: 'var(--schwarz)', lineHeight: 1.65, marginBottom: 12 }}>
+                Danke für euer Engagement! Wir sehen uns bei der AfterShit 🎉
+              </div>
+            )
+          }
+
           // ── Sicherheitsbriefing-Item ──
           if (item.type === 'sicherheitsbriefing') {
             return (
@@ -1575,6 +1747,7 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName, inAccordion = fa
       {/* Sheets */}
       {showBriefing    && <SicherheitsbriefingSheet onClose={() => setShowBriefing(false)} />}
       {showAnleitung   && <AnleitungSheet onClose={() => setShowAnleitung(false)} />}
+      {showPutzen      && <PutzenSheet onClose={() => setShowPutzen(false)} />}
       {showRueckmeldung && festivalId && (
         <RueckmeldungSheet
           festivalId={festivalId}
