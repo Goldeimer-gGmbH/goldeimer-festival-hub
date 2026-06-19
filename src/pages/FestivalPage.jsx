@@ -1977,6 +1977,20 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission,
 
   useEffect(() => { setSubmission(attendanceSubmission || null) }, [attendanceSubmission])
 
+  // Schnell-Initialisierung aus dem Crew-Array (kommt aus get_my_festival_info, kann gecacht sein).
+  // Wird sofort gesetzt — der Loading-Indikator blendet die Liste aus, bis die DB-Abfrage
+  // fertig ist und diesen Stand überschreibt. So gibt es einen Fallback falls der DB-Fetch scheitert.
+  useEffect(() => {
+    if (!crew) return
+    setAttendance(prev => {
+      const next = { ...prev }
+      crew.forEach(a => {
+        if (!(a.assignment_id in next)) next[a.assignment_id] = a.attendance_present ?? null
+      })
+      return next
+    })
+  }, [crew])
+
   // Beim Öffnen sofort frische DB-Daten holen (bypassed Cache), danach alle 20s
   // wiederholen — so sieht man immer den aktuellen Stand, auch wenn ein Kollege
   // zwischenzeitlich Einträge gemacht hat.
