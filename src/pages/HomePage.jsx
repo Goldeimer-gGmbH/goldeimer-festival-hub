@@ -5,6 +5,7 @@ import { useAuth } from '../components/AuthContext'
 import { cacheGet, cacheSet } from '../lib/cache'
 import { fetchWithTimeout } from '../lib/fetchWithTimeout'
 import { IconStar } from '../components/Icons'
+import { HUB_ADMIN_EMAILS } from '../lib/admins'
 
 const ROLLE_LABEL = {
   lead: 'Lead', operator: 'Operator',
@@ -116,6 +117,7 @@ const ALL_TOPICS = [
 
 export default function HomePage() {
   const { profile, signOut } = useAuth()
+  const isHubAdmin = HUB_ADMIN_EMAILS.includes(profile?.email)
   const cacheKey = `assignments_${profile?.id}`
   // Lazy-Init: wenn Cache warm → sofort Daten + kein Spinner
   const [assignments, setAssignments] = useState(() => cacheGet(cacheKey) || [])
@@ -137,19 +139,42 @@ export default function HomePage() {
         .eq('profile_id', profile.id)
         .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
     )
+
+    let merged = data || []
+
+    if (isHubAdmin) {
+      const { data: allFestivals } = await supabase
+        .from('festivals')
+        .select('id, name, details')
+        .order('created_at', { ascending: true })
+
+      if (allFestivals) {
+        const assignedIds = new Set((data || []).map(a => a.festival?.id))
+        const adminOnly = allFestivals
+          .filter(f => !assignedIds.has(f.id))
+          .map(f => ({ id: `admin_${f.id}`, role: 'lead', status: 'zugesagt', festival: f }))
+        merged = [...(data || []), ...adminOnly]
+      }
+    }
+
     if (!error && data) {
-      setAssignments(data)
+      setAssignments(merged)
       cacheSet(cacheKey, data, 48 * 60 * 60 * 1000)
     } else if (error) {
       if (isAuthError) setAuthError(true)
       else if (!cached) setFetchError(true)
+      if (isHubAdmin && merged.length > 0) {
+        setAssignments(merged)
+      }
+    } else {
+      setAssignments(merged)
     }
     setLoading(false)
   }
 
   const vorname = profile?.full_name?.split(' ')[0] || 'Hey'
   // Zeige Lead-spezifische Inhalte, wenn die Person bei IRGENDEINEM Festival Lead/Operator ist
-  const isLeadOrOp = assignments.some(a => a.role === 'lead' || a.role === 'operator')
+  const isLeadOrOp = isHubAdmin || assignments.some(a => a.role === 'lead' || a.role === 'operator')
 
   const topics = ALL_TOPICS.filter(t => !t.leadOnly || isLeadOrOp)
 

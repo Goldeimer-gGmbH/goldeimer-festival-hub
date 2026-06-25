@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
 import { cacheGet, cacheSet, cacheClear } from '../lib/cache'
 import { fetchWithTimeout } from '../lib/fetchWithTimeout'
+import { HUB_ADMIN_EMAILS } from '../lib/admins'
 import {
   IconAblauf, IconInfos, IconKontakte,
   IconKalender, IconTransport, IconOrderbird, IconStift, IconLupe,
@@ -355,6 +356,7 @@ export default function FestivalPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const { profile, signOut } = useAuth()
+  const isHubAdmin = HUB_ADMIN_EMAILS.includes(profile?.email)
   const [data, setData]           = useState(null)
   const [loading, setLoading]     = useState(true)
   const [fetchError, setFetchError] = useState(false)
@@ -415,14 +417,20 @@ export default function FestivalPage() {
           setFetchError(true)
         }
       } else if (rpcData?.error) {
-        // RPC hat application-level Fehler zurückgegeben — nie cachen
-        if (!validCached) {
+        // RPC hat application-level Fehler zurückgegeben (z.B. kein Assignment)
+        if (isHubAdmin) {
+          await loadAdminFallback()
+        } else if (!validCached) {
           setDebugMsg(`rpc: ${String(rpcData.error)}`)
           setFetchError(true)
         }
-        console.error('get_my_festival_info RPC error:', rpcData.error)
+        if (!isHubAdmin) console.error('get_my_festival_info RPC error:', rpcData.error)
       } else if (!rpcData && !validCached) {
-        setNotFound(true)
+        if (isHubAdmin) {
+          await loadAdminFallback()
+        } else {
+          setNotFound(true)
+        }
       }
     } catch (e) {
       if (!validCached) {
@@ -431,6 +439,26 @@ export default function FestivalPage() {
       }
     } finally {
       setLoading(false)  // immer aufrufen – verhindert dauerhaftes Laden
+    }
+  }
+
+  async function loadAdminFallback() {
+    const { data: festival, error } = await supabase
+      .from('festivals')
+      .select('id, name, details')
+      .eq('id', id)
+      .single()
+    if (!error && festival) {
+      setData({
+        festival,
+        assignment_role: 'lead',
+        crew: null,
+        checklists: null,
+        content: null,
+        attendance_submission: null,
+      })
+    } else {
+      setNotFound(true)
     }
   }
 
