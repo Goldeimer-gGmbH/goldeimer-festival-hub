@@ -87,7 +87,7 @@ export default function LoginPage() {
       })
       if (error) {
         if (error.message?.toLowerCase().includes('signups not allowed')) {
-          setError('Du hast aktuell keine Zusage für ein Goldeimer-Festival für kommende Saison.')
+          setError('Du hast aktuell keine Zusage für ein Goldeimer-Festival für diese Saison.')
         } else if (error.message?.includes('not found') || error.message?.includes('user')) {
           setError('Diese E-Mail ist nicht in unserem System. Wende dich an Goldeimer.')
         } else if (error.message?.includes('rate') || error.status === 429) {
