@@ -2136,6 +2136,12 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
                   <div style={valMulti}><ContactText text={details.social_media_fotos} /></div>
                 </div></li>
               )}
+              {!isSupporti && details.vca_crew && (
+                <li><div>
+                  <h4 style={lbl}>VCA Crew</h4>
+                  <div style={valMulti}><ContactText text={details.vca_crew} /></div>
+                </div></li>
+              )}
               {!isSupporti && details.crew_sonstiges && (
                 <li><div>
                   <h4 style={lbl}>Sonstiges</h4>
