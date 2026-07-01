@@ -1963,8 +1963,8 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
   // NUR Telegram-Links – shift_table_link kommt in die eigene Crew-Sektion
   const hasTelegramButtons = details.telegram_link || details.telegram_op_link
 
-  // Crew-Sektion: Schichtplan und/oder Crew-Liste (Lead/Op)
-  const hasCrewCard = isSupporti || details.shift_table_link || (isLeadOp && crewLoaded)
+  // Crew-Sektion: für Leads/Ops immer anzeigen (ggf. mit Placeholder)
+  const hasCrewCard = isSupporti || details.shift_table_link || isLeadOp
 
   return (
     <div>
@@ -2031,19 +2031,23 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
                   </div>
                 </li>
               )}
-              {isLeadOp && crewLoaded && (
+              {isLeadOp && (
                 <li>
                   <div>
                     <h4 style={lbl}>Crew-Liste</h4>
-                    <div style={{ marginTop: 6 }}>
-                      <button
-                        onClick={() => setShowCrewSheet(true)}
-                        className="button button--sm"
-                        style={{ border: 'none', cursor: 'pointer' }}
-                      >
-                        Crew-Liste & Anwesenheit feedbacken
-                      </button>
-                    </div>
+                    {crewLoaded ? (
+                      <div style={{ marginTop: 6 }}>
+                        <button
+                          onClick={() => setShowCrewSheet(true)}
+                          className="button button--sm"
+                          style={{ border: 'none', cursor: 'pointer' }}
+                        >
+                          Crew-Liste & Anwesenheit feedbacken
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2 }}>Wird noch bekannt gegeben</div>
+                    )}
                   </div>
                 </li>
               )}
