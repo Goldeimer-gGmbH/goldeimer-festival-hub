@@ -375,7 +375,7 @@ export default function FestivalPage() {
 
   async function loadFestivalInfo(retryCount = 0) {
     setFetchError(false); setAuthError(false); setNotFound(false); setDebugMsg('')
-    const cacheKey = `festival_v3_${id}`
+    const cacheKey = `festival_v4_${id}`
     const cached = cacheGet(cacheKey)
 
     // Nur gültigen Cache verwenden — Responses mit error-Key nie cachen/anzeigen.
