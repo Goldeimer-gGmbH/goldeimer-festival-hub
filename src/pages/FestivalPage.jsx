@@ -443,16 +443,32 @@ export default function FestivalPage() {
   }
 
   async function loadAdminFallback() {
-    const { data: festival, error } = await supabase
-      .from('festivals')
-      .select('id, name, details')
-      .eq('id', id)
-      .single()
+    const [{ data: festival, error }, { data: crewRaw }] = await Promise.all([
+      supabase.from('festivals').select('id, name, details').eq('id', id).single(),
+      supabase.from('assignments')
+        .select('id, role, detail_pronouns, detail_carpass, detail_arrival, profile:profiles(full_name, email, phone)')
+        .eq('festival_id', id)
+        .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
+        .order('role'),
+    ])
     if (!error && festival) {
+      const crew = (crewRaw || []).map(a => ({
+        assignment_id: a.id,
+        role: a.role,
+        full_name: a.profile?.full_name,
+        email: a.profile?.email,
+        phone: a.profile?.phone,
+        detail_pronouns: a.detail_pronouns,
+        detail_carpass: a.detail_carpass,
+        detail_arrival: a.detail_arrival,
+        attendance_present: null,
+        attendance_checked_by_name: null,
+        attendance_checked_at: null,
+      }))
       setData({
         festival,
         assignment_role: 'lead',
-        crew: null,
+        crew,
         checklists: null,
         content: null,
         attendance_submission: null,
