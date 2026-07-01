@@ -119,9 +119,9 @@ export default function HomePage() {
   const { profile, signOut } = useAuth()
   const isHubAdmin = HUB_ADMIN_EMAILS.includes(profile?.email)
   const cacheKey = `assignments_${profile?.id}`
-  // Lazy-Init: wenn Cache warm → sofort Daten + kein Spinner
-  const [assignments, setAssignments] = useState(() => cacheGet(cacheKey) || [])
-  const [loading, setLoading] = useState(() => !cacheGet(cacheKey))
+  // Admins: kein Cache (merged Liste kann nicht gecacht werden), immer frisch laden
+  const [assignments, setAssignments] = useState(() => isHubAdmin ? [] : (cacheGet(cacheKey) || []))
+  const [loading, setLoading] = useState(() => isHubAdmin ? true : !cacheGet(cacheKey))
   const [fetchError, setFetchError] = useState(false)
   const [authError, setAuthError] = useState(false)
 
