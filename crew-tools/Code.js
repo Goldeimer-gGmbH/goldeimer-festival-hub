@@ -3160,6 +3160,13 @@ function rebuildShiftStatsFromPlan_({ festivalId, targetSpreadsheetId }) {
   const uniqueDays = [...new Set(slots.map(s => String(s.day || "").trim()))].filter(Boolean);
   const dayOrderMap = buildDayOrderMapFromSlots_(slots);
 
+  // Lookup-Map: day|time|block → people_per_shift (für dynamische Zeilenzahl im Rücklesen)
+  const slotPpsMap = {};
+  slots.forEach(s => {
+    const key = `${String(s.day||"").trim()}|${String(s.time||"").trim()}|${String(s.block||"").trim()}`;
+    slotPpsMap[key] = Math.max(1, Number(s.people_per_shift || 3) || 3);
+  });
+
   const firstTwoDaysSet = {};
   uniqueDays.slice(0, 2).forEach(d => firstTwoDaysSet[d] = true);
 
@@ -3345,19 +3352,23 @@ function rebuildShiftStatsFromPlan_({ festivalId, targetSpreadsheetId }) {
       continue;
     }
 
-    // slot start (expect 3 lines)
+    // slot start — Anzahl Zeilen pro Slot aus Config
     if (!currentDay2 || !timeCell || !blockCell) { rIdx++; continue; }
+
+    const slotKey2 = `${currentDay2}|${timeCell}|${blockCell}`;
+    const pps2 = slotPpsMap[slotKey2] || 3;
 
     if (firstTwoDaysSet[currentDay2]) {
       for (let c = 0; c < campColsCount; c++) {
         const colIdx = 3 + c;
 
-        const n1 = String(values[rIdx]?.[colIdx] || "").trim();
-        const n2 = String(values[rIdx + 1]?.[colIdx] || "").trim();
-        const n3 = String(values[rIdx + 2]?.[colIdx] || "").trim();
-        const names = [n1, n2, n3].filter(Boolean);
+        const names = [];
+        for (let ni = 0; ni < pps2; ni++) {
+          const n = String(values[rIdx + ni]?.[colIdx] || "").trim();
+          if (n) names.push(n);
+        }
 
-        if (names.length === 3) {
+        if (names.length === pps2) {
           const hasExp = names.some(n => (peopleByName[n] && peopleByName[n].isExperienced === true));
           if (!hasExp) {
             warnings.push({
@@ -3374,7 +3385,7 @@ function rebuildShiftStatsFromPlan_({ festivalId, targetSpreadsheetId }) {
       }
     }
 
-    rIdx += 3; // nächster Slot
+    rIdx += pps2; // nächster Slot
   }
 
   // 2) Back-to-back: aus Occurrences pro Person
@@ -3717,11 +3728,12 @@ function buildUniversalSchichtplan_({ festivalId, targetSpreadsheetId }) {
   // Zielwert: wie viele Schichten soll jeder bekommen?
   const totalSlotPositions = (slots || []).reduce((sum, slot) => {
     const numCamps = Math.max(1, Number(slot.num_camps || 0) || 1);
+    const pps = Math.max(1, Number(slot.people_per_shift || 3) || 3);
     const slotHasPromo = hasPromo && (
       isTrue_(slot.promo) || isTrue_(slot.promo_needed) ||
       isTrue_(slot.has_promo) || isTrue_(slot.promo_active) || isTrue_(slot.promo_enabled)
     );
-    return sum + numCamps * 3 + (slotHasPromo ? 3 : 0);
+    return sum + numCamps * pps + (slotHasPromo ? pps : 0);
   }, 0);
   const shiftTarget = Math.max(1, Math.floor(totalSlotPositions / Math.max(1, peopleAll.length)));
   Logger.log(`Schicht-Zielwert: ${shiftTarget} (${totalSlotPositions} Positionen / ${peopleAll.length} Personen)`);
@@ -3757,12 +3769,13 @@ function buildUniversalSchichtplan_({ festivalId, targetSpreadsheetId }) {
 
   (slots || []).forEach((slot, slotIdx) => {
     const numCamps = Math.max(1, Number(slot.num_camps || 0) || 1);
+    const pps = Math.max(1, Number(slot.people_per_shift || 3) || 3);
     const roster = pickRosterUniversal_({
       blockLetter: String(slot.block || "").toUpperCase(),
       blockPeople,
       state,
       slot,
-      needed: numCamps * 3,
+      needed: numCamps * pps,
       dayOrderMap,
       shiftTarget,
       peopleAll,
@@ -3810,6 +3823,7 @@ function buildUniversalSchichtplan_({ festivalId, targetSpreadsheetId }) {
     const time  = String(slot.time  || "").trim();
     const block = String(slot.block || "").trim();
     const numCamps = Math.max(1, Number(slot.num_camps || 0) || 1);
+    const pps = Math.max(1, Number(slot.people_per_shift || 3) || 3);
 
     // Day header row einfügen
     if (day && day !== currentDay) {
@@ -3826,8 +3840,8 @@ function buildUniversalSchichtplan_({ festivalId, targetSpreadsheetId }) {
     const groups     = allCampGroups[slotIdx]  || {};
     const promoRoster = allPromoRosters[slotIdx] || [];
 
-    // 3 Reihen pro Slot schreiben
-    for (let i = 0; i < 3; i++) {
+    // pps Reihen pro Slot schreiben
+    for (let i = 0; i < pps; i++) {
       const row = [i === 0 ? day : "", i === 0 ? time : "", i === 0 ? block : ""];
       for (let c = 1; c <= maxCamps; c++) {
         if (c <= numCamps) {
@@ -4077,18 +4091,19 @@ function buildBestCampGroupsForSlot_({ roster, state, globalPairCounts, globalTr
 
   // Camps dynamisch aus slot.num_camps (nicht immer 4)
   const numCamps = Math.max(1, Number(slot?.num_camps || 1) || 1);
+  const pps = Math.max(1, Number(slot?.people_per_shift || 3) || 3);
   const campKeys = [];
   for (let c = 1; c <= numCamps; c++) campKeys.push(`camp${c}`);
 
   const out = {};
   campKeys.forEach(k => out[k] = []);
 
-  // Wenn weniger als 3*numCamps verfügbar: stumpf auffüllen, aber stabil
-  if (people.length < numCamps * 3) {
+  // Wenn weniger als pps*numCamps verfügbar: stumpf auffüllen, aber stabil
+  if (people.length < numCamps * pps) {
     people.sort((a, b) => stableKey_(a).localeCompare(stableKey_(b)));
     let idx = 0;
     for (let c = 0; c < campKeys.length; c++) {
-      for (let k = 0; k < 3; k++) {
+      for (let k = 0; k < pps; k++) {
         if (idx < people.length) out[campKeys[c]].push(people[idx++]);
       }
     }
@@ -4122,8 +4137,8 @@ function buildBestCampGroupsForSlot_({ roster, state, globalPairCounts, globalTr
   // --- Phase 2: Trios bauen Camp für Camp mit minimaler Penalty
   // Greedy: pro Camp die beste Ergänzung für vorhandene (0 oder 1 Person) wählen
   function pickBestForCamp_(campArr, pool) {
-    // campArr hat 0..2 Personen, wir müssen bis 3 auffüllen
-    while (campArr.length < 3) {
+    // campArr hat 0..pps-1 Personen, wir müssen bis pps auffüllen
+    while (campArr.length < pps) {
       let bestIdx = -1;
       let bestScore = Infinity;
 
@@ -4136,10 +4151,10 @@ function buildBestCampGroupsForSlot_({ roster, state, globalPairCounts, globalTr
 
         if (trial.length === 2) {
           score = getPairPenalty_(trial[0], trial[1]);
-        } else if (trial.length === 3) {
+        } else if (trial.length === pps) {
           score = trioPenaltyTotal_(trial);
 
-          // Experience-Priorität in den ersten 2 Tagen: wenn Trio voll und ohne erfahrene, fetter Malus
+          // Experience-Priorität in den ersten 2 Tagen: wenn Camp voll und ohne erfahrene, fetter Malus
           if (isFirstTwoDaysSlot && !hasExperienced_(trial)) score += 1000;
         } else {
           // should not happen
@@ -4166,9 +4181,9 @@ function buildBestCampGroupsForSlot_({ roster, state, globalPairCounts, globalTr
     pickBestForCamp_(out[campKeys[c]], remaining);
   }
 
-  // --- Phase 3: counts updaten für die finalen Trios
+  // --- Phase 3: counts updaten für die finalen Camps
   campKeys.forEach(k => {
-    if (out[k].length === 3) markCounts_(out[k]);
+    if (out[k].length === pps) markCounts_(out[k]);
   });
 
   return out;
@@ -4689,9 +4704,10 @@ function pickPromoRosterForSlot_({ peopleAll, state, slot, dayOrderMap, excludeI
 
   const picked = [];
   const remaining = pool.slice().sort(sortKey);
+  const pps = Math.max(1, Number(slot?.people_per_shift || 3) || 3);
 
   // Pass 1: Leute unter dem Ziel
-  for (let i = 0; i < remaining.length && picked.length < 3; i++) {
+  for (let i = 0; i < remaining.length && picked.length < pps; i++) {
     const p = remaining[i];
     const st = state[p.application_id];
     if ((st.totalAll || 0) < target) picked.push(p);
@@ -4699,8 +4715,8 @@ function pickPromoRosterForSlot_({ peopleAll, state, slot, dayOrderMap, excludeI
 
   // Pass 2: Option A – strikt gleiche Obergrenze wie Camp-Picker
   // Nur Leute UNTER target (nicht AM Ziel) → niemand wird durch Promo über target gedrückt
-  // Konsequenz: Promo-Slot bleibt ggf. mit weniger als 3 Leuten besetzt
-  for (let i = 0; i < remaining.length && picked.length < 3; i++) {
+  // Konsequenz: Promo-Slot bleibt ggf. mit weniger als pps Leuten besetzt
+  for (let i = 0; i < remaining.length && picked.length < pps; i++) {
     const p = remaining[i];
     if (picked.some(x => x.application_id === p.application_id)) continue;
     const st = state[p.application_id];
@@ -4737,43 +4753,44 @@ function applyUniversalFormatting_(sh, slots, layout) {
 
     const blockLetter = String(slot.block || "").toUpperCase();
     const numCamps = Math.max(1, Number(slot.num_camps || 0) || 1);
+    const pps = Math.max(1, Number(slot.people_per_shift || 3) || 3);
 
     const bgLight = getBlockColorUniversal_(blockLetter, "light");
     const bgDark  = getBlockColorUniversal_(blockLetter, "dark");
 
-    // Merges für Tag/Zeit/Block (3 Zeilen Slot)
-    sh.getRange(startRow, 1, 3, 1).mergeVertically();
-    sh.getRange(startRow, 2, 3, 1).mergeVertically();
-    sh.getRange(startRow, 3, 3, 1).mergeVertically();
+    // Merges für Tag/Zeit/Block (pps Zeilen pro Slot)
+    sh.getRange(startRow, 1, pps, 1).mergeVertically();
+    sh.getRange(startRow, 2, pps, 1).mergeVertically();
+    sh.getRange(startRow, 3, pps, 1).mergeVertically();
 
 
-    sh.getRange(startRow, 1, 3, 3)
+    sh.getRange(startRow, 1, pps, 3)
       .setVerticalAlignment("middle")
       .setHorizontalAlignment("center");
 
-    sh.getRange(startRow, 3, 3, 1)
+    sh.getRange(startRow, 3, pps, 1)
       .setBackground(bgDark)
       .setFontWeight("bold");
 
     // Camps: erst alles weiß
     if (maxCamps > 0) {
-      sh.getRange(startRow, campStartCol, 3, maxCamps).setBackground("#ffffff");
+      sh.getRange(startRow, campStartCol, pps, maxCamps).setBackground("#ffffff");
     }
 
     // dann nur existierende Camps einfärben
     const paintCamps = Math.min(numCamps, maxCamps);
     if (paintCamps > 0) {
-      sh.getRange(startRow, campStartCol, 3, paintCamps).setBackground(bgLight);
+      sh.getRange(startRow, campStartCol, pps, paintCamps).setBackground(bgLight);
     }
 
     // Promo: nur wenn Festival Promo-Spalte hat UND Slot Promo will, sonst weiß
     if (hasPromo && promoCol !== -1) {
       const slotWantsPromo = isTrue_(slot.promo) || isTrue_(slot.promo_needed) || isTrue_(slot.has_promo);
-      sh.getRange(startRow, promoCol, 3, 1).setBackground(slotWantsPromo ? bgLight : "#ffffff");
+      sh.getRange(startRow, promoCol, pps, 1).setBackground(slotWantsPromo ? bgLight : "#ffffff");
     }
 
     // Rahmen über Planbreite
-    sh.getRange(startRow, 1, 3, headerLen)
+    sh.getRange(startRow, 1, pps, headerLen)
       .setBorder(true, null, true, null, null, null, "#cccccc", SpreadsheetApp.BorderStyle.SOLID);
   }
 }
