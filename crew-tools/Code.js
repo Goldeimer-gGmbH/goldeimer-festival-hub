@@ -5689,12 +5689,17 @@ function loadSperrlisteMap_() {
 }
 
 function applySperrlisteHighlighting_(sh, sorted, dashCols, headerRow, sperrMap) {
-  if (!sperrMap || sperrMap.size === 0) return;
-
   const firstIdx = dashCols.indexOf("first_name");
   const lastIdx  = dashCols.indexOf("last_name");
   const emailIdx = dashCols.indexOf("email");
   if (emailIdx === -1) return;
+
+  // Immer erst alte Sperrliste-Notizen löschen (bleiben sonst nach Rebuild erhalten)
+  if (sorted.length > 0 && firstIdx !== -1) {
+    sh.getRange(headerRow + 1, firstIdx + 1, sorted.length, 1).clearNote();
+  }
+
+  if (!sperrMap || sperrMap.size === 0) return;
 
   sorted.forEach((row, i) => {
     const em = normEmail_(String(row[emailIdx] || ""));
