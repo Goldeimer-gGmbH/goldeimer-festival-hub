@@ -4841,6 +4841,21 @@ function updateInternalWebsiteData() {
     return;
   }
 
+  // Bestehende status_override-Werte retten bevor clearContents()
+  const existingOverrides = {};
+  const lastRowBefore = targetSheet.getLastRow();
+  if (lastRowBefore > 1) {
+    const existingData = targetSheet.getRange(1, 1, lastRowBefore, 7).getValues();
+    const overrideColIdx = existingData[0].indexOf("status_override");
+    if (overrideColIdx !== -1) {
+      for (let i = 1; i < existingData.length; i++) {
+        const festName = String(existingData[i][0] || "").trim();
+        const override = String(existingData[i][overrideColIdx] || "").trim();
+        if (festName && override) existingOverrides[festName] = override;
+      }
+    }
+  }
+
   const festData = readSheetAsObjects_(festivalConfigSheet);
   const appRows = readSheetAsObjects_(appSheet).rows;
 
@@ -4907,31 +4922,38 @@ function updateInternalWebsiteData() {
       status = "waitinglist";
     }
 
-    Logger.log(`[${fid}] → status: ${status}`);
+    // Manueller Override aus vorheriger WEBSITE_DATA-Spalte hat Vorrang
+    const festNameKey = String(fest.festival_name || "").trim();
+    const override = existingOverrides[festNameKey] || "";
+    const finalStatus = override || status;
+
+    Logger.log(`[${fid}] → status: ${status}${override ? " (override: " + override + ")" : ""}`);
 
     exportRows.push([
-      fest.festival_name, 
-      displayStart, 
-      displayEnd, 
-      town, 
-      status, 
-      Utilities.formatDate(new Date(), "GMT+1", "dd.MM.yyyy HH:mm")
+      fest.festival_name,
+      displayStart,
+      displayEnd,
+      town,
+      finalStatus,
+      Utilities.formatDate(new Date(), "GMT+1", "dd.MM.yyyy HH:mm"),
+      override,
     ]);
   });
 
   targetSheet.clearContents();
-  
-  targetSheet.getRange(1, 1, 1, 6)
-    .setValues([["Festival", "Beginn", "Ende", "Ort", "Status", "Letztes Update"]])
+
+  targetSheet.getRange(1, 1, 1, 7)
+    .setValues([["Festival", "Beginn", "Ende", "Ort", "Status", "Letztes Update", "status_override"]])
     .setFontWeight("bold")
     .setBackground("#f3f3f3");
-  
+
   if (exportRows.length > 0) {
-    targetSheet.getRange(2, 1, exportRows.length, 6).setValues(exportRows);
-    targetSheet.autoResizeColumns(1, 6);
+    targetSheet.getRange(2, 1, exportRows.length, 7).setValues(exportRows);
+    targetSheet.autoResizeColumns(1, 7);
     targetSheet.getRange(2, 2, exportRows.length, 2).setHorizontalAlignment("center");
     targetSheet.getRange(2, 5, exportRows.length, 1).setHorizontalAlignment("center");
     targetSheet.getRange(2, 6, exportRows.length, 1).setFontColor("#999999").setFontSize(8);
+    targetSheet.getRange(2, 7, exportRows.length, 1).setFontColor("#555555");
   }
   
   toast_("WEBSITE_DATA wurde mit Daten aus Spalte H (end_takedown) aktualisiert.");
