@@ -910,8 +910,11 @@ if (isReminder) {
         : "";
 
       // Briefing-Zeiten (nur Supporti & Supporti Plus)
+      const briefingTimesIntro = roleNorm === "SUPPORTI_PLUS"
+        ? `Mit den anderen Supportis treffen wir uns dann zum Willkommens-Briefing am`
+        : `Wir treffen uns zum gemeinsamen Start ins Festival und für ein kurzes Willkommens-Briefing am`;
       const blockBriefingTimes = ["SUPPORTI", "SUPPORTI_PLUS"].includes(roleNorm)
-        ? `<p>Wir treffen uns zum gemeinsamen Start ins Festival und für ein kurzes Willkommens-Briefing <b>am ${timeWelcomeMeeting} im Crew Camp</b>. Bitte sei pünktlich da und plan dir ausreichend Zeit für die Anreise, zum Ankommen und Aufbauen ein.
+        ? `<p>${briefingTimesIntro} <b>${timeWelcomeMeeting} im Crew Camp</b>. Bitte sei pünktlich da und plan dir ausreichend Zeit für die Anreise, zum Ankommen und Aufbauen ein.
 Unser Crew-Briefing für alle findet <b>am ${timeCrewBriefing} im Crew Camp</b> statt. Hier solltest du unbedingt da sein.
 </p>`
         : "";
