@@ -363,8 +363,12 @@ const COC_CONTENT = [
     text: 'Wir können nicht immer direkt eingreifen, aber es ist häufig möglich, Menschen nach einem Vorfall zu unterstützen. Sprecht die betroffene Person an und fragt, ob es ihr gut geht oder ob ihr sie bei etwas unterstützen könnt (z.B. Freund*innen anrufen).',
   },
   {
-    type: 'p',
-    text: 'Um eine erlebte Situation im Nachgang innerhalb des Goldeimer Kosmos anzusprechen, kannst du dich an die Goldeimer-Ansprechperson für Crew Care wenden. Alternativ kannst du andere Mitglieder der Goldeimer Crew (z.B. Leads oder Operatis), die Goldeimer Festivalkoordination (Tanja & Rolf via festival@goldeimer.de) kontaktieren oder das anonyme Formular von Goldeimer – auch im Nachgang des Festivals – nutzen.',
+    type: 'p_link',
+    parts: [
+      { text: 'Um eine erlebte Situation im Nachgang innerhalb des Goldeimer Kosmos anzusprechen, kannst du dich an die Goldeimer-Ansprechperson für Crew Care wenden. Alternativ kannst du andere Mitglieder der Goldeimer Crew (z.B. Leads oder Operatis), die Goldeimer Festivalkoordination (Tanja & Rolf via festival@goldeimer.de) kontaktieren oder das ' },
+      { text: 'anonyme Awareness-Formular von Goldeimer', href: 'https://docs.google.com/forms/d/e/1FAIpQLSeXVxdCv2lGa-h98Fhiyoc23Ofji_BAWZL5AJrz1QVPF3GOVg/viewform' },
+      { text: ' – auch im Nachgang des Festivals – nutzen.' },
+    ],
   },
   {
     type: 'h2',
@@ -493,6 +497,16 @@ function CocPlainText() {
             return (
               <p key={i} style={{ lineHeight: 1.75, marginBottom: 'var(--sp-4)', color: 'var(--grau-text)' }}>
                 {block.text}
+              </p>
+            )
+          case 'p_link':
+            return (
+              <p key={i} style={{ lineHeight: 1.75, marginBottom: 'var(--sp-4)', color: 'var(--grau-text)' }}>
+                {block.parts.map((part, j) =>
+                  part.href
+                    ? <a key={j} href={part.href} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--schwarz)', fontWeight: 600 }}>{part.text}</a>
+                    : part.text
+                )}
               </p>
             )
           case 'note':
