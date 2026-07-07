@@ -148,6 +148,9 @@ function onOpen() {
     .addSeparator()
     .addItem("✅ Anwesenheit übernehmen (Status 'teilgenommen')", "uiSyncAttendanceToStatus")
     .addSeparator()
+    .addItem("✉️ Dankes-Mail: Testversand", "uiSendDankemailTest")
+    .addItem("📩 Dankes-Mail: Echter Versand", "uiSendDankemailReal")
+    .addSeparator()
     .addItem("📜 Newbies-Liste aktualisieren", "uiBuildNewbieSheet")
     .addSeparator()
     .addItem("🌐 Festivals zu Supabase synchronisieren", "syncAllFestivalsToSupabase")
@@ -5745,6 +5748,149 @@ function applySperrlisteHighlighting_(sh, sorted, dashCols, headerRow, sperrMap)
         .setNote(`🚫 Gesperrt${entry.reason ? ": " + entry.reason : ""}`);
     }
   });
+}
+
+/* =========================
+ * DANKES-MAIL
+ * ========================= */
+function uiSendDankemailTest() {
+  const festivalId = getActiveFestivalIdOrPrompt_();
+  if (!festivalId) return;
+  const res = sendDankemailForFestival_({ festivalId, forceTest: true });
+  toast_(`TEST Dankes-Mail: ${res.sentOk} OK, ${res.sentFailed} Fehler (${res.candidates} Kandidaten)`);
+}
+
+function uiSendDankemailReal() {
+  const festivalId = getActiveFestivalIdOrPrompt_();
+  if (!festivalId) return;
+  const res = sendDankemailForFestival_({ festivalId, forceTest: false });
+  toast_(`ECHT Dankes-Mail: ${res.sentOk} OK, ${res.sentFailed} Fehler`);
+}
+
+function sendDankemailForFestival_({ festivalId, forceTest }) {
+  Logger.log(`▶ DANKEMAIL START | festival=${festivalId} | forceTest=${forceTest}`);
+
+  const ss = SpreadsheetApp.getActive();
+  const appSheet = ss.getSheetByName(SHEETS.APPLICATIONS);
+  if (!appSheet) throw new Error(`Sheet fehlt: ${SHEETS.APPLICATIONS}`);
+
+  const isTestRun = !!forceTest;
+  const template = getTemplate_("DANKE", { allowInactive: true });
+  Logger.log(`template gefunden: ${!!template} | active=${template && template.active}`);
+
+  if (!isTestRun && !template.active) {
+    Logger.log("⚠ Abbruch: Template DANKE inaktiv");
+    return { candidates: 0, sentOk: 0, sentFailed: 0 };
+  }
+
+  // Festival-Config
+  const festSheet = ss.getSheetByName(SHEETS.FESTIVALS);
+  const festData  = readSheetAsObjects_(festSheet);
+  const festCfg   = festData.rows.find(r => String(r.festival_id || "").trim() === festivalId) || {};
+
+  const dankeIntro   = String(festCfg.danke_intro   || "").trim();
+  const crewFotoUrl  = String(festCfg.crew_foto_url  || "").trim();
+  const anmeldungUrl = String(festCfg.anmeldung_url  || "").trim();
+
+  // Lead-Vornamen automatisch aus APPLICATIONS ziehen
+  const appData = readSheetAsObjects_(appSheet);
+  const leadFirstNames = appData.rows
+    .filter(r =>
+      String(r.festival_id || "").trim() === festivalId &&
+      normalizeRole_(r.role) === "LEAD" &&
+      ["zugesagt", "akkreditiert", "teilgenommen"].includes(normalizeStatus_(r.status))
+    )
+    .map(r => String(r.first_name || "").trim())
+    .filter(Boolean);
+
+  const dankeLeads = leadFirstNames.length === 0
+    ? ""
+    : leadFirstNames.length === 1
+      ? leadFirstNames[0]
+      : leadFirstNames.slice(0, -1).join(", ") + " und " + leadFirstNames[leadFirstNames.length - 1];
+
+  // BLOCK_CREWFOTO: img-Tag wenn URL gesetzt, sonst leer
+  const blockCrewfoto = crewFotoUrl
+    ? `<p style="text-align:center; margin:24px 0;"><img src="${crewFotoUrl}" alt="Crew Foto" style="max-width:100%; border-radius:8px;" /></p>`
+    : "";
+
+  // BLOCK_MEHR_FESTIVALS: nur bis 7. August des aktuellen Jahres sichtbar
+  const now = new Date();
+  const cutoff = new Date(now.getFullYear(), 7, 7, 23, 59, 59);
+  const blockMehrFestivals = now <= cutoff
+    ? `<p>&#127926; <strong>Noch mehr Bock auf Festivals?</strong><br>
+Wenn du noch nicht genug von Festivals mit Goldeimer hast, komm nochmal mit! ${anmeldungUrl ? `<a href="${anmeldungUrl}">Zur Anmeldung geht&#8217;s hier.</a>` : "Zur Anmeldung geht&#8217;s hier."}</p>`
+    : "";
+
+  // Kandidaten: Status teilgenommen, noch keine Dankes-Mail bekommen
+  const candidates = appData.rows.filter(r => {
+    const fidMatch  = String(r.festival_id || "").trim() === String(festivalId).trim();
+    const st        = normalizeStatus_(r.status);
+    const notSentYet = !String(r.danke_sent || "").trim();
+    return fidMatch && st === "teilgenommen" && notSentYet;
+  });
+
+  Logger.log(`Kandidaten (teilgenommen, noch keine Dankes-Mail): ${candidates.length}`);
+  if (candidates.length === 0) {
+    Logger.log("⚠ Keine Kandidaten – alle bereits versorgt oder niemand hat teilgenommen.");
+    return { candidates: 0, sentOk: 0, sentFailed: 0 };
+  }
+
+  let sentOk = 0, sentFailed = 0;
+
+  candidates.forEach(r => {
+    try {
+      const vars = {
+        ...buildVars_(r),
+        BLOCK_INTRO:           dankeIntro,
+        BLOCK_CREWFOTO:        blockCrewfoto,
+        BLOCK_MEHR_FESTIVALS:  blockMehrFestivals,
+        DANKE_LEADS:           dankeLeads,
+      };
+
+      let htmlBody  = render_(template.body_html, vars);
+      const subject = render_(template.subject || "DANKE & Feedback | {{FESTIVAL_NAME}} 2026 💛🔥", vars);
+      const recipient = isTestRun ? Session.getActiveUser().getEmail() : (r.email || "");
+
+      if (isTestRun) {
+        htmlBody = buildTestHeader_(r.email, festivalId, r.role) + htmlBody;
+      }
+
+      Logger.log(`   Sende an: ${recipient} | Betreff: ${subject}`);
+      if (!recipient) throw new Error("Keine E-Mail-Adresse");
+
+      GmailApp.sendEmail(recipient, subject, "", {
+        htmlBody,
+        name: "Goldeimer Crew",
+      });
+
+      Logger.log(`   ✓ Mail gesendet`);
+
+      if (!isTestRun) {
+        const nowFmt = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd.MM.yyyy HH:mm");
+        const rowIdx = appData.rows.indexOf(r);
+        const colIdx = appData.headerMap["danke_sent"];
+        if (rowIdx >= 0 && colIdx !== undefined) {
+          appSheet.getRange(rowIdx + 2, colIdx + 1).setValue(nowFmt);
+        }
+        updateDashboardRowByApplicationId_(festivalId, r.application_id, { danke_sent: nowFmt });
+      }
+
+      sentOk++;
+    } catch (e) {
+      sentFailed++;
+      Logger.log(`   ✗ FEHLER bei ${r.email || "?"}: ${e.message}`);
+    }
+  });
+
+  log_({
+    action: "MAIL_DANKE",
+    meta: { festivalId, candidates: candidates.length, sentOk, sentFailed, mode: isTestRun ? "TEST" : "ECHT" },
+    count: sentOk,
+  });
+
+  Logger.log(`▶ FERTIG | ok=${sentOk} | fehler=${sentFailed}`);
+  return { candidates: candidates.length, sentOk, sentFailed };
 }
 
 function uiSendLastInfoTest() {
