@@ -481,6 +481,38 @@ function FaqSection() {
   )
 }
 
+// ── Awareness-Formular Link ───────────────────────────────────────────────────
+const AWARENESS_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSeXVxdCv2lGa-h98Fhiyoc23Ofji_BAWZL5AJrz1QVPF3GOVg/viewform'
+
+function AwarenessFormLink() {
+  return (
+    <a
+      href={AWARENESS_FORM_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ display: 'block', textDecoration: 'none', marginTop: 'var(--sp-4)' }}
+    >
+      <div style={{
+        background: 'var(--schwarz)', borderRadius: 'var(--rounded)',
+        padding: 'var(--sp-4) var(--sp-5)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--sp-3)',
+      }}>
+        <div>
+          <div style={{ color: 'var(--gelb)', fontWeight: 700, fontSize: 'var(--text-sm)', fontFamily: 'var(--font-heading)' }}>
+            Anonymes Awareness-Formular
+          </div>
+          <div style={{ color: 'var(--on-dark-sub)', fontSize: 'var(--text-xs)', marginTop: 2 }}>
+            Vorfall melden – anonym & auch nach dem Festival
+          </div>
+        </div>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gelb)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M7 17L17 7M17 7H7M17 7v10" />
+        </svg>
+      </div>
+    </a>
+  )
+}
+
 // ── CoC als fließender Text ───────────────────────────────────────────────────
 function CocPlainText() {
   return (
@@ -504,7 +536,7 @@ function CocPlainText() {
               <p key={i} style={{ lineHeight: 1.75, marginBottom: 'var(--sp-4)', color: 'var(--grau-text)' }}>
                 {block.parts.map((part, j) =>
                   part.href
-                    ? <a key={j} href={part.href} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--schwarz)', fontWeight: 600 }}>{part.text}</a>
+                    ? <a key={j} href={part.href} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--schwarz)', fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: 3 }}>{part.text}</a>
                     : part.text
                 )}
               </p>
@@ -712,13 +744,21 @@ export default function InfosPage() {
       <div style={{ flex: 1, background: 'var(--papier)', padding: 'var(--sp-5) var(--sp-4) var(--sp-10)' }}>
 
         {/* ── Nur FAQ ── */}
-        {section === 'faq' && <FaqSection />}
+        {section === 'faq' && (
+          <>
+            <FaqSection />
+            <AwarenessFormLink />
+          </>
+        )}
 
         {/* ── Nur CoC ── */}
         {section === 'code-of-conduct' && (
-          <div style={{ background: 'var(--weiss)', borderRadius: 'var(--rounded)', padding: 'var(--sp-5)', boxShadow: 'var(--shadow-sm)' }}>
-            <CocPlainText />
-          </div>
+          <>
+            <div style={{ background: 'var(--weiss)', borderRadius: 'var(--rounded)', padding: 'var(--sp-5)', boxShadow: 'var(--shadow-sm)' }}>
+              <CocPlainText />
+            </div>
+            <AwarenessFormLink />
+          </>
         )}
 
         {/* ── Standardansicht: DB-Inhalte + FAQ + CoC ── */}
@@ -739,6 +779,7 @@ export default function InfosPage() {
             <div ref={faqRef} style={{ scrollMarginTop: 72, marginTop: content.length > 0 ? 'var(--sp-8)' : 0 }}>
               <h3 className="section-title" style={{ marginBottom: 'var(--sp-4)' }}>FAQ</h3>
               <FaqSection />
+              <AwarenessFormLink />
             </div>
 
             <div ref={cocRef} style={{ scrollMarginTop: 72, marginTop: 'var(--sp-8)' }}>
@@ -746,6 +787,7 @@ export default function InfosPage() {
               <div style={{ background: 'var(--weiss)', borderRadius: 'var(--rounded)', padding: 'var(--sp-5)', boxShadow: 'var(--shadow-sm)' }}>
                 <CocPlainText />
               </div>
+              <AwarenessFormLink />
             </div>
           </>
         )}
