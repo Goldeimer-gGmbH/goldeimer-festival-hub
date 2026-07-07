@@ -325,7 +325,7 @@ export default function HomePage() {
                 alignItems: 'center',
                 gap: 'var(--sp-3)',
                 padding: 'var(--sp-3) var(--sp-4)',
-                borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
+                borderBottom: '1px solid var(--border)',
                 textDecoration: 'none',
                 color: 'var(--schwarz)',
               }}
@@ -339,6 +339,26 @@ export default function HomePage() {
               <ChevronIcon dir="right" size={16} color="rgba(29,29,27,0.45)" />
             </Link>
           ))}
+          <a
+            href="https://docs.google.com/forms/d/e/1FAIpQLSeXVxdCv2lGa-h98Fhiyoc23Ofji_BAWZL5AJrz1QVPF3GOVg/viewform"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
+              padding: 'var(--sp-3) var(--sp-4)',
+              textDecoration: 'none', color: 'var(--schwarz)',
+            }}
+          >
+            <span style={{ width: 36, height: 36, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </span>
+            <span style={{ flex: 1, fontWeight: 600, fontSize: 'var(--text-sm)' }}>Anonymes Awareness-Formular</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(29,29,27,0.45)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 17L17 7M17 7H7M17 7v10" />
+            </svg>
+          </a>
         </div>
 
       </div>
