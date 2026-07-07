@@ -5790,7 +5790,11 @@ function sendDankemailForFestival_({ festivalId, forceTest }) {
 
   const dankeIntro   = String(festCfg.danke_intro   || "").trim();
   const crewFotoUrl  = String(festCfg.crew_foto_url  || "").trim();
-  const anmeldungUrl = String(festCfg.anmeldung_url  || "").trim();
+
+  // TODO: URLs für neue Saison aktualisieren
+  const CONST_FEEDBACK_URL  = ""; // Feedback-Formular URL
+  const CONST_AWARENESS_URL = ""; // Awareness-Formular URL
+  const CONST_ANMELDUNG_URL = ""; // Anmeldungs-URL für nächste Festivals
 
   // Lead-Vornamen automatisch aus APPLICATIONS ziehen
   const appData = readSheetAsObjects_(appSheet);
@@ -5814,12 +5818,33 @@ function sendDankemailForFestival_({ festivalId, forceTest }) {
     ? `<p style="text-align:center; margin:24px 0;"><img src="${crewFotoUrl}" alt="Crew Foto" style="max-width:100%; border-radius:8px;" /></p>`
     : "";
 
+  // BLOCK_FEEDBACK
+  const feedbackLink   = CONST_FEEDBACK_URL  ? `<a href="${CONST_FEEDBACK_URL}">zum Feedback-Bogen</a>`   : "zum Feedback-Bogen";
+  const awarenessLink  = CONST_AWARENESS_URL ? `<a href="${CONST_AWARENESS_URL}">zum Awareness-Formular</a>` : "zum Awareness-Formular";
+  const blockFeedback = `<p style="background-color:#fff9e6; border-left:4px solid #ffe500; padding:10px 14px; margin:16px 0;">
+<strong>&#128203; Dein Feedback zählt</strong><br>
+Wie war's für dich? Wir freuen uns sehr über dein Feedback – ehrlich, direkt und so ausführlich du möchtest.<br>
+&#128073; ${feedbackLink}<br><br>
+Falls du etwas erlebt hast, das du dem Awareness-Team mitteilen möchtest, kannst du das hier tun – anonym und vertraulich.<br>
+&#128073; ${awarenessLink}
+</p>`;
+
+  // BLOCK_AFTERSHIT
+  const blockAftershit = `<p style="background-color:#fce5f5; border-left:4px solid #cc00aa; padding:10px 14px; margin:16px 0;">
+<strong>&#127881; Aftershit Party</strong><br>
+Die Festivalsaison endet mit der legendären Aftershit Party – nur für die Goldeimer Crew. Wir feiern gemeinsam auf das, was wir zusammen bewegt haben. Infos folgen per Mail!
+</p>`;
+
   // BLOCK_MEHR_FESTIVALS: nur bis 7. August des aktuellen Jahres sichtbar
   const now = new Date();
   const cutoff = new Date(now.getFullYear(), 7, 7, 23, 59, 59);
+  const anmeldungLink = CONST_ANMELDUNG_URL ? `<a href="${CONST_ANMELDUNG_URL}">Zur Anmeldung geht&#8217;s hier.</a>` : "Zur Anmeldung geht&#8217;s hier.";
   const blockMehrFestivals = now <= cutoff
-    ? `<p>&#127926; <strong>Noch mehr Bock auf Festivals?</strong><br>
-Wenn du noch nicht genug von Festivals mit Goldeimer hast, komm nochmal mit! ${anmeldungUrl ? `<a href="${anmeldungUrl}">Zur Anmeldung geht&#8217;s hier.</a>` : "Zur Anmeldung geht&#8217;s hier."}</p>`
+    ? `<p style="background-color:#e6f9ee; border-left:4px solid #00a845; padding:10px 14px; margin:16px 0;">
+<strong>&#127926; Noch mehr Bock auf Festivals?</strong><br>
+Wenn du noch nicht genug von Festivals mit Goldeimer hast, komm nochmal mit!<br>
+&#128073; ${anmeldungLink}
+</p>`
     : "";
 
   // Kandidaten: Status teilgenommen, noch keine Dankes-Mail bekommen
@@ -5844,6 +5869,8 @@ Wenn du noch nicht genug von Festivals mit Goldeimer hast, komm nochmal mit! ${a
         ...buildVars_(r),
         BLOCK_INTRO:           dankeIntro,
         BLOCK_CREWFOTO:        blockCrewfoto,
+        BLOCK_FEEDBACK:        blockFeedback,
+        BLOCK_AFTERSHIT:       blockAftershit,
         BLOCK_MEHR_FESTIVALS:  blockMehrFestivals,
         DANKE_LEADS:           dankeLeads,
       };
