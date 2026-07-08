@@ -2836,7 +2836,7 @@ function slugFestivalId_(festivalName) {
 function setFestivalConfigColumnNotes() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sh = ss.getSheetByName(SHEETS.FESTIVALS);
-  if (!sh) { SpreadsheetApp.getUi().alert("Sheet CONFIG_FESTIVALS nicht gefunden."); return; }
+  if (!sh) { Logger.log("Sheet CONFIG_FESTIVALS nicht gefunden."); return; }
 
   const notes = {
     festival_id:           "Eindeutiger Kürzel (z.B. \"DEICH26\"). Muss exakt mit festival_id in APPLICATIONS übereinstimmen.",
@@ -2867,7 +2867,7 @@ function setFestivalConfigColumnNotes() {
     if (note) sh.getRange(1, i + 1).setNote(note);
   });
 
-  SpreadsheetApp.getUi().alert("✅ Notizen gesetzt auf " + Object.keys(notes).length + " Spalten.");
+  ss.toast("✅ Notizen gesetzt auf " + Object.keys(notes).length + " Spalten.", "CONFIG_FESTIVALS", 5);
 }
 
 function buildFestivalMaps_() {
