@@ -3983,11 +3983,18 @@ function assignPeopleToBlocks_({ people, slots }) {
     }
   });
 
-  // Pass 2: pref2 – erst jetzt werden pref2-Slots vergeben (kein neediest dazwischen)
+  // Pass 2: pref2 – vergleiche Überfülldruck von pref2 vs. neediest.
+  // Wenn pref2 nicht schlechter ausgelastet ist als der Block, den neediest_ wählen würde,
+  // gib der Präferenz den Vorzug – auch wenn pref2 schon am Target ist.
   const afterPass2 = [];
   afterPass1.forEach((p) => {
     const b2 = normBlock_(p.pref2);
-    if (BLOCKS.includes(b2) && (targets[b2] - blockPeople[b2].length) > 0) {
+    if (!BLOCKS.includes(b2)) { afterPass2.push(p); return; }
+    // slack < 0 = Platz, 0 = genau am Ziel, > 0 = überfüllt
+    const b2Slack = blockPeople[b2].length - targets[b2];
+    const neediestB = neediest_();
+    const neediestSlack = blockPeople[neediestB].length - targets[neediestB];
+    if (b2Slack <= neediestSlack) {
       blockPeople[b2].push(p);
       blockChosenById[p.application_id] = b2;
     } else {
