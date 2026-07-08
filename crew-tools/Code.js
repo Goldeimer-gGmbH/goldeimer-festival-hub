@@ -5802,10 +5802,11 @@ function sendDankemailForFestival_({ festivalId, forceTest }) {
     .filter(r =>
       String(r.festival_id || "").trim() === festivalId &&
       normalizeRole_(r.role) === "LEAD" &&
-      ["zugesagt", "akkreditiert", "teilgenommen"].includes(normalizeStatus_(r.status))
+      !["absage", "abgesagt", "auf warteliste", "für warteliste"].includes(normalizeStatus_(r.status))
     )
     .map(r => String(r.first_name || "").trim())
     .filter(Boolean);
+  Logger.log(`Leads gefunden: ${leadFirstNames.join(", ")} (${leadFirstNames.length})`)
 
   const dankeLeads = leadFirstNames.length === 0
     ? ""
