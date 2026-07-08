@@ -5827,10 +5827,8 @@ function sendDankemailForFestival_({ festivalId, forceTest }) {
   const awarenessLink  = CONST_AWARENESS_URL ? `<a href="${CONST_AWARENESS_URL}">zum Awareness-Formular</a>` : "zum Awareness-Formular";
   const blockFeedback = `<p style="background-color:#fff9e6; border-left:4px solid #ffe500; padding:10px 14px; margin:16px 0;">
 <strong>&#128203; Dein Feedback zählt</strong><br>
-Wie war's für dich? Wir freuen uns sehr über dein Feedback – ehrlich, direkt und so ausführlich du möchtest.<br>
-&#128073; ${feedbackLink}<br><br>
-Falls du etwas erlebt hast, das du dem Awareness-Team mitteilen möchtest, kannst du das hier tun – anonym und vertraulich.<br>
-&#128073; ${awarenessLink}
+Wie hat's dir gefallen? Würdest du nochmal mitkommen? Hast du Feedback, Ideen oder Kritik? Wir würden uns freuen, wenn du diesen ${feedbackLink} schnell (oder langsam) ausfüllst, damit Goldeimer noch besser werden kann!<br><br>
+Beschäftigt dich noch ein bestimmtes Thema oder eine Situation vom Festival? Wenn du Gesprächsbedarf hast oder Unterstützung wünschst, kannst du uns über dieses Formular anonym dein Anliegen mitteilen &#8594; ${awarenessLink}
 </p>`;
 
   // BLOCK_AFTERSHIT
