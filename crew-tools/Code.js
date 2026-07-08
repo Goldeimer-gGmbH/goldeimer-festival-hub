@@ -4037,8 +4037,12 @@ function assignPeopleToBlocks_({ people, slots }) {
             const py = blockPeople[by][j];
             const gain = (prefScore_(px, by) - prefScore_(px, bx))
                        + (prefScore_(py, bx) - prefScore_(py, by));
-            const rescues = (prefScore_(px, bx) === 0 && prefScore_(px, by) > 0)
-                         || (prefScore_(py, by) === 0 && prefScore_(py, bx) > 0);
+            // Rescue gilt nur wenn:
+            // - py war anderer Block (score=0) und wird nach bx besser (score>0)
+            // - px war zufrieden (score>0) UND landet nach by auch in pref1 oder pref2
+            //   (verhindert Zyklus: px muss pref2=by haben, sonst tauscht es nächste Runde zurück)
+            const rescues = prefScore_(py, by) === 0 && prefScore_(py, bx) > 0
+                         && prefScore_(px, bx) > 0 && prefScore_(px, by) > 0;
             if (gain > 0 || (gain === 0 && rescues)) {
               blockPeople[bx][i] = py;
               blockPeople[by][j] = px;
@@ -4065,7 +4069,7 @@ function assignPeopleToBlocks_({ people, slots }) {
       // Suche pref2-Freiwillige aus anderen Blöcken (Spender muss ≥ target bleiben)
       for (const donorBlock of BLOCKS) {
         if (donorBlock === underBlock) continue;
-        if (blockPeople[donorBlock].length <= targets[donorBlock]) continue; // Spender hat kein Surplus
+        if (blockPeople[donorBlock].length < targets[donorBlock]) continue; // Spender muss mindestens am Target sein
         const idx = blockPeople[donorBlock].findIndex(p =>
           normBlock_(p.pref2) === underBlock && normBlock_(p.pref1) === donorBlock
         );
