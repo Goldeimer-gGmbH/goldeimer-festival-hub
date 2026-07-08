@@ -6679,9 +6679,10 @@ function sendNewbieBriefingReminder() {
       return;
     }
 
-    // Uhrzeit aus preBriefing extrahieren, z.B. "18:30 Uhr"
-    const timeMatch = preBriefing.match(/(\d{1,2}:\d{2})\s*Uhr/i);
-    const timeStr   = timeMatch ? `${timeMatch[1]} Uhr` : "";
+    // Zeitraum aus preBriefing extrahieren, z.B. "18:30-20:00 Uhr" aus "08.07.2026 von 18:30-20:00 Uhr"
+    const timeRangeMatch = preBriefing.match(/von\s+(\d{1,2}:\d{2}-\d{1,2}:\d{2})\s*Uhr/i);
+    const timeSingleMatch = preBriefing.match(/von\s+(\d{1,2}:\d{2})/i) || preBriefing.match(/(\d{1,2}:\d{2})/);
+    const timeStr = timeRangeMatch ? `${timeRangeMatch[1]} Uhr` : (timeSingleMatch ? `${timeSingleMatch[1]} Uhr` : "");
 
     // Alle Angemeldeten für dieses Festival
     const registrations = respData.rows.filter(r =>
@@ -6733,8 +6734,9 @@ function uiSendNewbieBriefingReminderTest() {
     const briefingCall = String(festRow["newbie_briefing_call"] || "").trim();
     if (!briefingCall) return;
 
-    const timeMatch = preBriefing.match(/(\d{1,2}:\d{2})\s*Uhr/i);
-    const timeStr   = timeMatch ? `${timeMatch[1]} Uhr` : "";
+    const timeRangeMatch2  = preBriefing.match(/von\s+(\d{1,2}:\d{2}-\d{1,2}:\d{2})\s*Uhr/i);
+    const timeSingleMatch2 = preBriefing.match(/von\s+(\d{1,2}:\d{2})/i) || preBriefing.match(/(\d{1,2}:\d{2})/);
+    const timeStr = timeRangeMatch2 ? `${timeRangeMatch2[1]} Uhr` : (timeSingleMatch2 ? `${timeSingleMatch2[1]} Uhr` : "");
     const sample    = respData.rows.find(r =>
       String(r["Bei welchem Festival bist du dabei?"] || "").trim() === festivalName
     );
@@ -6872,7 +6874,7 @@ function _buildNewbieReminderHtml_(firstName, timeStr, briefingCall) {
   return `<meta charset="UTF-8">
 <p>Moini${firstName ? " " + firstName : ""},</p>
 
-<p>kleine Erinnerung: Wir treffen uns <strong>heute${timeStr ? " um " + timeStr : ""}</strong> für das Goldeimer Briefing. Es dauert max. 1,5 Stunden – danach bist du bestens vorbereitet für ein fantastisches Festival. Bring gern deine Fragen mit!</p>
+<p>kleine Erinnerung: Wir treffen uns <strong>heute${timeStr ? " von " + timeStr : ""}</strong> für das Goldeimer Briefing. Es dauert max. 1,5 Stunden – danach bist du bestens vorbereitet für ein fantastisches Festival. Bring gern deine Fragen mit!</p>
 
 <p>${_formatCallBlock_(briefingCall)}</p>
 
