@@ -5834,7 +5834,8 @@ Beschäftigt dich noch ein bestimmtes Thema oder eine Situation vom Festival? We
   // BLOCK_AFTERSHIT
   const blockAftershit = `<p style="background-color:#fce5f5; border-left:4px solid #cc00aa; padding:10px 14px; margin:16px 0;">
 <strong>&#127881; Aftershit Party</strong><br>
-Die Festivalsaison endet mit der legendären Aftershit Party – nur für die Goldeimer Crew. Wir feiern gemeinsam auf das, was wir zusammen bewegt haben. Infos folgen per Mail!
+Sehen wir uns bei der Aftershit Party?<br>
+Am 14. November steigt in Hamburg der phänomenale Goldeimer Saisonabschluss, den du dir keinesfalls entgehen lassen solltest – save the date für die Aftershit Party! Der Termin steht – auch schon in deinem Kalender? Am Samstagabend, 14.11. steigt die Sause. Freitag und Samstag wird es auch schon Programm geben. Details und offizielle Einladung folgen im Herbst.
 </p>`;
 
   // BLOCK_MEHR_FESTIVALS: nur bis 7. August des aktuellen Jahres sichtbar
