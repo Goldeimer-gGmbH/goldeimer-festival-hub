@@ -3400,18 +3400,18 @@ function rebuildShiftStatsFromPlan_({ festivalId, targetSpreadsheetId }) {
   // --- Stats sammeln
   const stats = {};
   function ensure_(name) {
-    if (!name || !peopleByName[name]) return null;
+    if (!name) return null;
     if (!stats[name]) {
-      const meta = peopleByName[name];
+      const meta = peopleByName[name] || {};
       stats[name] = {
         name,
-        email: meta.email,
-        experienceBucket: meta.experienceBucket,
-        isExperienced: meta.isExperienced,
-        pref1: meta.pref1,
-        pref2: meta.pref2,
-        promoWant: meta.promoWant,
-        arrival: meta.arrival,
+        email: meta.email || "",
+        experienceBucket: meta.experienceBucket || "",
+        isExperienced: meta.isExperienced === true,
+        pref1: meta.pref1 || "",
+        pref2: meta.pref2 || "",
+        promoWant: meta.promoWant || "",
+        arrival: meta.arrival || "",
         total: 0,
         perDay: {},
         perBlock: { A: 0, B: 0, C: 0, D: 0, E: 0 },
@@ -3424,7 +3424,9 @@ function rebuildShiftStatsFromPlan_({ festivalId, targetSpreadsheetId }) {
   const values = planSh.getDataRange().getValues();
   const header = values[0].map(h => String(h || "").trim());
   const campColsCount = header.filter(h => /^Camp\s+\d+$/i.test(h)).length;
-  const promoColIdx = header.indexOf("Promo Schicht"); // -1 wenn nicht vorhanden
+  const promoColIdx = header.indexOf("Promo Schicht"); // erster Treffer, ignoriert Duplikate
+  Logger.log(`Plan-Header: ${JSON.stringify(header)}`);
+  Logger.log(`campColsCount=${campColsCount}, promoColIdx=${promoColIdx}, peopleByName entries=${Object.keys(peopleByName).length}`);
 
   let curDay = "", curTime = "", curBlock = "";
   for (let r = 1; r < values.length; r++) {
@@ -3467,6 +3469,8 @@ function rebuildShiftStatsFromPlan_({ festivalId, targetSpreadsheetId }) {
     return [s.name, s.email, "Supporti", s.experienceBucket, s.isExperienced ? "Ja" : "Nein", assignedLabel, s.pref1, s.pref2, match, s.total - s.promo, s.promo, s.total, s.promoWant, s.arrival];
   });
 
+  const matchedCount = Object.keys(stats).filter(n => peopleByName[n]).length;
+  Logger.log(`Stats: ${rowsOut.length} Personen im Plan, ${matchedCount} im Meta-Lookup gematcht (${Object.keys(stats).length - matchedCount} ohne Meta)`);
   if (rowsOut.length) statSh.getRange(2, 1, rowsOut.length, headersOut.length).setValues(rowsOut);
 
   // --- Warnings aus dem Plan bauen (statt Notes)
