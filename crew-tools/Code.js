@@ -4009,6 +4009,45 @@ function assignPeopleToBlocks_({ people, slots }) {
     blockChosenById[p.application_id] = target;
   });
 
+  // Pass 4: Preference-Swaps – verbessere Gesamtzufriedenheit durch paarweise Tausche.
+  // Bewertung: pref1-Match = 2, pref2-Match = 1, kein Match = 0.
+  // Tausch nur wenn Gesamtpunktzahl steigt (netto > 0).
+  function prefScore_(p, block) {
+    if (normBlock_(p.pref1) === block) return 2;
+    if (normBlock_(p.pref2) === block) return 1;
+    return 0;
+  }
+
+  let anySwap = true;
+  while (anySwap) {
+    anySwap = false;
+    for (let xi = 0; xi < BLOCKS.length; xi++) {
+      for (let yi = xi + 1; yi < BLOCKS.length; yi++) {
+        const bx = BLOCKS[xi];
+        const by = BLOCKS[yi];
+        let bestGain = 0, bestI = -1, bestJ = -1;
+        for (let i = 0; i < blockPeople[bx].length; i++) {
+          for (let j = 0; j < blockPeople[by].length; j++) {
+            const px = blockPeople[bx][i];
+            const py = blockPeople[by][j];
+            const gain = (prefScore_(px, by) - prefScore_(px, bx))
+                       + (prefScore_(py, bx) - prefScore_(py, by));
+            if (gain > bestGain) { bestGain = gain; bestI = i; bestJ = j; }
+          }
+        }
+        if (bestI !== -1) {
+          const px = blockPeople[bx][bestI];
+          const py = blockPeople[by][bestJ];
+          blockPeople[bx][bestI] = py;
+          blockPeople[by][bestJ] = px;
+          blockChosenById[px.application_id] = by;
+          blockChosenById[py.application_id] = bx;
+          anySwap = true;
+        }
+      }
+    }
+  }
+
   return { blockPeople, blockChosenById };
 }
 
