@@ -3959,9 +3959,17 @@ function assignPeopleToBlocks_({ people, slots }) {
   const targets = {};
   BLOCKS.forEach(b => targets[b] = Math.round(totalPeople * (weights[b] / totalWeight)));
 
-  const sorted = (people || []).slice().sort((a, b) =>
-    String(a.application_id).localeCompare(String(b.application_id))
-  );
+  // Erst hintere Blöcke bedienen (C→B→A, D→C→B→A), damit weniger nachgefragte
+  // Blöcke ihre pref1-Leute bekommen bevor A/B alles auffüllt.
+  // Innerhalb desselben pref1-Blocks: stabile Reihenfolge per application_id.
+  const sorted = (people || []).slice().sort((a, b) => {
+    const ai = BLOCKS.indexOf(normBlock_(a.pref1));
+    const bi = BLOCKS.indexOf(normBlock_(b.pref1));
+    const aIdx = ai === -1 ? -1 : ai; // kein pref1 → ganz ans Ende
+    const bIdx = bi === -1 ? -1 : bi;
+    if (aIdx !== bIdx) return bIdx - aIdx; // höherer Index zuerst (C vor B vor A)
+    return String(a.application_id).localeCompare(String(b.application_id));
+  });
 
   const blockPeople = {};
   BLOCKS.forEach(b => blockPeople[b] = []);
