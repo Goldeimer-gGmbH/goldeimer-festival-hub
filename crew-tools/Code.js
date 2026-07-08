@@ -2862,12 +2862,20 @@ function setFestivalConfigColumnNotes() {
   };
 
   const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  const missing = [];
   headers.forEach((h, i) => {
-    const note = notes[String(h).trim()];
-    if (note) sh.getRange(1, i + 1).setNote(note);
+    const key = String(h).trim();
+    if (!key) return;
+    const note = notes[key];
+    if (note) {
+      sh.getRange(1, i + 1).setNote(note);
+    } else {
+      missing.push(key);
+    }
   });
 
-  ss.toast("✅ Notizen gesetzt auf " + Object.keys(notes).length + " Spalten.", "CONFIG_FESTIVALS", 5);
+  if (missing.length) Logger.log("Spalten ohne Notiz: " + missing.join(", "));
+  ss.toast("✅ Fertig. Spalten ohne Notiz: " + (missing.length ? missing.join(", ") : "keine"), "CONFIG_FESTIVALS", 8);
 }
 
 function buildFestivalMaps_() {
