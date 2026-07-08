@@ -4048,6 +4048,33 @@ function assignPeopleToBlocks_({ people, slots }) {
     }
   }
 
+  // Pass 5: Freiwilligen-Einzug – Blöcke mit zu vielen "anderer Block"-Leuten
+  // ziehen pref2-Freiwillige aus anderen Blöcken, auch wenn diese dadurch von
+  // 1. Wahl auf 2. Wahl wechseln. Nur wenn der Spender-Block danach noch ≥ target hat.
+  let pulled = true;
+  while (pulled) {
+    pulled = false;
+    for (const underBlock of BLOCKS) {
+      const willingCount = blockPeople[underBlock].filter(p => prefScore_(p, underBlock) > 0).length;
+      if (willingCount >= targets[underBlock]) continue; // genug Willige
+      // Suche pref2-Freiwillige aus anderen Blöcken (Spender muss ≥ target bleiben)
+      for (const donorBlock of BLOCKS) {
+        if (donorBlock === underBlock) continue;
+        if (blockPeople[donorBlock].length <= targets[donorBlock]) continue; // Spender hat kein Surplus
+        const idx = blockPeople[donorBlock].findIndex(p =>
+          normBlock_(p.pref2) === underBlock && normBlock_(p.pref1) === donorBlock
+        );
+        if (idx === -1) continue;
+        const person = blockPeople[donorBlock].splice(idx, 1)[0];
+        blockPeople[underBlock].push(person);
+        blockChosenById[person.application_id] = underBlock;
+        pulled = true;
+        break;
+      }
+      if (pulled) break;
+    }
+  }
+
   return { blockPeople, blockChosenById };
 }
 
