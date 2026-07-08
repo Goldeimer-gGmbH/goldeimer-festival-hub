@@ -3233,9 +3233,9 @@ function getOrCreateSchichtplanSpreadsheet_({ festivalId, label }) {
 
   if (existingId) {
     try {
-      Drive.Files.get(existingId, { supportsAllDrives: true });
       return SpreadsheetApp.openById(existingId);
     } catch (e) {
+      Logger.log("Schichtplan-Datei nicht zugänglich (" + existingId + "): " + e.message);
       props.deleteProperty(key);
     }
   }
