@@ -2829,6 +2829,47 @@ function slugFestivalId_(festivalName) {
     .replace(/^_+|_+$/g, "");
 }
 
+/**
+ * Setzt erklärende Notizen auf alle Header-Zellen des CONFIG_FESTIVALS-Sheets.
+ * Einmalig manuell ausführen (Erweiterungen → Apps Script → Funktion auswählen → Ausführen).
+ */
+function setFestivalConfigColumnNotes() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName(SHEETS.FESTIVALS);
+  if (!sh) { SpreadsheetApp.getUi().alert("Sheet CONFIG_FESTIVALS nicht gefunden."); return; }
+
+  const notes = {
+    festival_id:           "Eindeutiger Kürzel (z.B. \"DEICH26\"). Muss exakt mit festival_id in APPLICATIONS übereinstimmen.",
+    festival_name:         "Anzeigename des Festivals. Genutzt in: allen E-Mails ({{FESTIVAL_NAME}}), Festival Hub / Supabase-Sync, Crew- & Küchen-Crew-Liste, Newbie-Briefing-Erinnerung, Dashboards.",
+    telegram_link:         "Telegram-Gruppenlink für die gesamte Crew. Genutzt in: Detailabfrage-Mail (Info-Box \"Telegram-Gruppe\").",
+    telegram_op_link:      "Telegram-Link nur für Leads & Operators. Genutzt in: Detailabfrage-Mail (zusätzlicher Link, nur bei Rolle LEAD/OPERATOR).",
+    time_crew_briefing:    "Datum + Uhrzeit des Crew-Briefings (z.B. \"Fr, 20.06. um 18:00 Uhr\"). Genutzt in: Detailabfrage-Mail (Block \"Briefing-Zeiten\", nur SUPPORTI/SUPPORTI_PLUS).",
+    time_welcome_meeting:  "Datum + Uhrzeit des Willkommens-Briefings. Genutzt in: Detailabfrage-Mail (Block \"Briefing-Zeiten\", nur SUPPORTI/SUPPORTI_PLUS).",
+    start_official:        "Offizieller Festivalstart. Genutzt in: Detailabfrage-Mail ({{START_OFFICIAL}}).",
+    end_official:          "Offizielles Festivalende. Genutzt in: Detailabfrage-Mail ({{END_OFFICIAL}}); Altersberechnung (unter 18 zum Festivalzeitpunkt).",
+    festival_town:         "Stadt/Ort des Festivals. Genutzt in: Detailabfrage-Mail ({{FESTIVAL_TOWN}}), allen buildVars-Mails ({{STADT}}), Festival Hub / Website-Daten (Spalte \"Ort\").",
+    start_campsite:        "Öffnung des Campsites für die Crew. Genutzt in: Detailabfrage-Mail ({{START_CAMPSITE}}).",
+    start_setup:           "Aufbaubeginn. Genutzt in: Detailabfrage-Mail (Rollen-Detailblock für OPERATOR/SUPPORTI_PLUS + {{START_SETUP}}).",
+    start_leadop:          "Anreisedatum für Leads & Operators. Genutzt in: Detailabfrage-Mail (Lead-Detailblock + {{START_LEADOP}}), allen buildVars-Mails (ANREISE_PLAN für LEAD/OP/SUPPORTI_PLUS).",
+    end_takedown:          "Ende des Abbaus. Genutzt in: Detailabfrage-Mail (alle Rollen-Detailblöcke + {{END_TAKEDOWN}}), Festival Hub / Website-Daten (Spalte \"Ende\").",
+    start_kitchen:         "Küchenbeginn (Anreise Catering). Genutzt in: Detailabfrage-Mail (Catering-Detailblock + {{START_KITCHEN}}), allen buildVars-Mails (ANREISE_PLAN für CATERING).",
+    start_supp:            "Beginn der Supporti-Schichten. Genutzt in: Detailabfrage-Mail (Supporti-Detailblock + {{START_SUPP}}), allen buildVars-Mails (ANREISE_PLAN für SUPPORTI), Festival Hub (Spalte \"Beginn\", Logik für \"Festival vorbei\").",
+    end_supp:              "Ende der Supporti-Schichten. Genutzt in: Detailabfrage-Mail (Supporti-Detailblock + {{END_SUPP}}), allen buildVars-Mails (ABREISE_PLAN für SUPPORTI).",
+    newbie_pre_briefing:   "Datum + Zeitraum des Online-Briefings für Newbies (z.B. \"08.07.2026 von 18:30-20:00 Uhr\"). Genutzt in: Detailabfrage-Mail (Newbie-Block), Newbie-Briefing-Erinnerungsmail (Zeitangabe + Betreff), Newbie-Registrierungs-Bestätigung.",
+    newbie_briefing_link:  "Anmeldelink zum Newbie-Briefing. Genutzt in: Detailabfrage-Mail (klickbarer Link – Block wird unterdrückt wenn leer), Newbie-Registrierungs-Bestätigung.",
+    danke_intro:           "Intro-Absatz für die Dankesmail. Unterstützt Zeilenumbrüche und Emojis (als echte Zeichen eintragen). Genutzt in: Dankesmail ({{BLOCK_INTRO}}).",
+    crew_foto_url:         "Google-Drive-Freigabelink zum Crew-Foto (drive.google.com/file/d/...). Genutzt in: Dankesmail (Bild, max. 400px, als {{BLOCK_CREWFOTO}}).",
+  };
+
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  headers.forEach((h, i) => {
+    const note = notes[String(h).trim()];
+    if (note) sh.getRange(1, i + 1).setNote(note);
+  });
+
+  SpreadsheetApp.getUi().alert("✅ Notizen gesetzt auf " + Object.keys(notes).length + " Spalten.");
+}
+
 function buildFestivalMaps_() {
   // getActive() gibt null zurück wenn die Funktion aus einem externen Trigger läuft
   // (z.B. onFormSubmit auf einem fremden Spreadsheet). Fallback: gespeicherte ID nutzen.
