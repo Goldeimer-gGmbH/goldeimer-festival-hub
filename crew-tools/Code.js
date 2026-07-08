@@ -3971,25 +3971,33 @@ function assignPeopleToBlocks_({ people, slots }) {
     (targets[y] - blockPeople[y].length) - (targets[x] - blockPeople[x].length)
   )[0];
 
+  // Pass 1: pref1 – alle die Platz haben bekommen 1. Wahl
+  const afterPass1 = [];
   sorted.forEach((p) => {
     const b1 = normBlock_(p.pref1);
-    const b2 = normBlock_(p.pref2);
-    let target = "";
-
-    const b1Need = BLOCKS.includes(b1) ? targets[b1] - blockPeople[b1].length : -Infinity;
-    const b2Need = BLOCKS.includes(b2) ? targets[b2] - blockPeople[b2].length : -Infinity;
-
-    if (BLOCKS.includes(b1) && b1Need > 0) {
-      // pref1 hat noch Bedarf → 1. Wahl
-      target = b1;
-    } else if (BLOCKS.includes(b2) && b2Need > 0) {
-      // pref1 voll, aber pref2 hat noch Bedarf → 2. Wahl
-      target = b2;
+    if (BLOCKS.includes(b1) && (targets[b1] - blockPeople[b1].length) > 0) {
+      blockPeople[b1].push(p);
+      blockChosenById[p.application_id] = b1;
     } else {
-      // beide Präferenzen voll (oder keine angegeben) → Block mit dem größten Bedarf
-      target = neediest_();
+      afterPass1.push(p);
     }
+  });
 
+  // Pass 2: pref2 – erst jetzt werden pref2-Slots vergeben (kein neediest dazwischen)
+  const afterPass2 = [];
+  afterPass1.forEach((p) => {
+    const b2 = normBlock_(p.pref2);
+    if (BLOCKS.includes(b2) && (targets[b2] - blockPeople[b2].length) > 0) {
+      blockPeople[b2].push(p);
+      blockChosenById[p.application_id] = b2;
+    } else {
+      afterPass2.push(p);
+    }
+  });
+
+  // Pass 3: neediest – Rest auf den Block mit dem größten Bedarf
+  afterPass2.forEach((p) => {
+    const target = neediest_();
     blockPeople[target].push(p);
     blockChosenById[p.application_id] = target;
   });
