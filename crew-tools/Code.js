@@ -5792,9 +5792,9 @@ function sendDankemailForFestival_({ festivalId, forceTest }) {
   const crewFotoUrl  = String(festCfg.crew_foto_url || "").trim();
 
   // TODO: URLs für neue Saison aktualisieren
-  const CONST_FEEDBACK_URL  = ""; // Feedback-Formular URL
-  const CONST_AWARENESS_URL = ""; // Awareness-Formular URL
-  const CONST_ANMELDUNG_URL = ""; // Anmeldungs-URL für nächste Festivals
+  const CONST_FEEDBACK_URL  = "https://forms.gle/7P3ckz3U3wduWPmCA";
+  const CONST_AWARENESS_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeXVxdCv2lGa-h98Fhiyoc23Ofji_BAWZL5AJrz1QVPF3GOVg/viewform?usp=header";
+  const CONST_ANMELDUNG_URL = "https://goldeimer.de/pages/festivals";
 
   // Lead-Vornamen automatisch aus APPLICATIONS ziehen
   const appData = readSheetAsObjects_(appSheet);
@@ -5814,8 +5814,12 @@ function sendDankemailForFestival_({ festivalId, forceTest }) {
       : leadFirstNames.slice(0, -1).join(", ") + " und " + leadFirstNames[leadFirstNames.length - 1];
 
   // BLOCK_CREWFOTO: img-Tag wenn URL gesetzt, sonst leer
-  const blockCrewfoto = crewFotoUrl
-    ? `<p style="text-align:center; margin:24px 0;"><img src="${crewFotoUrl}" alt="Crew Foto" style="max-width:100%; border-radius:8px;" /></p>`
+  // Google Drive "view"-Links → direkte Bild-URL umwandeln
+  const resolvedFotoUrl = crewFotoUrl
+    ? crewFotoUrl.replace(/drive\.google\.com\/file\/d\/([^/]+).*/, "drive.google.com/uc?export=view&id=$1")
+    : "";
+  const blockCrewfoto = resolvedFotoUrl
+    ? `<p style="text-align:center; margin:24px 0;"><img src="https://${resolvedFotoUrl}" alt="Crew Foto" style="max-width:100%; border-radius:8px;" /></p>`
     : "";
 
   // BLOCK_FEEDBACK
