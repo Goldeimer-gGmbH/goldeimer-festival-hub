@@ -5788,8 +5788,8 @@ function sendDankemailForFestival_({ festivalId, forceTest }) {
   const festData  = readSheetAsObjects_(festSheet);
   const festCfg   = festData.rows.find(r => String(r.festival_id || "").trim() === festivalId) || {};
 
-  const dankeIntro   = String(festCfg.danke_intro   || "").trim();
-  const crewFotoUrl  = String(festCfg.crew_foto_url  || "").trim();
+  const dankeIntro   = configMdToHtml_(String(festCfg.danke_intro  || "").trim());
+  const crewFotoUrl  = String(festCfg.crew_foto_url || "").trim();
 
   // TODO: URLs für neue Saison aktualisieren
   const CONST_FEEDBACK_URL  = ""; // Feedback-Formular URL
