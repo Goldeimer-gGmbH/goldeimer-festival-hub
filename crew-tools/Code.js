@@ -5823,17 +5823,17 @@ function sendDankemailForFestival_({ festivalId, forceTest }) {
     : "";
 
   // BLOCK_FEEDBACK
-  const feedbackLink   = CONST_FEEDBACK_URL  ? `<a href="${CONST_FEEDBACK_URL}">zum Feedback-Bogen</a>`   : "zum Feedback-Bogen";
-  const awarenessLink  = CONST_AWARENESS_URL ? `<a href="${CONST_AWARENESS_URL}">zum Awareness-Formular</a>` : "zum Awareness-Formular";
+  const feedbackLink   = CONST_FEEDBACK_URL  ? `<a href="${CONST_FEEDBACK_URL}">Feedback-Bogen</a>`       : "Feedback-Bogen";
+  const awarenessLink  = CONST_AWARENESS_URL ? `<a href="${CONST_AWARENESS_URL}">Formular Awareness</a>`   : "Formular Awareness";
   const blockFeedback = `<p style="background-color:#fff9e6; border-left:4px solid #ffe500; padding:10px 14px; margin:16px 0;">
-<strong>&#128203; Dein Feedback zählt</strong><br>
+<strong>📋 Dein Feedback zählt</strong><br>
 Wie hat's dir gefallen? Würdest du nochmal mitkommen? Hast du Feedback, Ideen oder Kritik? Wir würden uns freuen, wenn du diesen ${feedbackLink} schnell (oder langsam) ausfüllst, damit Goldeimer noch besser werden kann!<br><br>
-Beschäftigt dich noch ein bestimmtes Thema oder eine Situation vom Festival? Wenn du Gesprächsbedarf hast oder Unterstützung wünschst, kannst du uns über dieses Formular anonym dein Anliegen mitteilen &#8594; ${awarenessLink}
+Beschäftigt dich noch ein bestimmtes Thema oder eine Situation vom Festival? Wenn du Gesprächsbedarf hast oder Unterstützung wünschst, kannst du uns über dieses Formular anonym dein Anliegen mitteilen → ${awarenessLink}
 </p>`;
 
   // BLOCK_AFTERSHIT
   const blockAftershit = `<p style="background-color:#fce5f5; border-left:4px solid #cc00aa; padding:10px 14px; margin:16px 0;">
-<strong>&#127881; Aftershit Party</strong><br>
+<strong>🎉 Aftershit Party</strong><br>
 Sehen wir uns bei der Aftershit Party?<br>
 Am 14. November steigt in Hamburg der phänomenale Goldeimer Saisonabschluss, den du dir keinesfalls entgehen lassen solltest – save the date für die Aftershit Party! Der Termin steht – auch schon in deinem Kalender? Am Samstagabend, 14.11. steigt die Sause. Freitag und Samstag wird es auch schon Programm geben. Details und offizielle Einladung folgen im Herbst.
 </p>`;
@@ -5841,12 +5841,12 @@ Am 14. November steigt in Hamburg der phänomenale Goldeimer Saisonabschluss, de
   // BLOCK_MEHR_FESTIVALS: nur bis 7. August des aktuellen Jahres sichtbar
   const now = new Date();
   const cutoff = new Date(now.getFullYear(), 7, 7, 23, 59, 59);
-  const anmeldungLink = CONST_ANMELDUNG_URL ? `<a href="${CONST_ANMELDUNG_URL}">Zur Anmeldung geht&#8217;s hier.</a>` : "Zur Anmeldung geht&#8217;s hier.";
+  const anmeldungLink = CONST_ANMELDUNG_URL ? `<a href="${CONST_ANMELDUNG_URL}">Zur Anmeldung geht's hier.</a>` : "Zur Anmeldung geht's hier.";
   const blockMehrFestivals = now <= cutoff
     ? `<p style="background-color:#e6f9ee; border-left:4px solid #00a845; padding:10px 14px; margin:16px 0;">
-<strong>&#127926; Noch mehr Bock auf Festivals?</strong><br>
+<strong>🎶 Noch mehr Bock auf Festivals?</strong><br>
 Wenn du noch nicht genug von Festivals mit Goldeimer hast, komm nochmal mit!<br>
-&#128073; ${anmeldungLink}
+👉 ${anmeldungLink}
 </p>`
     : "";
 
