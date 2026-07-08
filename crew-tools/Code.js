@@ -5827,7 +5827,7 @@ function sendDankemailForFestival_({ festivalId, forceTest }) {
     ? `https://drive.google.com/uc?export=view&id=${fotoIdMatch[1]}`
     : crewFotoUrl;
   const blockCrewfoto = resolvedFotoUrl
-    ? `<p style="text-align:center; margin:24px 0;"><img src="${resolvedFotoUrl}" alt="Crew Foto" style="max-width:600px; width:100%; border-radius:8px;" /></p>`
+    ? `<p style="text-align:center; margin:24px 0;"><img src="${resolvedFotoUrl}" alt="Crew Foto" style="max-width:400px; width:100%; border-radius:8px;" /></p>`
     : "";
 
   // BLOCK_FEEDBACK
