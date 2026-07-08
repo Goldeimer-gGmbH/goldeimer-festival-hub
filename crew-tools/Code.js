@@ -2185,10 +2185,16 @@ const isActive = (function(val) {
 
   return {
     template_key: t.template_key,
-    subject: t.subject || "",
-    body_html: t.body_html || "",
+    subject: encodeEmojiToEntities_(t.subject || ""),
+    body_html: encodeEmojiToEntities_(t.body_html || ""),
     active: isActive,
   };
+}
+
+function encodeEmojiToEntities_(str) {
+  // Emoji und sonstige Non-Latin-Zeichen (> U+00FF) → HTML-Entities
+  // Verhindert Encoding-Probleme wenn Emojis direkt in Spreadsheet-Zellen stehen
+  return String(str || "").replace(/[^ -ÿ]/gu, ch => `&#${ch.codePointAt(0)};`);
 }
 
 /* =========================
@@ -5815,26 +5821,27 @@ function sendDankemailForFestival_({ festivalId, forceTest }) {
       : leadFirstNames.slice(0, -1).join(", ") + " und " + leadFirstNames[leadFirstNames.length - 1];
 
   // BLOCK_CREWFOTO: img-Tag wenn URL gesetzt, sonst leer
-  // Google Drive "view"-Links → direkte Bild-URL umwandeln
-  const resolvedFotoUrl = crewFotoUrl
-    ? crewFotoUrl.replace(/drive\.google\.com\/file\/d\/([^/]+).*/, "drive.google.com/uc?export=view&id=$1")
-    : "";
+  // Google Drive "view"-Links → direkte Bild-URL (File-ID extrahieren)
+  const fotoIdMatch = crewFotoUrl.match(/\/file\/d\/([^/?]+)/);
+  const resolvedFotoUrl = fotoIdMatch
+    ? `https://drive.google.com/uc?export=view&id=${fotoIdMatch[1]}`
+    : crewFotoUrl;
   const blockCrewfoto = resolvedFotoUrl
-    ? `<p style="text-align:center; margin:24px 0;"><img src="https://${resolvedFotoUrl}" alt="Crew Foto" style="max-width:100%; border-radius:8px;" /></p>`
+    ? `<p style="text-align:center; margin:24px 0;"><img src="${resolvedFotoUrl}" alt="Crew Foto" style="max-width:100%; border-radius:8px;" /></p>`
     : "";
 
   // BLOCK_FEEDBACK
   const feedbackLink   = CONST_FEEDBACK_URL  ? `<a href="${CONST_FEEDBACK_URL}">Feedback-Bogen</a>`       : "Feedback-Bogen";
   const awarenessLink  = CONST_AWARENESS_URL ? `<a href="${CONST_AWARENESS_URL}">Formular Awareness</a>`   : "Formular Awareness";
   const blockFeedback = `<p style="background-color:#fff9e6; border-left:4px solid #ffe500; padding:10px 14px; margin:16px 0;">
-<strong>📋 Dein Feedback zählt</strong><br>
+<strong>&#128203; Dein Feedback zählt</strong><br>
 Wie hat's dir gefallen? Würdest du nochmal mitkommen? Hast du Feedback, Ideen oder Kritik? Wir würden uns freuen, wenn du diesen ${feedbackLink} schnell (oder langsam) ausfüllst, damit Goldeimer noch besser werden kann!<br><br>
-Beschäftigt dich noch ein bestimmtes Thema oder eine Situation vom Festival? Wenn du Gesprächsbedarf hast oder Unterstützung wünschst, kannst du uns über dieses Formular anonym dein Anliegen mitteilen → ${awarenessLink}
+Beschäftigt dich noch ein bestimmtes Thema oder eine Situation vom Festival? Wenn du Gesprächsbedarf hast oder Unterstützung wünschst, kannst du uns über dieses Formular anonym dein Anliegen mitteilen &#8594; ${awarenessLink}
 </p>`;
 
   // BLOCK_AFTERSHIT
   const blockAftershit = `<p style="background-color:#fce5f5; border-left:4px solid #cc00aa; padding:10px 14px; margin:16px 0;">
-<strong>🎉 Aftershit Party</strong><br>
+<strong>&#127881; Aftershit Party</strong><br>
 Sehen wir uns bei der Aftershit Party?<br>
 Am 14. November steigt in Hamburg der phänomenale Goldeimer Saisonabschluss, den du dir keinesfalls entgehen lassen solltest – save the date für die Aftershit Party! Der Termin steht – auch schon in deinem Kalender? Am Samstagabend, 14.11. steigt die Sause. Freitag und Samstag wird es auch schon Programm geben. Details und offizielle Einladung folgen im Herbst.
 </p>`;
@@ -5845,9 +5852,9 @@ Am 14. November steigt in Hamburg der phänomenale Goldeimer Saisonabschluss, de
   const anmeldungLink = CONST_ANMELDUNG_URL ? `<a href="${CONST_ANMELDUNG_URL}">Zur Anmeldung geht's hier.</a>` : "Zur Anmeldung geht's hier.";
   const blockMehrFestivals = now <= cutoff
     ? `<p style="background-color:#e6f9ee; border-left:4px solid #00a845; padding:10px 14px; margin:16px 0;">
-<strong>🎶 Noch mehr Bock auf Festivals?</strong><br>
+<strong>&#127926; Noch mehr Bock auf Festivals?</strong><br>
 Wenn du noch nicht genug von Festivals mit Goldeimer hast, komm nochmal mit!<br>
-👉 ${anmeldungLink}
+&#128073; ${anmeldungLink}
 </p>`
     : "";
 
