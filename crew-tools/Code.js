@@ -3345,8 +3345,8 @@ function rebuildShiftStatsFromPlan_({ festivalId, targetSpreadsheetId }) {
 
     // Header dynamisch
     const header = values[0].map(h => String(h || "").trim());
-    const campColsCount = header.filter(h => /^Camp\s+\d+$/i.test(h)).length;
-    const promoColIdx = header.indexOf("Promo Schicht"); // -1 wenn nicht vorhanden
+    const campColsCount = header.filter(h => /^Camp\s+\d+/i.test(h)).length;
+    const promoColIdxs = header.reduce((acc, h, i) => { if (/^Promo(\s|$)/i.test(h) || h === "Promo Schicht") acc.push(i); return acc; }, []);
 
     for (let r = 1; r < values.length; r++) {
       const row = values[r];
@@ -3365,16 +3365,16 @@ function rebuildShiftStatsFromPlan_({ festivalId, targetSpreadsheetId }) {
         occByPerson[name].push({ day: curDay, time: curTime, block: curBlock, type: "camp" });
       }
 
-      // Promo
-      if (promoColIdx !== -1) {
-        const pName = String(row[promoColIdx] || "").trim();
+      // Promo (alle Promo-Spalten)
+      promoColIdxs.forEach(idx => {
+        const pName = String(row[idx] || "").trim();
         if (pName) {
           if (!occByPerson[pName]) occByPerson[pName] = [];
           occByPerson[pName].push({ day: curDay, time: curTime, block: curBlock, type: "promo" });
         }
-      }
+      });
     }
-    return { occByPerson, campColsCount, promoColIdx };
+    return { occByPerson, campColsCount, promoColIdxs };
   }
 
   function buildAssignedBlockAndMatch_({ perBlock, pref1, pref2 }) {
@@ -3423,10 +3423,10 @@ function rebuildShiftStatsFromPlan_({ festivalId, targetSpreadsheetId }) {
 
   const values = planSh.getDataRange().getValues();
   const header = values[0].map(h => String(h || "").trim());
-  const campColsCount = header.filter(h => /^Camp\s+\d+$/i.test(h)).length;
-  const promoColIdx = header.indexOf("Promo Schicht"); // erster Treffer, ignoriert Duplikate
+  const campColsCount = header.filter(h => /^Camp\s+\d+/i.test(h)).length;
+  const promoColIdxs = header.reduce((acc, h, i) => { if (/^Promo(\s|$)/i.test(h) || h === "Promo Schicht") acc.push(i); return acc; }, []);
   Logger.log(`Plan-Header: ${JSON.stringify(header)}`);
-  Logger.log(`campColsCount=${campColsCount}, promoColIdx=${promoColIdx}, peopleByName entries=${Object.keys(peopleByName).length}`);
+  Logger.log(`campColsCount=${campColsCount}, promoColIdxs=${JSON.stringify(promoColIdxs)}, peopleByName entries=${Object.keys(peopleByName).length}`);
 
   let curDay = "", curTime = "", curBlock = "";
   for (let r = 1; r < values.length; r++) {
@@ -3448,12 +3448,12 @@ function rebuildShiftStatsFromPlan_({ festivalId, targetSpreadsheetId }) {
       }
     }
 
-    // Promo
-    if (promoColIdx !== -1) {
-      const pName = String(row[promoColIdx] || "").trim();
+    // Promo (alle Promo-Spalten)
+    promoColIdxs.forEach(idx => {
+      const pName = String(row[idx] || "").trim();
       const ps = ensure_(pName);
       if (ps) { ps.total++; ps.promo++; }
-    }
+    });
   }
 
   // --- Shift Stats Sheet schreiben
