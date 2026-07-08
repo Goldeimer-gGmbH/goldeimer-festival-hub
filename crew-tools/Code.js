@@ -4020,6 +4020,8 @@ function assignPeopleToBlocks_({ people, slots }) {
     return 0;
   }
 
+  // Jedes Block-Paar bekommt pro Iteration genau einen Swap (falls möglich).
+  // Kein globaler Abbruch nach erstem Swap – alle Paare (A↔B, A↔C, B↔C ...) werden geprüft.
   let maxIter = 30;
   let anySwap = true;
   while (anySwap && maxIter-- > 0) {
@@ -4043,7 +4045,7 @@ function assignPeopleToBlocks_({ people, slots }) {
               blockChosenById[px.application_id] = by;
               blockChosenById[py.application_id] = bx;
               anySwap = true;
-              swapDone = true;
+              swapDone = true; // nur dieser Block-Paar-Durchlauf endet, nicht die äußere Schleife
             }
           }
         }
