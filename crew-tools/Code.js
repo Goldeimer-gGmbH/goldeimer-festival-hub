@@ -4753,14 +4753,12 @@ function pickPromoRosterForSlot_({ peopleAll, state, slot, dayOrderMap, excludeI
     if ((st.totalAll || 0) < target) picked.push(p);
   }
 
-  // Pass 2: Option A – strikt gleiche Obergrenze wie Camp-Picker
-  // Nur Leute UNTER target (nicht AM Ziel) → niemand wird durch Promo über target gedrückt
-  // Konsequenz: Promo-Slot bleibt ggf. mit weniger als pps Leuten besetzt
+  // Pass 2: Fallback – Leute genau am Ziel (damit spätere Promo-Slots nicht leer bleiben)
   for (let i = 0; i < remaining.length && picked.length < pps; i++) {
     const p = remaining[i];
     if (picked.some(x => x.application_id === p.application_id)) continue;
     const st = state[p.application_id];
-    if ((st.totalAll || 0) < target) picked.push(p);
+    if ((st.totalAll || 0) <= target) picked.push(p);
   }
 
   // State updaten
