@@ -4011,7 +4011,9 @@ function assignPeopleToBlocks_({ people, slots }) {
 
   // Pass 4: Preference-Swaps – verbessere Gesamtzufriedenheit durch paarweise Tausche.
   // Bewertung: pref1-Match = 2, pref2-Match = 1, kein Match = 0.
-  // Tausch nur wenn Gesamtpunktzahl steigt (netto > 0).
+  // Tausch wenn: netto > 0 (strenge Verbesserung) ODER netto = 0 und mindestens
+  // eine Person rettet sich aus "anderer Block" (score 0 → score > 0).
+  // Kein Zyklus möglich: anderer-Block-Zahl kann nur sinken.
   function prefScore_(p, block) {
     if (normBlock_(p.pref1) === block) return 2;
     if (normBlock_(p.pref2) === block) return 1;
@@ -4025,14 +4027,19 @@ function assignPeopleToBlocks_({ people, slots }) {
       for (let yi = xi + 1; yi < BLOCKS.length; yi++) {
         const bx = BLOCKS[xi];
         const by = BLOCKS[yi];
-        let bestGain = 0, bestI = -1, bestJ = -1;
+        let bestScore = -1, bestI = -1, bestJ = -1;
         for (let i = 0; i < blockPeople[bx].length; i++) {
           for (let j = 0; j < blockPeople[by].length; j++) {
             const px = blockPeople[bx][i];
             const py = blockPeople[by][j];
             const gain = (prefScore_(px, by) - prefScore_(px, bx))
                        + (prefScore_(py, bx) - prefScore_(py, by));
-            if (gain > bestGain) { bestGain = gain; bestI = i; bestJ = j; }
+            const rescues = (prefScore_(px, bx) === 0 && prefScore_(px, by) > 0)
+                         || (prefScore_(py, by) === 0 && prefScore_(py, bx) > 0);
+            if (gain > 0 || (gain === 0 && rescues)) {
+              const score = gain * 10 + (rescues ? 1 : 0);
+              if (score > bestScore) { bestScore = score; bestI = i; bestJ = j; }
+            }
           }
         }
         if (bestI !== -1) {
