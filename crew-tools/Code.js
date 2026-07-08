@@ -3133,6 +3133,8 @@ function getSchichtplanPropKey_(festivalId) {
  * Öffnet vorhandene Schichtplan-Datei (pro festivalId), oder erstellt sie einmalig
  * und speichert die ID in ScriptProperties.
  */
+const SCHICHTPLAN_FOLDER_ID = "18UFSyP1IuTZ01YTcagEWR_BMcjkNAT0E";
+
 function getOrCreateSchichtplanSpreadsheet_({ festivalId, label }) {
   const props = PropertiesService.getScriptProperties();
   const key = getSchichtplanPropKey_(festivalId);
@@ -3140,24 +3142,39 @@ function getOrCreateSchichtplanSpreadsheet_({ festivalId, label }) {
 
   if (existingId) {
     try {
-      DriveApp.getFileById(existingId);
+      Drive.Files.get(existingId, { supportsAllDrives: true });
       return SpreadsheetApp.openById(existingId);
     } catch (e) {
       props.deleteProperty(key);
     }
   }
 
-  // ✅ neu erstellen mit sauberem Namen
+  // Neu erstellen
   const ts = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd_HHmm");
   const name = `${label}_${festivalId}_${ts}`;
   const ss = SpreadsheetApp.create(name);
+  const fileId = ss.getId();
 
   deleteDefaultSheetIfEmpty_(ss);
 
-  // Freigabe: Goldeimer = Bearbeiter, Extern = Betrachter
-  try { setGoldeimerrSharing_(ss.getId()); } catch (e) { Logger.log("Sharing: " + e.message); }
+  // In geteilten Ordner verschieben (Drive API v3, Shared-Drive-kompatibel)
+  try {
+    const meta = Drive.Files.get(fileId, { fields: "parents", supportsAllDrives: true });
+    const currentParents = (meta.parents || []).join(",");
+    Drive.Files.update({}, fileId, null, {
+      addParents: SCHICHTPLAN_FOLDER_ID,
+      removeParents: currentParents,
+      supportsAllDrives: true
+    });
+    Logger.log("Schichtplan-Datei in Ordner verschoben: " + SCHICHTPLAN_FOLDER_ID);
+  } catch (e) {
+    Logger.log("Ordner-Verschiebung fehlgeschlagen: " + e.message);
+  }
 
-  props.setProperty(key, ss.getId());
+  // Freigabe: Goldeimer = Bearbeiter, Extern = Betrachter
+  try { setGoldeimerrSharing_(fileId); } catch (e) { Logger.log("Sharing: " + e.message); }
+
+  props.setProperty(key, fileId);
   return ss;
 }
 
@@ -3693,7 +3710,7 @@ function getShiftCandidatesForFestival_({ festivalId }) {
       name: displayName,
       pref1: normalizeBlockPref_(r.detail_shift_pref_1),
       pref2: normalizeBlockPref_(r.detail_shift_pref_2),
-      promoWant: String(r.detail_promo_want || "").trim(),
+      promoWant: parsePromoWant_(String(r.detail_promo_want || "").trim()),
       experienceBucket: bucket,
       isExperienced: isVeryExperienced_(bucket),
       arrival: String(r.detail_arrival || "").trim(),
@@ -4690,7 +4707,10 @@ function pickPromoRosterForSlot_({ peopleAll, state, slot, dayOrderMap, excludeI
   }
 
   // Pool = alle promo-yes Supportis (peopleAll ist eh Supporti-only bei dir)
-  const pool = (peopleAll || []).filter(p => isPromoYes_(p)).filter(canTakePromo_);
+  const promoYesPeople = (peopleAll || []).filter(p => isPromoYes_(p));
+  Logger.log(`[Promo ${day} ${time}] promoWant-Werte: ${promoYesPeople.map(p => p.promoWant).join(", ") || "(niemand mit Ja)"}`);
+  const pool = promoYesPeople.filter(canTakePromo_);
+  Logger.log(`[Promo ${day} ${time}] Pool nach canTakePromo_: ${pool.length} Personen`);
   if (!pool.length) return [];
 
   const target = shiftTarget || 5;
