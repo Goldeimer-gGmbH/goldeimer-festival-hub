@@ -3229,8 +3229,27 @@ const SCHICHTPLAN_FOLDER_ID = "18UFSyP1IuTZ01YTcagEWR_BMcjkNAT0E";
 function getOrCreateSchichtplanSpreadsheet_({ festivalId, label }) {
   const props = PropertiesService.getScriptProperties();
   const key = getSchichtplanPropKey_(festivalId);
-  const existingId = props.getProperty(key);
 
+  // 1. Zuerst shift_table_link aus CONFIG_FESTIVALS lesen (zuverlässigste Quelle)
+  try {
+    const festSheet = SpreadsheetApp.getActive().getSheetByName(SHEETS.FESTIVALS);
+    const festData  = readSheetAsObjects_(festSheet);
+    const festRow   = festData.rows.find(r => String(r.festival_id || "").trim() === String(festivalId).trim());
+    const configUrl = String(festRow && festRow.shift_table_link || "").trim();
+    if (configUrl) {
+      const configId = normalizeSpreadsheetId_(configUrl);
+      if (configId) {
+        const existing = SpreadsheetApp.openById(configId);
+        props.setProperty(key, configId); // ScriptProperty synchron halten
+        return existing;
+      }
+    }
+  } catch (e) {
+    Logger.log("shift_table_link Lookup fehlgeschlagen: " + e.message);
+  }
+
+  // 2. Fallback: ScriptProperties
+  const existingId = props.getProperty(key);
   if (existingId) {
     try {
       return SpreadsheetApp.openById(existingId);
