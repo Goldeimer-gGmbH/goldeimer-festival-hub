@@ -4020,16 +4020,17 @@ function assignPeopleToBlocks_({ people, slots }) {
     return 0;
   }
 
+  let maxIter = 30;
   let anySwap = true;
-  while (anySwap) {
+  while (anySwap && maxIter-- > 0) {
     anySwap = false;
     for (let xi = 0; xi < BLOCKS.length; xi++) {
       for (let yi = xi + 1; yi < BLOCKS.length; yi++) {
         const bx = BLOCKS[xi];
         const by = BLOCKS[yi];
-        let bestScore = -1, bestI = -1, bestJ = -1;
-        for (let i = 0; i < blockPeople[bx].length; i++) {
-          for (let j = 0; j < blockPeople[by].length; j++) {
+        let swapDone = false;
+        for (let i = 0; i < blockPeople[bx].length && !swapDone; i++) {
+          for (let j = 0; j < blockPeople[by].length && !swapDone; j++) {
             const px = blockPeople[bx][i];
             const py = blockPeople[by][j];
             const gain = (prefScore_(px, by) - prefScore_(px, bx))
@@ -4037,19 +4038,14 @@ function assignPeopleToBlocks_({ people, slots }) {
             const rescues = (prefScore_(px, bx) === 0 && prefScore_(px, by) > 0)
                          || (prefScore_(py, by) === 0 && prefScore_(py, bx) > 0);
             if (gain > 0 || (gain === 0 && rescues)) {
-              const score = gain * 10 + (rescues ? 1 : 0);
-              if (score > bestScore) { bestScore = score; bestI = i; bestJ = j; }
+              blockPeople[bx][i] = py;
+              blockPeople[by][j] = px;
+              blockChosenById[px.application_id] = by;
+              blockChosenById[py.application_id] = bx;
+              anySwap = true;
+              swapDone = true;
             }
           }
-        }
-        if (bestI !== -1) {
-          const px = blockPeople[bx][bestI];
-          const py = blockPeople[by][bestJ];
-          blockPeople[bx][bestI] = py;
-          blockPeople[by][bestJ] = px;
-          blockChosenById[px.application_id] = by;
-          blockChosenById[py.application_id] = bx;
-          anySwap = true;
         }
       }
     }
