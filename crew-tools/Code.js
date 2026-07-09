@@ -412,6 +412,9 @@ function fixMailLogFormatOnly_() {
     });
     if (changed) range.setValues(values);
     sh.getRange(2, col, lastRow - 1, 1).setFontSize(8);
+    // Zeilenhöhen explizit zurücksetzen — Google Sheets behält aufgeblähte Höhen
+    // auch nach Entfernen der \n, bis sie manuell gesetzt werden
+    try { sh.setRowHeightsForced(2, lastRow - 1, MAIL_LOG_ROW_HEIGHT); } catch(e) {}
     Logger.log(`${sh.getName()}: mail_log formatiert (${lastRow - 1} Zeilen)`);
   };
 
