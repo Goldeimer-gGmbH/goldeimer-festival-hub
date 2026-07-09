@@ -125,6 +125,7 @@ function onOpen() {
     .createMenu("Crew Tools")
     .addItem("📤 Import aus Anmeldeformular", "uiSyncApplicationsFromForm")
     .addItem("🗂️ Dashboards erstellen/aktualisieren", "uiBuildFestivalDashboards")
+    .addItem("📬 Mail-Log aus bisherigen Daten befüllen", "uiBackfillMailLog")
     .addSeparator()
     .addItem("✉️ Zusage: Testversand", "uiSendOffersTest")
     .addItem("📩 Zusage: Echter Versand", "uiSendOffersReal")
@@ -178,6 +179,88 @@ function uiBuildFestivalDashboards() {
 function uiBuildNewbieSheet() {
   const res = buildNewbieSheet_();
   toast_(`Newbies aktualisiert: ${res.count} Personen gefunden.`);
+}
+
+function uiBackfillMailLog() {
+  const res = backfillMailLog_();
+  toast_(`Mail-Log Backfill: ${res.updated} Zeilen befüllt, ${res.skipped} übersprungen.`);
+}
+
+function backfillMailLog_() {
+  const ss = SpreadsheetApp.getActive();
+  const appSheet = ss.getSheetByName(SHEETS.APPLICATIONS);
+  if (!appSheet) throw new Error("Sheet fehlt: APPLICATIONS");
+
+  const appData = readSheetAsObjects_(appSheet);
+  const hm = appData.headerMap;
+
+  // Alte mail_status-Werte → neue Labels
+  const oldToNew = {
+    "zusage_gesendet":        MAIL_STATUS.ZUSAGE_SENT,
+    "warteliste_gesendet":    MAIL_STATUS.WARTELISTE_SENT,
+    "final_absage_gesendet":  MAIL_STATUS.FINAL_ABSAGE_SENT,
+  };
+
+  // Detail-Status-Werte die zeigen, dass Detailabfrage rausging
+  const detailSentStates = new Set([DETAIL_STATUS.SENT, DETAIL_STATUS.REMINDER, DETAIL_STATUS.DONE]);
+
+  let updated = 0, skipped = 0;
+
+  appData.rows.forEach(r => {
+    const rowNumber = r.__rowNumber;
+    const existingLog = String(r.mail_log || "").trim();
+    if (existingLog) { skipped++; return; } // schon befüllt → überspringen
+
+    const entries = [];
+
+    // 1) Alte mail_status-Werte: Zusage/Warteliste/Absage ohne Timestamp
+    const oldStatus = String(r.mail_status || "").trim();
+    const newLabel = oldToNew[oldStatus];
+    if (newLabel) entries.push(`? ${newLabel}`);
+
+    // 2) Detailabfrage (mit Timestamp wenn detail_last_sent_at vorhanden)
+    const detailSt = String(r.detail_status || "").trim();
+    if (detailSentStates.has(detailSt)) {
+      const sentAt = String(r.detail_last_sent_at || "").trim();
+      const isReminder = detailSt === DETAIL_STATUS.REMINDER;
+      const label = isReminder ? MAIL_STATUS.DETAIL_REMINDER : MAIL_STATUS.DETAIL_SENT;
+      entries.push(sentAt ? `${sentAt} ${label}` : `? ${label}`);
+    }
+
+    // 3) Letzte Infos (mit Timestamp aus last_info_sent)
+    const lastInfoTs = String(r.last_info_sent || "").trim();
+    if (lastInfoTs) entries.push(`${lastInfoTs} ${MAIL_STATUS.LAST_INFO}`);
+
+    if (!entries.length) { skipped++; return; }
+
+    const logVal = entries.join("\n");
+
+    // mail_log in APPLICATIONS schreiben + CLIP wrap
+    const logColIdx = hm["mail_log"];
+    if (logColIdx !== undefined) {
+      appSheet.getRange(rowNumber, logColIdx + 1)
+        .setValue(logVal)
+        .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+    }
+
+    // mail_status auf neues Format aktualisieren wenn nötig
+    const updatedMailStatus = newLabel || (lastInfoTs ? MAIL_STATUS.LAST_INFO : (detailSentStates.has(detailSt) ? MAIL_STATUS.DETAIL_SENT : null));
+    if (updatedMailStatus && hm["mail_status"] !== undefined) {
+      updateCell_(appSheet, hm, rowNumber, "mail_status", updatedMailStatus);
+    }
+
+    // Dashboard aktualisieren
+    const festivalId = String(r.festival_id || "").trim();
+    if (festivalId && r.application_id) {
+      const dashUp = { mail_log: logVal };
+      if (updatedMailStatus) dashUp.mail_status = updatedMailStatus;
+      updateDashboardRowByApplicationId_(festivalId, r.application_id, dashUp);
+    }
+
+    updated++;
+  });
+
+  return { updated, skipped };
 }
 
 function buildNewbieSheet_() {
