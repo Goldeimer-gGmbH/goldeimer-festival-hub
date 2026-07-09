@@ -201,55 +201,77 @@ function fixMailLogFormat_() {
     "final_absage_gesendet": MAIL_STATUS.FINAL_ABSAGE_SENT,
   };
 
-  // 1. APPLICATIONS: mail_status in einer Runde korrigieren
+  // 1. APPLICATIONS einmalig lesen — korrekte mail_status pro application_id ermitteln
   const appSheet = ss.getSheetByName(SHEETS.APPLICATIONS);
   const appData  = readSheetAsObjects_(appSheet);
-  const msColIdx = appData.headerMap["mail_status"];
-  let fixed = 0;
+  const hm       = appData.headerMap;
 
+  // Richtige mail_status Priorität: Dankes-Mail > Letzte Infos > Detailabfrage > Warteliste/Zusage/Absage
+  const detailSentStates = new Set([DETAIL_STATUS.SENT, DETAIL_STATUS.REMINDER, DETAIL_STATUS.DONE]);
+  const correctStatusByAppId = {};
+  appData.rows.forEach(r => {
+    const appId = String(r.application_id || "").trim();
+    if (!appId) return;
+    const dankeTs    = String(r.danke_sent        || "").trim();
+    const lastInfoTs = String(r.last_info_sent     || "").trim();
+    const detailSt   = String(r.detail_status      || "").trim();
+    const oldMs      = String(r.mail_status        || "").trim();
+    if      (dankeTs)                          correctStatusByAppId[appId] = MAIL_STATUS.DANKE;
+    else if (lastInfoTs)                       correctStatusByAppId[appId] = MAIL_STATUS.LAST_INFO;
+    else if (detailSentStates.has(detailSt))   correctStatusByAppId[appId] = MAIL_STATUS.DETAIL_SENT;
+    else                                       correctStatusByAppId[appId] = oldToNew[oldMs] || oldMs || MAIL_STATUS.NONE;
+  });
+
+  // 2. APPLICATIONS mail_status Batch-Update (über appData.rows, hat application_id bereits)
+  let fixed = 0;
+  const msColIdx = hm["mail_status"];
   if (msColIdx !== undefined) {
     const lastRow = appSheet.getLastRow();
     if (lastRow >= 2) {
       const msRange  = appSheet.getRange(2, msColIdx + 1, lastRow - 1, 1);
       const msValues = msRange.getValues();
-      let changed = false;
-      msValues.forEach(r => {
-        const newVal = oldToNew[String(r[0] || "").trim()];
-        if (newVal) { r[0] = newVal; changed = true; fixed++; }
+      let changed    = false;
+      appData.rows.forEach((r, i) => {
+        const appId   = String(r.application_id || "").trim();
+        const correct = correctStatusByAppId[appId];
+        if (correct && correct !== String(msValues[i][0] || "").trim()) {
+          msValues[i][0] = correct; changed = true; fixed++;
+        }
       });
       if (changed) msRange.setValues(msValues);
     }
   }
 
-  // 2. Alle DASH-Sheets: mail_status + mail_log-Spalte formatieren
+  // 3. Alle DASH-Sheets: mail_status korrigieren + mail_log Formatierung (alles batch)
   ss.getSheets().forEach(sh => {
     if (!sh.getName().startsWith("DASH_")) return;
     const lastRow = sh.getLastRow();
     if (lastRow < 2) return;
-    const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(h => String(h).trim());
-    const msIdx   = headers.indexOf("mail_status");
-    const mlIdx   = headers.indexOf("mail_log");
+    const numCols  = sh.getLastColumn();
+    const allData  = sh.getRange(1, 1, lastRow, numCols).getValues();
+    const headers  = allData[0].map(h => String(h).trim());
+    const msIdx    = headers.indexOf("mail_status");
+    const mlIdx    = headers.indexOf("mail_log");
+    const appIdIdx = headers.indexOf("application_id");
 
-    // mail_status: alte Werte ersetzen
+    // mail_status korrigieren (Batch-Write)
     if (msIdx !== -1) {
-      const range  = sh.getRange(2, msIdx + 1, lastRow - 1, 1);
-      const values = range.getValues();
-      let changed  = false;
-      values.forEach(r => {
-        const newVal = oldToNew[String(r[0] || "").trim()];
-        if (newVal) { r[0] = newVal; changed = true; }
+      let changed = false;
+      const msVals = allData.slice(1).map(row => {
+        const appId   = appIdIdx !== -1 ? String(row[appIdIdx] || "").trim() : "";
+        const correct = appId ? correctStatusByAppId[appId] : (oldToNew[String(row[msIdx] || "").trim()] || null);
+        if (correct && correct !== String(row[msIdx] || "").trim()) { changed = true; return [correct]; }
+        return [row[msIdx]];
       });
-      if (changed) range.setValues(values);
+      if (changed) sh.getRange(2, msIdx + 1, lastRow - 1, 1).setValues(msVals);
     }
 
-    // mail_log: CLIP wrap, font 8, Zeilenhöhe zurücksetzen
+    // mail_log: CLIP wrap + font 8 (ein Range-Call) + Zeilenhöhen batch
     if (mlIdx !== -1) {
       sh.getRange(2, mlIdx + 1, lastRow - 1, 1)
         .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP)
         .setFontSize(8);
-      for (let row = 2; row <= lastRow; row++) {
-        sh.setRowHeight(row, MAIL_LOG_ROW_HEIGHT);
-      }
+      sh.setRowHeights(2, lastRow - 1, MAIL_LOG_ROW_HEIGHT);
     }
   });
 
