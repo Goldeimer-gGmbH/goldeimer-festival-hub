@@ -129,6 +129,7 @@ function onOpen() {
     .addItem("📬 Mail-Log aus bisherigen Daten befüllen", "uiBackfillMailLog")
     .addItem("📧 Mail-Log aus Gmail-Gesendeten befüllen", "uiScanGmailForMailHistory")
     .addItem("🔧 Mail-Log Format & Status korrigieren", "uiFixMailLogFormat")
+    .addItem("🔠 Mail-Log Formatierung (alle Festivals)", "uiFixMailLogFormatOnly")
     .addSeparator()
     .addItem("✉️ Zusage: Testversand", "uiSendOffersTest")
     .addItem("📩 Zusage: Echter Versand", "uiSendOffersReal")
@@ -287,7 +288,12 @@ function scanGmailForMailHistory_({ festivalId }) {
 
 function uiFixMailLogFormat() {
   const res = fixMailLogFormat_();
-  toast_(`Mail-Log Format: ${res.fixed} Zeilen korrigiert.`);
+  toast_(`Mail-Log Format & Status: ${res.fixed} Status-Zeilen + ${res.formatted} Log-Zellen korrigiert.`);
+}
+
+function uiFixMailLogFormatOnly() {
+  const res = fixMailLogFormatOnly_();
+  toast_(`Mail-Log Formatierung: ${res.formatted} Zellen in ${res.sheets} Sheets korrigiert.`);
 }
 
 function fixMailLogFormat_() {
@@ -380,6 +386,43 @@ function fixMailLogFormat_() {
   });
 
   return { fixed };
+}
+
+function fixMailLogFormatOnly_() {
+  const ss = SpreadsheetApp.getActive();
+  let formatted = 0, sheets = 0;
+
+  ss.getSheets().forEach(sh => {
+    if (!sh.getName().startsWith("DASH_")) return;
+    const lastRow = sh.getLastRow();
+    if (lastRow < 2) return;
+
+    const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+    const mlIdx   = headers.findIndex(h => String(h).trim() === "mail_log");
+    if (mlIdx === -1) { Logger.log(`${sh.getName()}: keine mail_log Spalte`); return; }
+
+    sheets++;
+    const col    = mlIdx + 1;
+    const range  = sh.getRange(2, col, lastRow - 1, 1);
+    const values = range.getValues();
+    let changed  = false;
+
+    values.forEach((row, i) => {
+      let v = String(row[0] || "");
+      if (!v) return;
+      // \n → " | "
+      const cleaned = v.replace(/\n+/g, " | ").replace(/\s*\|\s*/g, " | ").trim();
+      if (cleaned !== v) { values[i][0] = cleaned; changed = true; }
+      formatted++;
+    });
+
+    if (changed) range.setValues(values);
+    // Font 8pt für die gesamte Spalte (Header + Daten)
+    sh.getRange(2, col, lastRow - 1, 1).setFontSize(8);
+    Logger.log(`${sh.getName()}: mail_log Spalte ${col} formatiert (${lastRow - 1} Zeilen)`);
+  });
+
+  return { formatted, sheets };
 }
 
 function backfillMailLog_() {
