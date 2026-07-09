@@ -216,7 +216,11 @@ function fixMailLogFormat_() {
     const lastInfoTs = String(r.last_info_sent     || "").trim();
     const detailSt   = String(r.detail_status      || "").trim();
     const oldMs      = String(r.mail_status        || "").trim();
-    if      (dankeTs)                          correctStatusByAppId[appId] = MAIL_STATUS.DANKE;
+    const existingLog= String(r.mail_log           || "").trim();
+    const statusNorm = normalizeStatus_(r.status);
+    // "teilgenommen" → Dankes-Mail wurde definitiv verschickt (auch wenn danke_sent-Spalte fehlt)
+    const hasDanke   = dankeTs || statusNorm === "teilgenommen" || existingLog.includes(MAIL_STATUS.DANKE);
+    if      (hasDanke)                         correctStatusByAppId[appId] = MAIL_STATUS.DANKE;
     else if (lastInfoTs)                       correctStatusByAppId[appId] = MAIL_STATUS.LAST_INFO;
     else if (detailSentStates.has(detailSt))   correctStatusByAppId[appId] = MAIL_STATUS.DETAIL_SENT;
     else                                       correctStatusByAppId[appId] = oldToNew[oldMs] || oldMs || MAIL_STATUS.NONE;
@@ -301,7 +305,9 @@ function backfillMailLog_() {
   appData.rows.forEach(r => {
     const rowNumber = r.__rowNumber;
     const existingLog = String(r.mail_log || "").trim();
-    if (existingLog) { skipped++; return; } // schon befüllt → überspringen
+    // Überspringe nur wenn schon befüllt UND Dankes-Mail schon drin (oder kein teilgenommen-Status)
+    const isTeilgenommen = normalizeStatus_(r.status) === "teilgenommen";
+    if (existingLog && (!isTeilgenommen || existingLog.includes(MAIL_STATUS.DANKE))) { skipped++; return; }
 
     const entries = [];
 
@@ -323,9 +329,11 @@ function backfillMailLog_() {
     const lastInfoTs = String(r.last_info_sent || "").trim();
     if (lastInfoTs) entries.push(`${lastInfoTs} ${MAIL_STATUS.LAST_INFO}`);
 
-    // 4) Dankes-Mail (mit Timestamp aus danke_sent)
-    const dankeTs = String(r.danke_sent || "").trim();
-    if (dankeTs) entries.push(`${dankeTs} ${MAIL_STATUS.DANKE}`);
+    // 4) Dankes-Mail (Timestamp aus danke_sent, Fallback: status=teilgenommen)
+    const dankeTs    = String(r.danke_sent || "").trim();
+    const isTeilgen  = normalizeStatus_(r.status) === "teilgenommen";
+    if (dankeTs)        entries.push(`${dankeTs} ${MAIL_STATUS.DANKE}`);
+    else if (isTeilgen) entries.push(`? ${MAIL_STATUS.DANKE}`);
 
     if (!entries.length) { skipped++; return; }
 
