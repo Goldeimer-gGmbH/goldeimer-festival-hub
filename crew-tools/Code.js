@@ -127,6 +127,7 @@ function onOpen() {
     .addItem("📤 Import aus Anmeldeformular", "uiSyncApplicationsFromForm")
     .addItem("🗂️ Dashboards erstellen/aktualisieren", "uiBuildFestivalDashboards")
     .addItem("📬 Mail-Log aus bisherigen Daten befüllen", "uiBackfillMailLog")
+    .addItem("📧 Mail-Log aus Gmail-Gesendeten befüllen", "uiScanGmailForMailHistory")
     .addItem("🔧 Mail-Log Format & Status korrigieren", "uiFixMailLogFormat")
     .addSeparator()
     .addItem("✉️ Zusage: Testversand", "uiSendOffersTest")
@@ -188,6 +189,93 @@ function uiBackfillMailLog() {
   toast_(`Mail-Log Backfill: ${res.updated} Zeilen befüllt, ${res.skipped} übersprungen.`);
 }
 
+function uiScanGmailForMailHistory() {
+  const festivalId = getActiveFestivalIdOrPrompt_();
+  if (!festivalId) return;
+  const res = scanGmailForMailHistory_({ festivalId });
+  toast_(`Gmail-Scan: ${res.found} Mails gefunden, ${res.updated} Zeilen aktualisiert.`);
+}
+
+function scanGmailForMailHistory_({ festivalId }) {
+  const ss       = SpreadsheetApp.getActive();
+  const appSheet = ss.getSheetByName(SHEETS.APPLICATIONS);
+  const appData  = readSheetAsObjects_(appSheet);
+  const hm       = appData.headerMap;
+
+  // Lookup: normierte E-Mail → application row (nur dieses Festival)
+  const emailToRow = {};
+  appData.rows.forEach(r => {
+    if (String(r.festival_id || "").trim() !== String(festivalId).trim()) return;
+    const email = normEmail_(r.email);
+    if (email) emailToRow[email] = r;
+  });
+
+  // Betreff-Muster → Label (Reihenfolge zählt bei Überschneidungen)
+  const PATTERNS = [
+    { query: 'subject:"DANKE"',           label: MAIL_STATUS.DANKE },
+    { query: 'subject:"Letzte Infos"',    label: MAIL_STATUS.LAST_INFO },
+    { query: 'subject:"Detailabfrage"',   label: MAIL_STATUS.DETAIL_SENT },
+    { query: 'subject:"Warteliste"',      label: MAIL_STATUS.WARTELISTE_SENT },
+    { query: 'subject:"Absage"',          label: MAIL_STATUS.FINAL_ABSAGE_SENT },
+    { query: 'subject:"Zusage"',          label: MAIL_STATUS.ZUSAGE_SENT },
+  ];
+
+  // sentLog: normEmail → [{label, date}]
+  const sentLog = {};
+  let found = 0;
+
+  PATTERNS.forEach(({ query, label }) => {
+    let threads;
+    try { threads = GmailApp.search(`in:sent ${query}`, 0, 500); }
+    catch (e) { Logger.log(`Gmail-Suche fehlgeschlagen (${query}): ${e.message}`); return; }
+
+    threads.forEach(t => {
+      const msg  = t.getMessages()[0];
+      const date = msg.getDate();
+      // TO-Feld parsen: "Name <email>, Name <email>"
+      String(msg.getTo() || "").split(",").forEach(part => {
+        const m     = part.trim().match(/<([^>]+)>/);
+        const email = normEmail_(m ? m[1] : part.trim());
+        if (!email || !emailToRow[email]) return;
+        if (!sentLog[email]) sentLog[email] = [];
+        // Kein Duplikat gleichen Labels am gleichen Tag
+        const dateStr = Utilities.formatDate(date, Session.getScriptTimeZone(), "dd.MM.yyyy");
+        if (!sentLog[email].some(e => e.label === label && Utilities.formatDate(e.date, Session.getScriptTimeZone(), "dd.MM.yyyy") === dateStr)) {
+          sentLog[email].push({ label, date });
+          found++;
+        }
+      });
+    });
+  });
+
+  // Anwenden
+  let updated = 0;
+  const fmt = d => Utilities.formatDate(d, Session.getScriptTimeZone(), "dd.MM.yyyy HH:mm");
+
+  Object.entries(sentLog).forEach(([email, entries]) => {
+    const r = emailToRow[email];
+    if (!r) return;
+    entries.sort((a, b) => a.date - b.date);
+
+    const logVal   = entries.map(e => `${fmt(e.date)} ${e.label}`).join(" | ");
+    const lastLabel = entries[entries.length - 1].label;
+    const rowNumber = r.__rowNumber;
+
+    const logColIdx = hm["mail_log"];
+    if (logColIdx !== undefined) {
+      appSheet.getRange(rowNumber, logColIdx + 1).setValue(logVal).setFontSize(8);
+    }
+    updateCell_(appSheet, hm, rowNumber, "mail_status", lastLabel);
+    updateDashboardRowByApplicationId_(festivalId, r.application_id, {
+      mail_log: logVal,
+      mail_status: lastLabel,
+    });
+    updated++;
+  });
+
+  return { found, updated };
+}
+
 function uiFixMailLogFormat() {
   const res = fixMailLogFormat_();
   toast_(`Mail-Log Format: ${res.fixed} Zeilen korrigiert.`);
@@ -217,9 +305,7 @@ function fixMailLogFormat_() {
     const detailSt   = String(r.detail_status      || "").trim();
     const oldMs      = String(r.mail_status        || "").trim();
     const existingLog= String(r.mail_log           || "").trim();
-    const statusNorm = normalizeStatus_(r.status);
-    // "teilgenommen" → Dankes-Mail wurde definitiv verschickt (auch wenn danke_sent-Spalte fehlt)
-    const hasDanke   = dankeTs || statusNorm === "teilgenommen" || existingLog.includes(MAIL_STATUS.DANKE);
+    const hasDanke   = dankeTs || existingLog.includes(MAIL_STATUS.DANKE);
     if      (hasDanke)                         correctStatusByAppId[appId] = MAIL_STATUS.DANKE;
     else if (lastInfoTs)                       correctStatusByAppId[appId] = MAIL_STATUS.LAST_INFO;
     else if (detailSentStates.has(detailSt))   correctStatusByAppId[appId] = MAIL_STATUS.DETAIL_SENT;
@@ -270,12 +356,17 @@ function fixMailLogFormat_() {
       if (changed) sh.getRange(2, msIdx + 1, lastRow - 1, 1).setValues(msVals);
     }
 
-    // mail_log: CLIP wrap + font 8 (ein Range-Call) + Zeilenhöhen batch
+    // mail_log: \n → | konvertieren + font 8
     if (mlIdx !== -1) {
-      sh.getRange(2, mlIdx + 1, lastRow - 1, 1)
-        .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP)
-        .setFontSize(8);
-      sh.setRowHeights(2, lastRow - 1, MAIL_LOG_ROW_HEIGHT);
+      const mlRange  = sh.getRange(2, mlIdx + 1, lastRow - 1, 1);
+      const mlValues = mlRange.getValues();
+      let mlChanged  = false;
+      mlValues.forEach(r => {
+        const v = String(r[0] || "");
+        if (v.includes("\n")) { r[0] = v.replace(/\n/g, " | "); mlChanged = true; }
+      });
+      if (mlChanged) mlRange.setValues(mlValues);
+      mlRange.setFontSize(8);
     }
   });
 
@@ -305,9 +396,7 @@ function backfillMailLog_() {
   appData.rows.forEach(r => {
     const rowNumber = r.__rowNumber;
     const existingLog = String(r.mail_log || "").trim();
-    // Überspringe nur wenn schon befüllt UND Dankes-Mail schon drin (oder kein teilgenommen-Status)
-    const isTeilgenommen = normalizeStatus_(r.status) === "teilgenommen";
-    if (existingLog && (!isTeilgenommen || existingLog.includes(MAIL_STATUS.DANKE))) { skipped++; return; }
+    if (existingLog) { skipped++; return; }
 
     const entries = [];
 
@@ -329,15 +418,13 @@ function backfillMailLog_() {
     const lastInfoTs = String(r.last_info_sent || "").trim();
     if (lastInfoTs) entries.push(`${lastInfoTs} ${MAIL_STATUS.LAST_INFO}`);
 
-    // 4) Dankes-Mail (Timestamp aus danke_sent, Fallback: status=teilgenommen)
-    const dankeTs    = String(r.danke_sent || "").trim();
-    const isTeilgen  = normalizeStatus_(r.status) === "teilgenommen";
-    if (dankeTs)        entries.push(`${dankeTs} ${MAIL_STATUS.DANKE}`);
-    else if (isTeilgen) entries.push(`? ${MAIL_STATUS.DANKE}`);
+    // 4) Dankes-Mail (Timestamp aus danke_sent wenn vorhanden)
+    const dankeTs = String(r.danke_sent || "").trim();
+    if (dankeTs) entries.push(`${dankeTs} ${MAIL_STATUS.DANKE}`);
 
     if (!entries.length) { skipped++; return; }
 
-    const logVal = entries.join("\n");
+    const logVal = entries.join(" | ");
 
     // mail_log in APPLICATIONS schreiben + CLIP wrap
     const logColIdx = hm["mail_log"];
@@ -1053,7 +1140,7 @@ if (isReminder) {
     // Reminder: mind. 24h seit letztem Versand warten (verhindert Doppelmail am gleichen Tag)
     let minGapOk = true;
     if (isReminder && statusOk) {
-      const logLines = String(r.mail_log || "").split("\n").filter(l => /Detailabfrage/.test(l));
+      const logLines = String(r.mail_log || "").split(" | ").filter(l => /Detailabfrage/.test(l));
       if (logLines.length > 0) {
         const lastLine = logLines[logLines.length - 1];
         const tsMatch = lastLine.match(/^(\d{1,2}\.\d{1,2}\.\d{4}\s+\d{1,2}:\d{2})/);
@@ -2885,11 +2972,8 @@ function appendMailLog_(appSheet, headerMap, rowNumber, label) {
   const entry = `${ts} ${label}`;
   const cell = appSheet.getRange(rowNumber, colIdx + 1);
   const existing = String(cell.getValue() || "").trim();
-  const newVal = existing ? `${existing}\n${entry}` : entry;
-  cell.setValue(newVal)
-    .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP)
-    .setFontSize(8);
-  appSheet.setRowHeight(rowNumber, MAIL_LOG_ROW_HEIGHT);
+  const newVal = existing ? `${existing} | ${entry}` : entry;
+  cell.setValue(newVal).setFontSize(8);
   return newVal;
 }
 
@@ -3854,12 +3938,7 @@ function updateDashboardRowByApplicationId_(festivalId, applicationId, updatesOb
     if (key === "mail_status" && !allowedMail.has(String(val))) return;
 
     setValueSafe_(sh.getRange(targetRow, col), val, `dashUpdate key=${key} appId=${applicationId}`);
-    if (key === "mail_log") {
-      sh.getRange(targetRow, col)
-        .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP)
-        .setFontSize(8);
-      sh.setRowHeight(targetRow, MAIL_LOG_ROW_HEIGHT);
-    }
+    if (key === "mail_log") sh.getRange(targetRow, col).setFontSize(8);
   });
 
   // Zeilenhintergrund bei Statuswechsel aktualisieren
