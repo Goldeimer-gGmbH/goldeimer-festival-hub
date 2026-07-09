@@ -392,34 +392,36 @@ function fixMailLogFormatOnly_() {
   const ss = SpreadsheetApp.getActive();
   let formatted = 0, sheets = 0;
 
-  ss.getSheets().forEach(sh => {
-    if (!sh.getName().startsWith("DASH_")) return;
+  const fixSheet = (sh, isDash) => {
     const lastRow = sh.getLastRow();
     if (lastRow < 2) return;
-
     const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
     const mlIdx   = headers.findIndex(h => String(h).trim() === "mail_log");
     if (mlIdx === -1) { Logger.log(`${sh.getName()}: keine mail_log Spalte`); return; }
-
     sheets++;
     const col    = mlIdx + 1;
     const range  = sh.getRange(2, col, lastRow - 1, 1);
     const values = range.getValues();
     let changed  = false;
-
     values.forEach((row, i) => {
-      let v = String(row[0] || "");
+      const v = String(row[0] || "");
       if (!v) return;
-      // \n → " | "
       const cleaned = v.replace(/\n+/g, " | ").replace(/\s*\|\s*/g, " | ").trim();
       if (cleaned !== v) { values[i][0] = cleaned; changed = true; }
       formatted++;
     });
-
     if (changed) range.setValues(values);
-    // Font 8pt für die gesamte Spalte (Header + Daten)
     sh.getRange(2, col, lastRow - 1, 1).setFontSize(8);
-    Logger.log(`${sh.getName()}: mail_log Spalte ${col} formatiert (${lastRow - 1} Zeilen)`);
+    Logger.log(`${sh.getName()}: mail_log formatiert (${lastRow - 1} Zeilen)`);
+  };
+
+  // APPLICATIONS
+  const appSheet = ss.getSheetByName(SHEETS.APPLICATIONS);
+  if (appSheet) fixSheet(appSheet, false);
+
+  // Alle DASH_ Sheets
+  ss.getSheets().forEach(sh => {
+    if (sh.getName().startsWith("DASH_")) fixSheet(sh, true);
   });
 
   return { formatted, sheets };
