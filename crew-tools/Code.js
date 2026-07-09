@@ -127,6 +127,7 @@ function onOpen() {
     .addItem("📤 Import aus Anmeldeformular", "uiSyncApplicationsFromForm")
     .addItem("🗂️ Dashboards erstellen/aktualisieren", "uiBuildFestivalDashboards")
     .addItem("📬 Mail-Log aus bisherigen Daten befüllen", "uiBackfillMailLog")
+    .addItem("🔧 Mail-Log Format & Status korrigieren", "uiFixMailLogFormat")
     .addSeparator()
     .addItem("✉️ Zusage: Testversand", "uiSendOffersTest")
     .addItem("📩 Zusage: Echter Versand", "uiSendOffersReal")
@@ -185,6 +186,74 @@ function uiBuildNewbieSheet() {
 function uiBackfillMailLog() {
   const res = backfillMailLog_();
   toast_(`Mail-Log Backfill: ${res.updated} Zeilen befüllt, ${res.skipped} übersprungen.`);
+}
+
+function uiFixMailLogFormat() {
+  const res = fixMailLogFormat_();
+  toast_(`Mail-Log Format: ${res.fixed} Zeilen korrigiert.`);
+}
+
+function fixMailLogFormat_() {
+  const ss = SpreadsheetApp.getActive();
+  const oldToNew = {
+    "zusage_gesendet":       MAIL_STATUS.ZUSAGE_SENT,
+    "warteliste_gesendet":   MAIL_STATUS.WARTELISTE_SENT,
+    "final_absage_gesendet": MAIL_STATUS.FINAL_ABSAGE_SENT,
+  };
+
+  // 1. APPLICATIONS: mail_status in einer Runde korrigieren
+  const appSheet = ss.getSheetByName(SHEETS.APPLICATIONS);
+  const appData  = readSheetAsObjects_(appSheet);
+  const msColIdx = appData.headerMap["mail_status"];
+  let fixed = 0;
+
+  if (msColIdx !== undefined) {
+    const lastRow = appSheet.getLastRow();
+    if (lastRow >= 2) {
+      const msRange  = appSheet.getRange(2, msColIdx + 1, lastRow - 1, 1);
+      const msValues = msRange.getValues();
+      let changed = false;
+      msValues.forEach(r => {
+        const newVal = oldToNew[String(r[0] || "").trim()];
+        if (newVal) { r[0] = newVal; changed = true; fixed++; }
+      });
+      if (changed) msRange.setValues(msValues);
+    }
+  }
+
+  // 2. Alle DASH-Sheets: mail_status + mail_log-Spalte formatieren
+  ss.getSheets().forEach(sh => {
+    if (!sh.getName().startsWith("DASH_")) return;
+    const lastRow = sh.getLastRow();
+    if (lastRow < 2) return;
+    const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(h => String(h).trim());
+    const msIdx   = headers.indexOf("mail_status");
+    const mlIdx   = headers.indexOf("mail_log");
+
+    // mail_status: alte Werte ersetzen
+    if (msIdx !== -1) {
+      const range  = sh.getRange(2, msIdx + 1, lastRow - 1, 1);
+      const values = range.getValues();
+      let changed  = false;
+      values.forEach(r => {
+        const newVal = oldToNew[String(r[0] || "").trim()];
+        if (newVal) { r[0] = newVal; changed = true; }
+      });
+      if (changed) range.setValues(values);
+    }
+
+    // mail_log: CLIP wrap, font 8, Zeilenhöhe zurücksetzen
+    if (mlIdx !== -1) {
+      sh.getRange(2, mlIdx + 1, lastRow - 1, 1)
+        .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP)
+        .setFontSize(8);
+      for (let row = 2; row <= lastRow; row++) {
+        sh.setRowHeight(row, MAIL_LOG_ROW_HEIGHT);
+      }
+    }
+  });
+
+  return { fixed };
 }
 
 function backfillMailLog_() {
@@ -2777,6 +2846,8 @@ function updateCell_(sheet, headerMap, rowNumber, columnName, value) {
   setValueSafe_(sheet.getRange(rowNumber, colIdx + 1), value, `updateCell col=${columnName} row=${rowNumber}`);
 }
 
+const MAIL_LOG_ROW_HEIGHT = 21;
+
 function appendMailLog_(appSheet, headerMap, rowNumber, label) {
   const colIdx = headerMap["mail_log"];
   if (colIdx === undefined) return "";
@@ -2785,7 +2856,10 @@ function appendMailLog_(appSheet, headerMap, rowNumber, label) {
   const cell = appSheet.getRange(rowNumber, colIdx + 1);
   const existing = String(cell.getValue() || "").trim();
   const newVal = existing ? `${existing}\n${entry}` : entry;
-  cell.setValue(newVal).setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+  cell.setValue(newVal)
+    .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP)
+    .setFontSize(8);
+  appSheet.setRowHeight(rowNumber, MAIL_LOG_ROW_HEIGHT);
   return newVal;
 }
 
@@ -3750,7 +3824,12 @@ function updateDashboardRowByApplicationId_(festivalId, applicationId, updatesOb
     if (key === "mail_status" && !allowedMail.has(String(val))) return;
 
     setValueSafe_(sh.getRange(targetRow, col), val, `dashUpdate key=${key} appId=${applicationId}`);
-    if (key === "mail_log") sh.getRange(targetRow, col).setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+    if (key === "mail_log") {
+      sh.getRange(targetRow, col)
+        .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP)
+        .setFontSize(8);
+      sh.setRowHeight(targetRow, MAIL_LOG_ROW_HEIGHT);
+    }
   });
 
   // Zeilenhintergrund bei Statuswechsel aktualisieren
