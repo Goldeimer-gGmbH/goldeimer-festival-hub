@@ -211,13 +211,20 @@ function scanGmailForMailHistory_({ festivalId }) {
   });
 
   // Betreff-Muster → Label (Reihenfolge zählt bei Überschneidungen)
+  // Holt den Festival-Namen für gezieltere Suche
+  const festSheet = ss.getSheetByName(SHEETS.FESTIVALS);
+  const festData  = festSheet ? readSheetAsObjects_(festSheet) : null;
+  const festRow   = festData ? festData.rows.find(r => String(r.festival_id || "").trim() === String(festivalId).trim()) : null;
+  const festName  = festRow ? String(festRow.festival_name || "").trim() : "";
+  const festExtra = festName ? ` "${festName}"` : "";
+
   const PATTERNS = [
-    { query: 'subject:"DANKE"',           label: MAIL_STATUS.DANKE },
-    { query: 'subject:"Letzte Infos"',    label: MAIL_STATUS.LAST_INFO },
-    { query: 'subject:"Detailabfrage"',   label: MAIL_STATUS.DETAIL_SENT },
-    { query: 'subject:"Warteliste"',      label: MAIL_STATUS.WARTELISTE_SENT },
-    { query: 'subject:"Absage"',          label: MAIL_STATUS.FINAL_ABSAGE_SENT },
-    { query: 'subject:"Zusage"',          label: MAIL_STATUS.ZUSAGE_SENT },
+    { query: `in:sent (subject:DANKE OR subject:Danke OR subject:danke)${festExtra}`, label: MAIL_STATUS.DANKE },
+    { query: `in:sent subject:"Letzte Infos"${festExtra}`,                            label: MAIL_STATUS.LAST_INFO },
+    { query: `in:sent subject:Detailabfrage${festExtra}`,                             label: MAIL_STATUS.DETAIL_SENT },
+    { query: `in:sent subject:Warteliste${festExtra}`,                                label: MAIL_STATUS.WARTELISTE_SENT },
+    { query: `in:sent (subject:Absage OR subject:absage)${festExtra}`,                label: MAIL_STATUS.FINAL_ABSAGE_SENT },
+    { query: `in:sent (subject:Zusage OR subject:Glückwunsch)${festExtra}`,          label: MAIL_STATUS.ZUSAGE_SENT },
   ];
 
   // sentLog: normEmail → [{label, date}]
@@ -229,9 +236,11 @@ function scanGmailForMailHistory_({ festivalId }) {
     try { threads = GmailApp.search(`in:sent ${query}`, 0, 500); }
     catch (e) { Logger.log(`Gmail-Suche fehlgeschlagen (${query}): ${e.message}`); return; }
 
+    Logger.log(`Gmail-Suche "${query}": ${threads.length} Threads gefunden`);
     threads.forEach(t => {
       const msg  = t.getMessages()[0];
       const date = msg.getDate();
+      Logger.log(`  → Betreff: "${msg.getSubject()}" | An: ${msg.getTo()} | Datum: ${date}`);
       // TO-Feld parsen: "Name <email>, Name <email>"
       String(msg.getTo() || "").split(",").forEach(part => {
         const m     = part.trim().match(/<([^>]+)>/);
