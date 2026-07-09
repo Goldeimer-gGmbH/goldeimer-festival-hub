@@ -87,7 +87,7 @@ const STATUS_LIST = [
 // löschen wir komplett, da wir keine "Vereinfachung" mehr wollen, 
 // sondern die echten Werte in 9 Spalten sehen.
 
-const MAIL_STATUS_LIST = ["-", "Zusage", "Warteliste", "Absage", "Detailabfrage", "Detailabfrage Reminder", "Letzte Infos"];
+const MAIL_STATUS_LIST = ["-", "Zusage", "Warteliste", "Absage", "Detailabfrage", "Detailabfrage Reminder", "Letzte Infos", "Dankes-Mail"];
 const DETAIL_STATUS_LIST = ["-", "detailabfrage_gesendet", "reminder_geschickt", "formular_ausgefuellt"];
 const CONTRACT_STATUS_LIST = ["-", "unterschrieben"];
 
@@ -99,6 +99,7 @@ const MAIL_STATUS = {
   DETAIL_SENT: "Detailabfrage",
   DETAIL_REMINDER: "Detailabfrage Reminder",
   LAST_INFO: "Letzte Infos",
+  DANKE: "Dankes-Mail",
 };
 
 const DETAIL_STATUS = {
@@ -231,6 +232,10 @@ function backfillMailLog_() {
     const lastInfoTs = String(r.last_info_sent || "").trim();
     if (lastInfoTs) entries.push(`${lastInfoTs} ${MAIL_STATUS.LAST_INFO}`);
 
+    // 4) Dankes-Mail (mit Timestamp aus danke_sent)
+    const dankeTs = String(r.danke_sent || "").trim();
+    if (dankeTs) entries.push(`${dankeTs} ${MAIL_STATUS.DANKE}`);
+
     if (!entries.length) { skipped++; return; }
 
     const logVal = entries.join("\n");
@@ -243,8 +248,11 @@ function backfillMailLog_() {
         .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
     }
 
-    // mail_status auf neues Format aktualisieren wenn nötig
-    const updatedMailStatus = newLabel || (lastInfoTs ? MAIL_STATUS.LAST_INFO : (detailSentStates.has(detailSt) ? MAIL_STATUS.DETAIL_SENT : null));
+    // mail_status: letzter bekannter Stand (Dankes-Mail hat Vorrang, dann Letzte Infos, etc.)
+    const updatedMailStatus = dankeTs ? MAIL_STATUS.DANKE
+      : lastInfoTs ? MAIL_STATUS.LAST_INFO
+      : (detailSentStates.has(detailSt) ? MAIL_STATUS.DETAIL_SENT : null)
+      || newLabel || null;
     if (updatedMailStatus && hm["mail_status"] !== undefined) {
       updateCell_(appSheet, hm, rowNumber, "mail_status", updatedMailStatus);
     }
@@ -6226,11 +6234,18 @@ Wenn du noch nicht genug von Festivals mit Goldeimer hast, komm nochmal mit!<br>
       if (!isTestRun) {
         const nowFmt = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd.MM.yyyy HH:mm");
         const rowIdx = appData.rows.indexOf(r);
-        const colIdx = appData.headerMap["danke_sent"];
-        if (rowIdx >= 0 && colIdx !== undefined) {
-          appSheet.getRange(rowIdx + 2, colIdx + 1).setValue(nowFmt);
+        if (rowIdx >= 0) {
+          const rowNumber = rowIdx + 2;
+          const colIdx = appData.headerMap["danke_sent"];
+          if (colIdx !== undefined) appSheet.getRange(rowNumber, colIdx + 1).setValue(nowFmt);
+          updateCell_(appSheet, appData.headerMap, rowNumber, "mail_status", MAIL_STATUS.DANKE);
+          const dankeLogVal = appendMailLog_(appSheet, appData.headerMap, rowNumber, MAIL_STATUS.DANKE);
+          updateDashboardRowByApplicationId_(festivalId, r.application_id, {
+            danke_sent: nowFmt,
+            mail_status: MAIL_STATUS.DANKE,
+            mail_log: dankeLogVal,
+          });
         }
-        updateDashboardRowByApplicationId_(festivalId, r.application_id, { danke_sent: nowFmt });
       }
 
       sentOk++;
