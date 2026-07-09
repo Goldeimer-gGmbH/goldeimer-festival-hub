@@ -1641,6 +1641,17 @@ function buildFestivalDashboards_() {
         .setVerticalAlignment("middle");
     }
 
+    // mail_log-Spalte: schmal + CLIP + Font 8pt
+    const mailLogColIdx = DASH_COLUMNS.indexOf("mail_log") + 1;
+    if (mailLogColIdx > 0) {
+      sh.setColumnWidth(mailLogColIdx, 180);
+      const lastDataRow = headerRow + Math.max(1, sorted.length);
+      sh.getRange(headerRow + 1, mailLogColIdx, lastDataRow - headerRow, 1)
+        .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP)
+        .setFontSize(8)
+        .setVerticalAlignment("middle");
+    }
+
     // Zeilenhöhe
     const lastDataRow = headerRow + Math.max(1, sorted.length);
     for (let r = headerRow + 1; r <= lastDataRow; r++) sh.setRowHeight(r, 21);
