@@ -87,15 +87,18 @@ const STATUS_LIST = [
 // löschen wir komplett, da wir keine "Vereinfachung" mehr wollen, 
 // sondern die echten Werte in 9 Spalten sehen.
 
-const MAIL_STATUS_LIST = ["-", "zusage_gesendet", "warteliste_gesendet", "final_absage_gesendet"];
+const MAIL_STATUS_LIST = ["-", "Zusage", "Warteliste", "Absage", "Detailabfrage", "Detailabfrage Reminder", "Letzte Infos"];
 const DETAIL_STATUS_LIST = ["-", "detailabfrage_gesendet", "reminder_geschickt", "formular_ausgefuellt"];
 const CONTRACT_STATUS_LIST = ["-", "unterschrieben"];
 
 const MAIL_STATUS = {
   NONE: "-",
-  ZUSAGE_SENT: "zusage_gesendet",
-  WARTELISTE_SENT: "warteliste_gesendet",
-  FINAL_ABSAGE_SENT: "final_absage_gesendet",
+  ZUSAGE_SENT: "Zusage",
+  WARTELISTE_SENT: "Warteliste",
+  FINAL_ABSAGE_SENT: "Absage",
+  DETAIL_SENT: "Detailabfrage",
+  DETAIL_REMINDER: "Detailabfrage Reminder",
+  LAST_INFO: "Letzte Infos",
 };
 
 const DETAIL_STATUS = {
@@ -540,9 +543,11 @@ function sendOffers_({ festivalId, role, forceTest }) {
       if (!isTestRun) {
         // Lokale Google Updates
         updateCell_(appSheet, data.headerMap, r.__rowNumber, "mail_status", MAIL_STATUS.ZUSAGE_SENT);
+        const zusageLogVal = appendMailLog_(appSheet, data.headerMap, r.__rowNumber, MAIL_STATUS.ZUSAGE_SENT);
         updateCell_(appSheet, data.headerMap, r.__rowNumber, "status", STATUS.ZUGESAGT);
         updateDashboardRowByApplicationId_(festivalId, r.application_id, {
           mail_status: MAIL_STATUS.ZUSAGE_SENT,
+          mail_log: zusageLogVal,
           status: STATUS.ZUGESAGT,
         });
 
@@ -656,15 +661,17 @@ function sendWaitlist_({ festivalId, role, forceTest }) {
 
       if (!isTestRun) {
         updateCell_(appSheet, data.headerMap, r.__rowNumber, "mail_status", MAIL_STATUS.WARTELISTE_SENT);
+        const wlLogVal = appendMailLog_(appSheet, data.headerMap, r.__rowNumber, MAIL_STATUS.WARTELISTE_SENT);
         updateCell_(appSheet, data.headerMap, r.__rowNumber, "status", STATUS.AUF_WARTELISTE);
         updateDashboardRowByApplicationId_(festivalId, r.application_id, {
           mail_status: MAIL_STATUS.WARTELISTE_SENT,
+          mail_log: wlLogVal,
           status: STATUS.AUF_WARTELISTE,
         });
       }
-    } catch (err) { 
+    } catch (err) {
       Logger.log(`Fehler bei Warteliste (${r.email}): ${err}`);
-      sentFailed++; 
+      sentFailed++;
     }
   });
   return { candidates: candidates.length, sentOk, sentFailed };
@@ -712,15 +719,17 @@ function sendFinalAbsage_({ festivalId, role, forceTest }) {
 
       if (!isTestRun) {
         updateCell_(appSheet, data.headerMap, r.__rowNumber, "mail_status", MAIL_STATUS.FINAL_ABSAGE_SENT);
+        const absageLogVal = appendMailLog_(appSheet, data.headerMap, r.__rowNumber, MAIL_STATUS.FINAL_ABSAGE_SENT);
         updateCell_(appSheet, data.headerMap, r.__rowNumber, "status", STATUS.FINAL_ABGESAGT);
         updateDashboardRowByApplicationId_(festivalId, r.application_id, {
           mail_status: MAIL_STATUS.FINAL_ABSAGE_SENT,
+          mail_log: absageLogVal,
           status: STATUS.FINAL_ABGESAGT,
         });
       }
-    } catch (err) { 
+    } catch (err) {
       Logger.log(`Fehler bei Absage (${r.email}): ${err}`);
-      sentFailed++; 
+      sentFailed++;
     }
   });
   return { candidates: candidates.length, sentOk, sentFailed };
@@ -854,12 +863,17 @@ if (isReminder) {
     // Reminder: mind. 24h seit letztem Versand warten (verhindert Doppelmail am gleichen Tag)
     let minGapOk = true;
     if (isReminder && statusOk) {
-      const sentAt = parseDEDatetime_(r.detail_last_sent_at);
-      if (sentAt) {
-        const hoursSince = (new Date() - sentAt) / (1000 * 60 * 60);
-        minGapOk = hoursSince >= 24;
-        if (!minGapOk && fidMatch) {
-          Logger.log(`  ⏭ ${r.email}: Reminder übersprungen – erst ${hoursSince.toFixed(1)}h seit letztem Versand (< 24h)`);
+      const logLines = String(r.mail_log || "").split("\n").filter(l => /Detailabfrage/.test(l));
+      if (logLines.length > 0) {
+        const lastLine = logLines[logLines.length - 1];
+        const tsMatch = lastLine.match(/^(\d{1,2}\.\d{1,2}\.\d{4}\s+\d{1,2}:\d{2})/);
+        const sentAt = tsMatch ? parseDEDatetime_(tsMatch[1]) : null;
+        if (sentAt) {
+          const hoursSince = (new Date() - sentAt) / (1000 * 60 * 60);
+          minGapOk = hoursSince >= 24;
+          if (!minGapOk && fidMatch) {
+            Logger.log(`  ⏭ ${r.email}: Reminder übersprungen – erst ${hoursSince.toFixed(1)}h seit letztem Versand (< 24h)`);
+          }
         }
       }
     }
@@ -977,36 +991,23 @@ Unser Crew-Briefing für alle findet <b>am ${timeCrewBriefing} im Crew Camp</b> 
       Logger.log(`   ✓ Mail gesendet`);
 
     if (!isTestRun) {
-  const newStatus   = isReminder ? DETAIL_STATUS.REMINDER : DETAIL_STATUS.SENT;
-  const now         = new Date();
-  const nowFormatted = Utilities.formatDate(now, Session.getScriptTimeZone(), "dd.MM.yyyy HH:mm");
+  const newStatus  = isReminder ? DETAIL_STATUS.REMINDER : DETAIL_STATUS.SENT;
+  const mailLabel  = isReminder ? MAIL_STATUS.DETAIL_REMINDER : MAIL_STATUS.DETAIL_SENT;
+  const rowIdx     = appData.rows.indexOf(r);
+  const rowNumber  = rowIdx + 2;
 
-  const rowIdx             = appData.rows.indexOf(r);
-  const colIdx             = appData.headerMap["detail_status"];
-  const sentAtColIdx       = appData.headerMap["detail_last_sent_at"];
-  const reminderCountColIdx = appData.headerMap["detail_reminder_count"];
+  Logger.log(`   Status-Update: rowIdx=${rowIdx} | newStatus=${newStatus} | mailLabel=${mailLabel}`);
 
-  Logger.log(`   Status-Update: rowIdx=${rowIdx} | colIdx=${colIdx} | newStatus=${newStatus}`);
-
-  if (rowIdx >= 0 && colIdx !== undefined) {
-    appSheet.getRange(rowIdx + 2, colIdx + 1).setValue(newStatus);
+  if (rowIdx >= 0) {
+    updateCell_(appSheet, appData.headerMap, rowNumber, "detail_status", newStatus);
+    updateCell_(appSheet, appData.headerMap, rowNumber, "mail_status", mailLabel);
+    const detailLogVal = appendMailLog_(appSheet, appData.headerMap, rowNumber, mailLabel);
+    updateDashboardRowByApplicationId_(festivalId, r.application_id, {
+      detail_status: newStatus,
+      mail_status: mailLabel,
+      mail_log: detailLogVal,
+    });
   }
-  if (rowIdx >= 0 && sentAtColIdx !== undefined) {
-    appSheet.getRange(rowIdx + 2, sentAtColIdx + 1).setValue(nowFormatted);
-  }
-  if (isReminder && rowIdx >= 0 && reminderCountColIdx !== undefined) {
-    const currentCount = Number(r.detail_reminder_count || 0);
-    appSheet.getRange(rowIdx + 2, reminderCountColIdx + 1).setValue(currentCount + 1);
-  }
-
-  const dashUpdate = {
-    detail_status:      newStatus,
-    detail_last_sent_at: nowFormatted,
-  };
-  if (isReminder) {
-    dashUpdate.detail_reminder_count = String(Number(r.detail_reminder_count || 0) + 1);
-  }
-  updateDashboardRowByApplicationId_(festivalId, r.application_id, dashUpdate);
 }
 
       sentOk++;
@@ -1062,10 +1063,9 @@ function buildFestivalDashboards_() {
 
   const DASH_COLUMNS = [
     "first_name", "last_name", "email", "role", "experience_count", "status",
-    "decision_note", "about", "extra_info", "mail_status", "detail_status", "contract_status", "last_info_sent", 
+    "decision_note", "about", "extra_info", "mail_status", "mail_log", "detail_status", "contract_status",
     "under_18_flag", "conflict_flag", "plus5_festivals_flag", "applied_at", "application_id",
     "hepa_vax_flag",
-    "detail_last_sent_at", "detail_reminder_count", "detail_ts",
     "detail_first_name", "detail_first_name_doc", "detail_last_name",
     "detail_last_name_birth", "detail_pronouns", "detail_birthdate",
     "detail_birthplace", "detail_birthcountry", "detail_phone",
@@ -1403,13 +1403,14 @@ function onEdit(e) {
     const colName = headers[range.getColumn() - 1];
     
     const ALLOWED = new Set([
-      "status", 
-      "decision_note", 
-      "mail_status", 
-      "detail_status", 
+      "status",
+      "decision_note",
+      "mail_status",
+      "mail_log",
+      "detail_status",
       "contract_status",
-      "first_name",         
-      "last_name", 
+      "first_name",
+      "last_name",
       "role",
       "experience_count",
       "hepa_vax_flag"
@@ -2685,6 +2686,18 @@ function updateCell_(sheet, headerMap, rowNumber, columnName, value) {
   setValueSafe_(sheet.getRange(rowNumber, colIdx + 1), value, `updateCell col=${columnName} row=${rowNumber}`);
 }
 
+function appendMailLog_(appSheet, headerMap, rowNumber, label) {
+  const colIdx = headerMap["mail_log"];
+  if (colIdx === undefined) return "";
+  const ts = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd.MM.yyyy HH:mm");
+  const entry = `${ts} ${label}`;
+  const cell = appSheet.getRange(rowNumber, colIdx + 1);
+  const existing = String(cell.getValue() || "").trim();
+  const newVal = existing ? `${existing}\n${entry}` : entry;
+  cell.setValue(newVal).setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+  return newVal;
+}
+
 function updateIfCol_(sheet, headerMap, rowNumber, columnName, value) {
   const colIdx = headerMap[columnName];
   if (colIdx === undefined) return;
@@ -3646,6 +3659,7 @@ function updateDashboardRowByApplicationId_(festivalId, applicationId, updatesOb
     if (key === "mail_status" && !allowedMail.has(String(val))) return;
 
     setValueSafe_(sh.getRange(targetRow, col), val, `dashUpdate key=${key} appId=${applicationId}`);
+    if (key === "mail_log") sh.getRange(targetRow, col).setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
   });
 
   // Zeilenhintergrund bei Statuswechsel aktualisieren
@@ -6249,7 +6263,7 @@ function sendLastInfoForFestival_({ festivalId, forceTest }) {
   const candidates = appData.rows.filter(r => {
     const fidMatch = String(r.festival_id || "").trim() === String(festivalId).trim();
     const st = normalizeStatus_(r.status);
-    const notSentYet = !String(r.last_info_sent || "").trim();
+    const notSentYet = !String(r.mail_log || "").includes(MAIL_STATUS.LAST_INFO);
     return fidMatch && (st === "akkreditiert" || st === STATUS.FRIEND) && notSentYet;
   });
 
@@ -6283,18 +6297,16 @@ if (isTestRun) {
       Logger.log(`   ✓ Mail gesendet`);
 
       if (!isTestRun) {
-        const now = new Date();
-        const nowFormatted = Utilities.formatDate(now, Session.getScriptTimeZone(), "dd.MM.yyyy HH:mm");
-
         const rowIdx = appData.rows.indexOf(r);
-        const colIdx = appData.headerMap["last_info_sent"];
-        if (rowIdx >= 0 && colIdx !== undefined) {
-          appSheet.getRange(rowIdx + 2, colIdx + 1).setValue(nowFormatted);
+        if (rowIdx >= 0) {
+          const rowNumber = rowIdx + 2;
+          updateCell_(appSheet, appData.headerMap, rowNumber, "mail_status", MAIL_STATUS.LAST_INFO);
+          const lastInfoLogVal = appendMailLog_(appSheet, appData.headerMap, rowNumber, MAIL_STATUS.LAST_INFO);
+          updateDashboardRowByApplicationId_(festivalId, r.application_id, {
+            mail_status: MAIL_STATUS.LAST_INFO,
+            mail_log: lastInfoLogVal,
+          });
         }
-
-        updateDashboardRowByApplicationId_(festivalId, r.application_id, {
-          last_info_sent: nowFormatted,
-        });
       }
 
       sentOk++;
@@ -7055,7 +7067,7 @@ function _getNewbieBriefingConfig_(festivalName) {
 
 /**
  * Parst deutsches Datums-Zeitformat "dd.MM.yyyy HH:mm" in ein Date-Objekt.
- * Wird z.B. für detail_last_sent_at verwendet.
+ * Wird z.B. für mail_log Timestamps verwendet.
  */
 function parseDEDatetime_(str) {
   if (!str) return null;
