@@ -446,7 +446,7 @@ export default function FestivalPage() {
     const [{ data: festival, error }, { data: crewRaw }] = await Promise.all([
       supabase.from('festivals').select('id, name, details').eq('id', id).single(),
       supabase.from('assignments')
-        .select('id, role, detail_pronouns, detail_carpass, detail_arrival, profile:profiles(full_name, email, phone)')
+        .select('id, role, detail_pronouns, detail_carpass, detail_arrival, profile:profiles(full_name, email, phone, birthday)')
         .eq('festival_id', id)
         .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
         .order('role'),
@@ -458,6 +458,7 @@ export default function FestivalPage() {
         full_name: a.profile?.full_name,
         email: a.profile?.email,
         phone: a.profile?.phone,
+        birthday: a.profile?.birthday,
         detail_pronouns: a.detail_pronouns,
         detail_carpass: a.detail_carpass,
         detail_arrival: a.detail_arrival,
@@ -2079,6 +2080,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
           festivalId={role === 'lead' ? festivalId : null}
           festivalName={festivalName}
           attendanceSubmission={attendanceSubmission}
+          details={details}
           onClose={() => setShowCrewSheet(false)}
         />
       )}
@@ -2186,7 +2188,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
 
 // ── CrewListSheet ─────────────────────────────────────────────────────────────
 
-function CrewListSheet({ crew, festivalId, festivalName, attendanceSubmission, onClose }) {
+function CrewListSheet({ crew, festivalId, festivalName, attendanceSubmission, details, onClose }) {
   return (
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 400 }} />
@@ -2217,6 +2219,7 @@ function CrewListSheet({ crew, festivalId, festivalName, attendanceSubmission, o
             festivalId={festivalId}
             festivalName={festivalName}
             attendanceSubmission={attendanceSubmission}
+            details={details}
             defaultOpen
           />
         </div>
@@ -2235,7 +2238,7 @@ const ROLLE_ORDER = ['lead', 'operator', 'supporti_plus', 'supporti', 'catering'
 // (tri-state: offen / anwesend / nicht anwesend). Jede Änderung wird sofort als
 // Entwurf gespeichert (attendance_entries), das Abschicken (→ Crew-Management)
 // ist beliebig oft möglich, auch zur Korrektur.
-function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission, defaultOpen = false }) {
+function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission, details, defaultOpen = false }) {
   const [open, setOpen]                       = useState(defaultOpen)
   const [attendance, setAttendance]           = useState({})
   const [savingIds, setSavingIds]             = useState(() => new Set())
@@ -2383,6 +2386,9 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission,
   const presentCount = Object.values(attendance).filter(v => v === true).length
   const decidedCount = Object.values(attendance).filter(v => v !== null && v !== undefined).length
 
+  const festStart = parseDeDate(details?.start_leadop)
+  const festEnd   = parseDeDate(details?.end_takedown)
+
   return (
     <div>
       {!defaultOpen && (
@@ -2450,6 +2456,11 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission,
                           {a.detail_pronouns && (
                             <span style={{ fontWeight: 400, color: 'var(--grau-text)', marginLeft: 4 }}>
                               ({a.detail_pronouns})
+                            </span>
+                          )}
+                          {a.birthday && hasBirthdayDuring(a.birthday, festStart, festEnd) && (
+                            <span style={{ fontWeight: 400, color: 'var(--grau-text)', marginLeft: 6, fontSize: 13 }}>
+                              🎂 {formatBirthdayDe(a.birthday)}
                             </span>
                           )}
                         </div>
@@ -3292,6 +3303,24 @@ function getAbreise(details, role) {
   if (role === 'lead' || role === 'operator') return details.end_leadop
   if (role === 'catering')      return details.end_kitchen
   return null
+}
+
+// Prüft ob ein Geburtstag (ISO-Date 'YYYY-MM-DD') in den Festivaltagen liegt
+function hasBirthdayDuring(birthday, start, end) {
+  if (!birthday || !start || !end) return false
+  const [yr, mo, dy] = birthday.split('-').map(Number)
+  // Festival kann Jahreswechsel überspannen → beide Jahre prüfen
+  for (const year of new Set([start.getFullYear(), end.getFullYear()])) {
+    const bd = new Date(year, mo - 1, dy)
+    if (bd >= start && bd <= end) return true
+  }
+  return false
+}
+
+function formatBirthdayDe(isoDate) {
+  if (!isoDate) return ''
+  const [year, month, day] = isoDate.split('-')
+  return `${day}.${month}.${year}`
 }
 
 function parseDeDate(str) {
