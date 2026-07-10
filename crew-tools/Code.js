@@ -3693,17 +3693,24 @@ function updateDashboardRowByApplicationId_(festivalId, applicationId, updatesOb
 /* =========================
  * AGE CHECK
  * ========================= */
+function parseFlexDate_(val) {
+  if (!val) return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  const s = String(val).trim();
+  const m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (m) return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function birthdayDuringFestival_(birthdateVal, startDate, endDate) {
-  if (!birthdateVal || !startDate || !endDate) return null;
-  const bd    = new Date(birthdateVal);
-  const start = new Date(startDate);
-  const end   = new Date(endDate);
-  if (isNaN(bd.getTime()) || isNaN(start.getTime()) || isNaN(end.getTime())) return null;
-  const bThisYear = new Date(start.getFullYear(), bd.getMonth(), bd.getDate());
-  const inRange   = bThisYear >= start && bThisYear <= end;
-  const bNextYear = new Date(start.getFullYear() + 1, bd.getMonth(), bd.getDate());
-  const inRangeNext = bNextYear >= start && bNextYear <= end;
-  if (!inRange && !inRangeNext) return null;
+  const bd    = parseFlexDate_(birthdateVal);
+  const start = parseFlexDate_(startDate);
+  const end   = parseFlexDate_(endDate);
+  if (!bd || !start || !end) return null;
+  const bThisYear   = new Date(start.getFullYear(), bd.getMonth(), bd.getDate());
+  const bNextYear   = new Date(start.getFullYear() + 1, bd.getMonth(), bd.getDate());
+  if (!(bThisYear >= start && bThisYear <= end) && !(bNextYear >= start && bNextYear <= end)) return null;
   const d = String(bd.getDate()).padStart(2, "0");
   const m = String(bd.getMonth() + 1).padStart(2, "0");
   return `${d}.${m}.${bd.getFullYear()}`;
