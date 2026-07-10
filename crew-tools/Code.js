@@ -3693,6 +3693,22 @@ function updateDashboardRowByApplicationId_(festivalId, applicationId, updatesOb
 /* =========================
  * AGE CHECK
  * ========================= */
+function birthdayDuringFestival_(birthdateVal, startDate, endDate) {
+  if (!birthdateVal || !startDate || !endDate) return null;
+  const bd    = new Date(birthdateVal);
+  const start = new Date(startDate);
+  const end   = new Date(endDate);
+  if (isNaN(bd.getTime()) || isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+  const bThisYear = new Date(start.getFullYear(), bd.getMonth(), bd.getDate());
+  const inRange   = bThisYear >= start && bThisYear <= end;
+  const bNextYear = new Date(start.getFullYear() + 1, bd.getMonth(), bd.getDate());
+  const inRangeNext = bNextYear >= start && bNextYear <= end;
+  if (!inRange && !inRangeNext) return null;
+  const d = String(bd.getDate()).padStart(2, "0");
+  const m = String(bd.getMonth() + 1).padStart(2, "0");
+  return `${d}.${m}.${bd.getFullYear()}`;
+}
+
 function isUnder18AtFestival_(birthdate, festivalDate) {
   if (!birthdate || !festivalDate) return false;
 
@@ -6558,6 +6574,19 @@ function buildCrewList_(festivalId) {
   const appData      = readSheetAsObjects_(appSheet);
   const validStatuses = ["zugesagt", "akkreditiert", "teilgenommen", "friend"];
 
+  // CREW_MASTER für Geburtstags-Fallback laden
+  const crewSheet = ss.getSheetByName(SHEETS.CREW_MASTER);
+  const crewByEmail = new Map();
+  if (crewSheet) {
+    readSheetAsObjects_(crewSheet).rows.forEach(r => {
+      const em = normEmail_(r.email);
+      if (em) crewByEmail.set(em, r);
+    });
+  }
+
+  const festStart = new Date(festCfg.start_leadop  || "");
+  const festEnd   = new Date(festCfg.end_takedown   || "");
+
   const crew = appData.rows
     .filter(r =>
       String(r.festival_id || "").trim() === festivalId &&
@@ -6636,8 +6665,12 @@ sh.setName("Crew");
       const firstName = String(r.detail_first_name || r.first_name || "").trim();
       const lastName  = String(r.detail_last_name  || r.last_name  || "").trim();
       const isFriend  = normalizeStatus_(r.status) === "friend";
+      const crewRow   = crewByEmail.get(normEmail_(r.email));
+      const bdVal     = r.detail_birthdate || (crewRow ? crewRow.birthdate : null);
+      const bdHint    = birthdayDuringFestival_(bdVal, festStart, festEnd);
+      const fullName  = [firstName, lastName].filter(Boolean).join(" ");
       return [
-        [firstName, lastName].filter(Boolean).join(" "),
+        bdHint ? `${fullName} (🎂 ${bdHint})` : fullName,
         String(r.detail_pronouns || "").trim(),
         isFriend ? "Friend" : String(r.role || "").trim(),
         String(r.detail_phone    || "").trim(),
@@ -6720,6 +6753,19 @@ function buildKitchenCrewList_(festivalId) {
   const appSheet      = ss.getSheetByName(SHEETS.APPLICATIONS);
   const appData       = readSheetAsObjects_(appSheet);
   const validStatuses = ["zugesagt", "akkreditiert", "teilgenommen"];
+
+  // CREW_MASTER für Geburtstags-Fallback laden
+  const crewSheet = ss.getSheetByName(SHEETS.CREW_MASTER);
+  const crewByEmail = new Map();
+  if (crewSheet) {
+    readSheetAsObjects_(crewSheet).rows.forEach(r => {
+      const em = normEmail_(r.email);
+      if (em) crewByEmail.set(em, r);
+    });
+  }
+
+  const festStart = new Date(festCfg.start_leadop || "");
+  const festEnd   = new Date(festCfg.end_takedown  || "");
 
   const crew = appData.rows
     .filter(r =>
@@ -6805,7 +6851,11 @@ function buildKitchenCrewList_(festivalId) {
       const food       = String(r.detail_food       || "").trim();
       const allergies  = String(r.detail_allergies  || "").trim();
       const arrival    = String(r.detail_arrival    || "").trim();
-      return [firstName, lastName, food, allergies, arrival, false];
+      const crewRow    = crewByEmail.get(normEmail_(r.email));
+      const bdVal      = r.detail_birthdate || (crewRow ? crewRow.birthdate : null);
+      const bdHint     = birthdayDuringFestival_(bdVal, festStart, festEnd);
+      const vorname    = bdHint ? `${firstName} (🎂 ${bdHint})` : firstName;
+      return [vorname, lastName, food, allergies, arrival, false];
     });
 
     sh.getRange(2, 1, rows.length, headers.length).setValues(rows);
