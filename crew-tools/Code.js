@@ -6624,8 +6624,8 @@ function buildCrewList_(festivalId) {
     });
   }
 
-  const festStart = new Date(festCfg.start_leadop  || "");
-  const festEnd   = new Date(festCfg.end_takedown   || "");
+  const festStart = parseFlexDate_(festCfg.start_leadop || festCfg.start_setup || festCfg.start_official || "");
+  const festEnd   = parseFlexDate_(festCfg.end_takedown || "");
 
   const crew = appData.rows
     .filter(r =>
