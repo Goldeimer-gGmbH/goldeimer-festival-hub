@@ -143,7 +143,6 @@ function onOpen() {
     .addItem("📋 Lead Rider generieren & speichern", "uiGenerateLeadRider")
     .addItem("🚽 Crew-Liste generieren", "uiBuildCrewList")
     .addItem("🍽️ Küchen-Liste generieren", "uiBuildKitchenCrewList")
-    .addItem("🎂 Debug: Geburtstag-Check", "uiDebugBirthday")
     .addItem("⌚️ Schichtplan erstellen/aktualisieren", "uiBuildUniversalSchichtplan")
     .addItem("📊 Schicht-Statistik neu berechnen", "uiRecalcUniversalShiftstats")
     .addItem("❌ Schichtplan-Reset", "uiResetUniversalSchichtplanLink")
@@ -3810,9 +3809,6 @@ function applyDetailStatusConditionalFormatting_(sheet, dashCols, headerRow) {
   sheet.setConditionalFormatRules(existingRules.concat(newRules));
 }
 
-function isEarlySlot_(timeStr) { return String(timeStr) === "7-10"; }
-function isLateSlot_(timeStr) { return String(timeStr) === "19-22"; }
-
 function isAdjacentTime_(timeA, timeB) {
   // adjacency only within same day
   const order = ["7-10", "10-13", "13-16", "16-19", "19-22"];
@@ -4700,53 +4696,6 @@ function dpmsCreateClient_(person) {
   return dpmsRequest_("post", "/client", { query: { companyId: DPMS.COMPANY_ID }, payload });
 }
 
-function dpmsFindOrCreateClient_(person) {
-  const existing = dpmsFindClientByEmail_(person.email);
-  if (existing && existing.clientId) return existing;
-  const created = dpmsCreateClient_(person);
-  return created;
-}
-
-// ============================
-// DPMS: create contract for client
-// ============================
-function dpmsCreateContractForClient_(clientId, title) {
-  const validUntilDate = "2026-12-31T23:59:59Z"; 
-
-  const payload = {
-    templateId: Number(DPMS.TEMPLATE_ID),
-    title: title || "Ehrenamtsvertrag Goldeimer 2026",
-    validUntil: validUntilDate,
-    isOrderProcessingContract: false,
-  };
-
-  const response = dpmsRequest_("post", `/client/${clientId}/contract`, {
-    query: { companyId: DPMS.COMPANY_ID },
-    payload,
-  });
-
-  // LOGIK-FIX: DPMS gibt das Client-Objekt zurück, der neue Vertrag ist der LETZTE im Array 'contracts'
-  if (response && response.contracts && response.contracts.length > 0) {
-    // Wir nehmen den letzten Eintrag aus dem Array (der gerade neu erstellte)
-    const newContract = response.contracts[response.contracts.length - 1];
-    const finalId = newContract.contractId;
-
-    Logger.log("Neuer Vertrag gefunden! ID: " + finalId);
-
-    return {
-      contractId: finalId,
-      shareLink: `https://app.dpms-online.de/contract/${finalId}/sign`
-    };
-  } else {
-    throw new Error("DPMS hat den Vertrag anscheinend nicht angelegt. Response: " + JSON.stringify(response));
-  }
-}
-
-function dpmsGetContract_(contractId) {
-  // DPMS: GET /contract/{contractId}?companyId=...
-  return dpmsRequest_("get", `/contract/${contractId}`, { query: { companyId: DPMS.COMPANY_ID } });
-}
-
 // ============================
 // CREW_MASTER integration
 // ============================
@@ -4765,27 +4714,6 @@ function ensureCrewMasterCols_(sh, cols) {
 
   if (changed) return readSheetAsObjects_(sh);
   return data;
-}
-
-
-function zzz_clearAllCachesAndCandidateProps() {
-  CacheService.getScriptCache().removeAll([]);
-  CacheService.getUserCache().removeAll([]);
-  CacheService.getDocumentCache().removeAll([]);
-
-  const props = PropertiesService.getScriptProperties();
-  const all = props.getProperties();
-  let removed = 0;
-
-  Object.keys(all).forEach(k => {
-    if (k.toLowerCase().includes("candidate") || k.toLowerCase().includes("candidates")) {
-      props.deleteProperty(k);
-      removed++;
-    }
-  });
-
-  Logger.log("Removed candidate-related props: " + removed);
-  Logger.log("Done.");
 }
 
 
@@ -5244,26 +5172,6 @@ function updateInternalWebsiteData() {
   toast_("WEBSITE_DATA wurde mit Daten aus Spalte H (end_takedown) aktualisiert.");
 }
 
-
-function testDpmsConnection() {
-  try {
-    // Wir versuchen einfach nur, die Liste der Kunden zu laden (kleinster Request)
-    const response = dpmsRequest_("get", "/client", { query: { companyId: DPMS.COMPANY_ID } });
-    
-    Logger.log("✅ Verbindung erfolgreich!");
-    Logger.log("Anzahl gefundener Clients: " + (response ? response.length : 0));
-    
-    if (response && response.length > 0) {
-      Logger.log("Beispiel-Client: " + response[0].name);
-    }
-    
-    SpreadsheetApp.getUi().alert("DPMS Verbindung steht! ✅");
-    
-  } catch (e) {
-    Logger.log("❌ Fehler bei der Verbindung: " + e.message);
-    SpreadsheetApp.getUi().alert("Fehler: " + e.message);
-  }
-}
 
 // ==========================================
 // 3. AUTOMATISCHER STATUS-SYNC (POLLING) - MIT JAHRES-CHECK
@@ -6226,52 +6134,6 @@ function uiSendLastInfoTest() {
  * loggt den relevanten Abschnitt des htmlBody und öffnet ihn als Google Doc.
  * Damit kann man exakt sehen, was vor GmailApp.sendEmail ankommt.
  */
-function uiDebugLastInfoHtml() {
-  const festivalId = getActiveFestivalIdOrPrompt_();
-  if (!festivalId) return;
-
-  const ss = SpreadsheetApp.getActive();
-  const appSheet = ss.getSheetByName(SHEETS.APPLICATIONS);
-  if (!appSheet) { toast_("APPLICATIONS Sheet fehlt"); return; }
-
-  const appData = readSheetAsObjects_(appSheet);
-  const sample = appData.rows.find(r =>
-    String(r.festival_id || "").trim() === String(festivalId).trim() &&
-    normalizeStatus_(r.status) === "akkreditiert"
-  );
-
-  if (!sample) { toast_("Keine akkreditierte Person für dieses Festival gefunden."); return; }
-
-  Logger.log(`Debug-Person: ${sample.email} | Festival: ${festivalId}`);
-
-  const vars = buildVars_(sample);
-  Logger.log("=== CONFIG-VARIABLEN (vor render) ===");
-  ["INFOMAIL_WOHIN", "INFOMAIL_TICKET", "INFOMAIL_VERPFLEGUNG", "INFOMAIL_SONSTIGES"].forEach(k => {
-    Logger.log(`  ${k} = ${String(vars[k] || "(leer)").substring(0, 300)}`);
-  });
-
-  const template = getTemplate_("LAST_INFO", { allowInactive: true });
-  const htmlBody = render_(template.body_html, vars);
-
-  Logger.log("=== HTMLBODY SNIPPET (erste 3000 Zeichen) ===");
-  Logger.log(htmlBody.substring(0, 3000));
-
-  // Prüfe ob HTML-Tags aus CONFIG-Variablen im Ergebnis vorhanden sind
-  const hasBold = /<b>|<strong>|font-weight/.test(htmlBody);
-  const hasColor = /color\s*:/.test(htmlBody);
-  Logger.log(`=== DIAGNOSE: <b>/<strong> im htmlBody vorhanden? ${hasBold} | color-Style? ${hasColor} ===`);
-
-  // htmlBody in Google Doc speichern für einfache Ansicht
-  try {
-    const doc = DocumentApp.create(`[DEBUG] Last-Info HTML – ${festivalId} – ${new Date().toISOString().slice(0,10)}`);
-    doc.getBody().setText(htmlBody);
-    doc.saveAndClose();
-    Logger.log(`Debug-Doc: ${doc.getUrl()}`);
-    toast_(`Debug-Log erstellt! Doc: ${doc.getUrl()} – bitte Logger prüfen.`);
-  } catch (e) {
-    toast_(`htmlBody im Logger! ${hasBold ? "✅ Bold-Tags vorhanden" : "❌ Keine Bold-Tags"}`);
-  }
-}
 
 function uiSendLastInfoReal() {
   const festivalId = getActiveFestivalIdOrPrompt_();
@@ -6525,58 +6387,6 @@ function generateLeadRiderPdf_(festivalId) {
   copyFile.setTrashed(true);
 
   return pdfBlob;
-}
-
-function DEBUG_leadRiderTest() {
-  const festivalId = "HURR_2026"; // ← deine Festival-ID eintragen
-  try {
-    const pdfBlob = generateLeadRiderPdf_(festivalId);
-    const email = Session.getActiveUser().getEmail();
-    GmailApp.sendEmail(email, `[TEST] Lead Rider – ${festivalId}`, "Lead Rider im Anhang.", {
-      attachments: [pdfBlob],
-      name: "Goldeimer Crew Tools"
-    });
-    Logger.log("✅ PDF verschickt an " + email);
-  } catch (e) {
-    Logger.log("❌ Fehler: " + e.message);
-  }
-}
-
-function DEBUG_checkProps() {
-  const props = PropertiesService.getScriptProperties().getProperties();
-  Logger.log(JSON.stringify(props, null, 2));
-}
-
-function uiDebugBirthday() {
-  const ss       = SpreadsheetApp.getActive();
-  const festData = readSheetAsObjects_(ss.getSheetByName(SHEETS.FESTIVALS));
-  const appData  = readSheetAsObjects_(ss.getSheetByName(SHEETS.APPLICATIONS));
-  const crewSheet = ss.getSheetByName(SHEETS.CREW_MASTER);
-  const crewByEmail = new Map();
-  if (crewSheet) readSheetAsObjects_(crewSheet).rows.forEach(r => {
-    const em = normEmail_(r.email); if (em) crewByEmail.set(em, r);
-  });
-
-  festData.rows.forEach(festCfg => {
-    const festivalId = String(festCfg.festival_id || "").trim();
-    if (!festivalId) return;
-    const startRaw = festCfg.start_leadop;
-    const endRaw   = festCfg.end_takedown;
-    const start    = parseFlexDate_(festCfg.start_leadop || festCfg.start_setup || festCfg.start_official || "");
-    const end      = parseFlexDate_(endRaw);
-    Logger.log(`=== ${festivalId}: start=${start} end=${end}`);
-
-    appData.rows
-      .filter(r => String(r.festival_id || "").trim() === festivalId)
-      .forEach(r => {
-        const em      = normEmail_(r.email);
-        const crewRow = crewByEmail.get(em);
-        const bdVal   = r.detail_birthdate || (crewRow ? crewRow.birthdate : null);
-        if (!bdVal) return;
-        const hint = birthdayDuringFestival_(bdVal, start, end);
-        Logger.log(`  ${r.first_name} ${r.last_name}: bd="${bdVal}" (${typeof bdVal}) → hint=${hint}`);
-      });
-  });
 }
 
 function uiBuildCrewList() {
