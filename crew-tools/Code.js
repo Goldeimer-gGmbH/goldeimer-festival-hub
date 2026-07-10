@@ -143,6 +143,7 @@ function onOpen() {
     .addItem("📋 Lead Rider generieren & speichern", "uiGenerateLeadRider")
     .addItem("🚽 Crew-Liste generieren", "uiBuildCrewList")
     .addItem("🍽️ Küchen-Liste generieren", "uiBuildKitchenCrewList")
+    .addItem("🎂 Debug: Geburtstag-Check", "uiDebugBirthday")
     .addItem("⌚️ Schichtplan erstellen/aktualisieren", "uiBuildUniversalSchichtplan")
     .addItem("📊 Schicht-Statistik neu berechnen", "uiRecalcUniversalShiftstats")
     .addItem("❌ Schichtplan-Reset", "uiResetUniversalSchichtplanLink")
@@ -6543,6 +6544,44 @@ function DEBUG_leadRiderTest() {
 function DEBUG_checkProps() {
   const props = PropertiesService.getScriptProperties().getProperties();
   Logger.log(JSON.stringify(props, null, 2));
+}
+
+function uiDebugBirthday() {
+  const festivalId = getActiveFestivalIdOrPrompt_();
+  if (!festivalId) return;
+
+  const ss       = SpreadsheetApp.getActive();
+  const festData = readSheetAsObjects_(ss.getSheetByName(SHEETS.FESTIVALS));
+  const festCfg  = festData.rows.find(r => String(r.festival_id || "").trim() === festivalId);
+  if (!festCfg) { Logger.log("Festival nicht gefunden"); return; }
+
+  const startRaw = festCfg.start_leadop;
+  const endRaw   = festCfg.end_takedown;
+  const start    = parseFlexDate_(startRaw);
+  const end      = parseFlexDate_(endRaw);
+  Logger.log(`Festival: ${festivalId}`);
+  Logger.log(`start_leadop raw: ${startRaw} (${typeof startRaw}) → parsed: ${start}`);
+  Logger.log(`end_takedown  raw: ${endRaw} (${typeof endRaw}) → parsed: ${end}`);
+
+  const appData = readSheetAsObjects_(ss.getSheetByName(SHEETS.APPLICATIONS));
+  const crewSheet = ss.getSheetByName(SHEETS.CREW_MASTER);
+  const crewByEmail = new Map();
+  if (crewSheet) readSheetAsObjects_(crewSheet).rows.forEach(r => {
+    const em = normEmail_(r.email); if (em) crewByEmail.set(em, r);
+  });
+
+  appData.rows
+    .filter(r => String(r.festival_id || "").trim() === festivalId)
+    .slice(0, 20)
+    .forEach(r => {
+      const em      = normEmail_(r.email);
+      const crewRow = crewByEmail.get(em);
+      const bdVal   = r.detail_birthdate || (crewRow ? crewRow.birthdate : null);
+      const hint    = birthdayDuringFestival_(bdVal, start, end);
+      if (bdVal) Logger.log(`${r.first_name} ${r.last_name}: bdVal="${bdVal}" (${typeof bdVal}) → hint=${hint}`);
+    });
+
+  toast_("Debug fertig – bitte Logs öffnen (Ausführungen → Protokolle)");
 }
 
 function uiBuildCrewList() {
