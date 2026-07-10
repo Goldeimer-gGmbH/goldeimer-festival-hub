@@ -3698,7 +3698,8 @@ function parseFlexDate_(val) {
   if (!val) return null;
   if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
   const s = String(val).trim();
-  const m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  // Extrahiert DD.MM.YYYY auch aus Strings mit Zusatztext wie "28.07.2026 abends"
+  const m = s.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
   if (m) return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
   const d = new Date(s);
   return isNaN(d.getTime()) ? null : d;
@@ -6563,9 +6564,6 @@ function uiDebugBirthday() {
     const endRaw   = festCfg.end_takedown;
     const start    = parseFlexDate_(festCfg.start_leadop || festCfg.start_setup || festCfg.start_official || "");
     const end      = parseFlexDate_(endRaw);
-    if (festivalId === "APPLE_2026") {
-      Logger.log(`APPLE_2026 alle Felder: ${JSON.stringify(Object.keys(festCfg).filter(k => k.includes("start") || k.includes("end") || k.includes("date")).map(k => `${k}=${festCfg[k]}`))}`);
-    }
     Logger.log(`=== ${festivalId}: start=${start} end=${end}`);
 
     appData.rows
