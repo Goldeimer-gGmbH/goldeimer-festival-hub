@@ -6561,8 +6561,11 @@ function uiDebugBirthday() {
     if (!festivalId) return;
     const startRaw = festCfg.start_leadop;
     const endRaw   = festCfg.end_takedown;
-    const start    = parseFlexDate_(startRaw);
+    const start    = parseFlexDate_(festCfg.start_leadop || festCfg.start_setup || festCfg.start_official || "");
     const end      = parseFlexDate_(endRaw);
+    if (festivalId === "APPLE_2026") {
+      Logger.log(`APPLE_2026 alle Felder: ${JSON.stringify(Object.keys(festCfg).filter(k => k.includes("start") || k.includes("end") || k.includes("date")).map(k => `${k}=${festCfg[k]}`))}`);
+    }
     Logger.log(`=== ${festivalId}: start=${start} end=${end}`);
 
     appData.rows
