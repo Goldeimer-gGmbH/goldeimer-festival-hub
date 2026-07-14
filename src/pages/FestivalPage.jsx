@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
 import { cacheGet, cacheSet, cacheClear } from '../lib/cache'
 import { fetchWithTimeout } from '../lib/fetchWithTimeout'
+import { HUB_ADMIN_EMAILS } from '../lib/admins'
 import {
   IconAblauf, IconInfos, IconKontakte,
   IconKalender, IconTransport, IconOrderbird, IconStift, IconLupe,
@@ -196,6 +197,52 @@ const CONTENT_LETZTER_TAG = [
   { text: 'Abbau' },
 ]
 
+// ── Supporti-spezifische Ablauf-Inhalte ───────────────────────────────────────
+
+const PUTZEN_STEPS = [
+  { n: 1,   text: 'Handschuhe an! Wichtig!' },
+  { n: 2,   text: 'Zum Putzen brauchst du Flächendesinfektionsmittel – meist in blauen Sprühflaschen – und einen Handfeger.' },
+  { tip: true, text: 'Nimm dir ein Stück Kreide aus dem Koffer mit, um auf den Treppen zu markieren, welche Kabine du schon geputzt hast.' },
+  { n: 3,   text: 'Beim Reingehen in die Kabine kannst du direkt den Türgriff desinfizieren, damit das gut einwirken kann.' },
+  { n: 4,   text: 'Jetzt heißt\'s: Fegen! Erstmal die Kabine von Einstreu befreien. Smart ist, wenn du von oben nach unten fegst – also erst die Sitzplatte, dann den Boden.' },
+  { n: 5,   text: 'Als nächstes sprühst du die Oberflächen mit Desi ein, um sie dann mit Klopapier sauber zu wischen. Auch hier am besten erst einmal die Klobrille komplett einsprühen, damit das Desi gut einwirken kann.' },
+  { n: 6,   text: 'Dann Sitzplatte desinfizieren und abwischen, die Klobrille gründlich oben und auch unterhalb sauber machen.' },
+  { n: 7,   text: 'Achte darauf, dass du nicht direkt in die Tonne sprühst – möglichst keine Chemie in die Toilette.' },
+  { n: 8,   text: 'Das Klopapier auch nicht ins Klo werfen, sondern immer in den Mülleimer!' },
+  { tip: true, text: 'Wenn der Spritzschutz unter der Klobrille hinten vollgekackt ist, dreh ihn um 180 Grad – dann wird er sauber gepinkelt!' },
+  { n: 9,   text: 'Wisch zum Schluss gern nochmal über den Mülleimer und den Türgriff.' },
+  { n: 10,  text: 'Für das Extra-Sternchen fegst du beim Rausgehen noch kurz die Treppe, wenn hier viel Streu liegt. Und fertig!' },
+]
+
+const CONTENT_SUPPORTI_TAG1 = [
+  {
+    title: 'Wichtige Zeiten',
+    bullets: [
+      '10 Uhr: Campingplatz- und Goldeimer-Öffnung',
+      '15 Uhr: Welcome Meeting mit Newbies',
+      '16 Uhr: Erste Supporti-Schichten',
+      '23 Uhr: Crew Briefing',
+    ],
+  },
+  { title: 'Erste Schichten' },
+  { type: 'putzen_button' },
+]
+
+const CONTENT_SUPPORTI_MITTE = [
+  { type: 'putzen_button' },
+  { type: 'preise' },
+]
+
+const CONTENT_SUPPORTI_VORLETZTER = [
+  { type: 'putzen_button' },
+  { type: 'preise', withWarning: true },
+]
+
+const CONTENT_SUPPORTI_LETZTER = [
+  { type: 'preise', withWarning: true },
+  { type: 'danke_text' },
+]
+
 // Erzeugt die Tages-Liste dynamisch aus den Festival-Datumfeldern
 function generateAblaufDays(details, role, festivalName) {
   const days = []
@@ -269,19 +316,31 @@ function generateAblaufDays(details, role, festivalName) {
 
       let type, label, todo, content
 
-      if (i === 0) {
-        type = 'tag1'; todo = 'Betriebsstart'; content = CONTENT_TAG1
-      } else if (i === totalDays - 1) {
-        type = 'letzter'; todo = 'Abreise & Abbau'; content = CONTENT_LETZTER_TAG
-      } else if (totalDays > 2 && i === totalDays - 2) {
-        type = 'vorletzter'; todo = 'Regelbetrieb vorletzter Tag'; content = CONTENT_VORLETZTER_TAG
-      } else if (i === 1) {
-        type = 'tag2'; todo = 'Regelbetrieb'; content = CONTENT_TAG2
+      if (role === 'supporti') {
+        if (i === 0) {
+          type = 'tag1_supp'; todo = 'Anreise & 1. Tag'; content = CONTENT_SUPPORTI_TAG1
+        } else if (i === totalDays - 1) {
+          type = 'letzter_supp'; todo = 'Letzte Schicht & Abreise'; content = CONTENT_SUPPORTI_LETZTER
+        } else if (totalDays > 2 && i === totalDays - 2) {
+          type = 'vorletzter_supp'; todo = 'Regelbetrieb vorletzter Tag'; content = CONTENT_SUPPORTI_VORLETZTER
+        } else {
+          type = 'mitte_supp'; todo = 'Regelbetrieb'; content = CONTENT_SUPPORTI_MITTE
+        }
+        label = i === 0 ? 'Anreisetag' : i === totalDays - 1 ? 'Letzter Tag' : `Goldeimer-Tag ${i + 1}`
       } else {
-        type = 'mitte'; todo = 'Regelbetrieb'; content = CONTENT_TAG_MITTE
+        if (i === 0) {
+          type = 'tag1'; todo = 'Betriebsstart'; content = CONTENT_TAG1
+        } else if (i === totalDays - 1) {
+          type = 'letzter'; todo = 'Abreise & Abbau'; content = CONTENT_LETZTER_TAG
+        } else if (totalDays > 2 && i === totalDays - 2) {
+          type = 'vorletzter'; todo = 'Regelbetrieb vorletzter Tag'; content = CONTENT_VORLETZTER_TAG
+        } else if (i === 1) {
+          type = 'tag2'; todo = 'Regelbetrieb'; content = CONTENT_TAG2
+        } else {
+          type = 'mitte'; todo = 'Regelbetrieb'; content = CONTENT_TAG_MITTE
+        }
+        label = i === totalDays - 1 ? 'Abreisetag' : `Goldeimer-Tag ${i + 1}`
       }
-
-      label = i === totalDays - 1 ? 'Abreisetag' : `Goldeimer-Tag ${i + 1}`
 
       days.push({ type, label, date: dateStr, todo, content })
     }
@@ -297,6 +356,7 @@ export default function FestivalPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const { profile, signOut } = useAuth()
+  const isHubAdmin = HUB_ADMIN_EMAILS.includes(profile?.email)
   const [data, setData]           = useState(null)
   const [loading, setLoading]     = useState(true)
   const [fetchError, setFetchError] = useState(false)
@@ -315,7 +375,7 @@ export default function FestivalPage() {
 
   async function loadFestivalInfo(retryCount = 0) {
     setFetchError(false); setAuthError(false); setNotFound(false); setDebugMsg('')
-    const cacheKey = `festival_v3_${id}`
+    const cacheKey = `festival_v4_${id}`
     const cached = cacheGet(cacheKey)
 
     // Nur gültigen Cache verwenden — Responses mit error-Key nie cachen/anzeigen.
@@ -358,14 +418,18 @@ export default function FestivalPage() {
         }
       } else if (rpcData?.error) {
         // Hub-Admin ohne persönliches Assignment → Admin-RPC als Fallback
-        if (rpcData.error === 'No assignment found' && profile?.hub_admin) {
+        if (rpcData.error === 'No assignment found' && isHubAdmin) {
           await loadAdminFallback(id, cacheKey, validCached)
         } else if (!validCached) {
           setDebugMsg(`rpc: ${String(rpcData.error)}`)
           setFetchError(true)
         }
       } else if (!rpcData && !validCached) {
-        setNotFound(true)
+        if (isHubAdmin) {
+          await loadAdminFallback(id, cacheKey, validCached)
+        } else {
+          setNotFound(true)
+        }
       }
     } catch (e) {
       if (!validCached) {
@@ -433,9 +497,9 @@ export default function FestivalPage() {
   const festivalName = data.festival?.name || ''
 
   const tabs = [
-    { key: 'ablauf',   label: 'Ablauf',          Icon: TabIconAblauf },
-    { key: 'infos',    label: 'Infos & Kontakte', Icon: TabIconInfos },
-    { key: 'kontakte', label: 'Crew',             Icon: TabIconKontakte },
+    { key: 'ablauf',   label: 'Ablauf',                                      Icon: TabIconAblauf },
+    { key: 'infos',    label: role === 'supporti' ? 'Infos' : 'Infos & Kontakte', Icon: TabIconInfos },
+    { key: 'kontakte', label: 'Crew',                                         Icon: TabIconKontakte },
   ]
 
   return (
@@ -579,7 +643,7 @@ export default function FestivalPage() {
 function AblaufTab({ role, festivalId, profileId, checklists, festivalName, details, crew }) {
   const [openDayIdx, setOpenDayIdx] = useState(-1)
 
-  const hasAblauf = role === 'lead' || role === 'operator' || role === 'supporti_plus' || role === 'catering'
+  const hasAblauf = role === 'lead' || role === 'operator' || role === 'supporti_plus' || role === 'catering' || role === 'supporti'
 
   const ablaufTitle =
     role === 'lead'          ? 'Ablauf für Leads' :
@@ -590,7 +654,12 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
 
   const days = hasAblauf ? generateAblaufDays(details, role, festivalName) : []
 
-  const wichtigeTermine = [
+  const wichtigeTermine = role === 'supporti' ? [
+    { lbl: 'Open Campingplatz / Anreise',  val: details.start_campsite || details.start_supp },
+    { lbl: 'Welcome Meeting',              val: details.time_welcome_meeting, always: true },
+    { lbl: 'Crew Briefing',               val: details.time_crew_briefing,    always: true },
+    { lbl: 'Close Campingplatz / Abreise', val: details.end_campsite || details.end_supp },
+  ].filter(t => t.val || t.always) : [
     { lbl: 'Anreise Lead & Operator', val: details.start_leadop },
     { lbl: 'Beginn Aufbau',           val: details.start_setup,         suffix: ', ab 8 Uhr' },
     { lbl: 'Open Campingplatz',       val: details.start_campsite },
@@ -639,7 +708,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
                   {t.lbl}
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--grau-text)', textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-                  {formatDateShort(t.val) || t.val}{t.suffix || ''}
+                  {t.val ? (formatDateShort(t.val) || t.val) : '–'}{t.suffix || ''}
                 </div>
               </div>
             ))}
@@ -700,6 +769,7 @@ function AblaufTab({ role, festivalId, profileId, checklists, festivalName, deta
                     crew={crew}
                     festivalId={festivalId}
                     festivalName={festivalName}
+                    details={details}
                     inAccordion
                   />
                 </div>
@@ -1260,6 +1330,66 @@ function AnleitungItem({ item, numbered, index, depth = 0 }) {
   )
 }
 
+// ── How-to-Putzen Sheet ───────────────────────────────────────────────────────
+
+function PutzenSheet({ onClose }) {
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 400 }} />
+      <div style={{
+        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: 480, background: 'var(--weiss)',
+        borderRadius: '16px 16px 0 0', zIndex: 401,
+        maxHeight: '88dvh', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px var(--sp-4)', borderBottom: '1px solid var(--border)', flexShrink: 0,
+        }}>
+          <div style={{ fontWeight: 800, fontSize: 'var(--text-base)', fontFamily: 'var(--font-heading)' }}>
+            How to Putzen
+          </div>
+          <button onClick={onClose} aria-label="Schließen" style={{
+            background: 'var(--papier)', border: 'none', borderRadius: '50%',
+            width: 32, height: 32, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, color: 'var(--schwarz)', fontWeight: 700,
+          }}>✕</button>
+        </div>
+        <div style={{ overflowY: 'auto', padding: 'var(--sp-4)', paddingBottom: 'calc(var(--sp-6) + env(safe-area-inset-bottom, 0px))' }}>
+          <p style={{ fontSize: 13, color: 'var(--grau-text)', lineHeight: 1.65, marginBottom: 16 }}>
+            Bevor es losgeht: Gute Laune Lieblingssong in die Warteschlange packen. Jetzt wird geputzt!
+          </p>
+          {PUTZEN_STEPS.map((step, i) => (
+            <div key={i} style={{ marginBottom: 12 }}>
+              {step.tip ? (
+                <div style={{
+                  background: '#FFF9D6', border: '1.5px solid var(--gelb)',
+                  borderRadius: 8, padding: '10px 12px',
+                  fontSize: 13, lineHeight: 1.6, color: 'var(--schwarz)',
+                }}>
+                  <strong>Pro-Tipp:</strong> {step.text}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <span style={{
+                    flexShrink: 0, width: 22, height: 22, borderRadius: '50%',
+                    background: 'var(--schwarz)', color: 'var(--gelb)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-heading)', marginTop: 1,
+                  }}>{step.n}</span>
+                  <span style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--schwarz)' }}>{step.text}</span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ── Aufbauanleitung Sheet ─────────────────────────────────────────────────────
 
 function AnleitungSheet({ onClose }) {
@@ -1437,10 +1567,11 @@ function RueckmeldungSheet({ festivalId, festivalName, crew, onClose }) {
 
 // ── Tages-Detailansicht ───────────────────────────────────────────────────────
 
-function AblaufDayDetail({ day, crew, festivalId, festivalName, inAccordion = false }) {
-  const [showBriefing, setShowBriefing]     = useState(false)
-  const [showAnleitung, setShowAnleitung]   = useState(false)
+function AblaufDayDetail({ day, crew, festivalId, festivalName, details, inAccordion = false }) {
+  const [showBriefing, setShowBriefing]         = useState(false)
+  const [showAnleitung, setShowAnleitung]       = useState(false)
   const [showRueckmeldung, setShowRueckmeldung] = useState(false)
+  const [showPutzen, setShowPutzen]             = useState(false)
 
   return (
     <div>
@@ -1534,6 +1665,65 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName, inAccordion = fa
             )
           }
 
+          // ── Putzen-Button ──
+          if (item.type === 'putzen_button') {
+            return (
+              <div key={i} style={{ marginBottom: 12 }}>
+                <button onClick={() => setShowPutzen(true)} className="button button--yellow button--sm" style={{ width: 'auto' }}>
+                  How to Putzen
+                </button>
+              </div>
+            )
+          }
+
+          // ── Preisänderungs-Warnung (schmale Inline-Box) ──
+          if (item.type === 'preisaenderung') {
+            return (
+              <div key={i} style={{ marginBottom: 12 }}>
+                <div style={{
+                  display: 'inline-block',
+                  background: '#fde8e3', border: '1.5px solid var(--rot)',
+                  borderRadius: 6, padding: '5px 10px',
+                  fontSize: 13, fontWeight: 700, color: 'var(--rot)', fontFamily: 'var(--font-heading)',
+                }}>
+                  Achtung Preisänderung!
+                </div>
+              </div>
+            )
+          }
+
+          // ── Preise aus Festival-Details ──
+          if (item.type === 'preise') {
+            if (!details?.goldeimer_prices) return null
+            return (
+              <div key={i} style={{ marginBottom: 12 }}>
+                <SectionHeader text="Preise" />
+                {item.withWarning && (
+                  <div style={{
+                    display: 'inline-block',
+                    background: '#fde8e3', border: '1.5px solid var(--rot)',
+                    borderRadius: 6, padding: '5px 10px', marginBottom: 6, marginTop: 2,
+                    fontSize: 13, fontWeight: 700, color: 'var(--rot)', fontFamily: 'var(--font-heading)',
+                  }}>
+                    Achtung Preisänderung!
+                  </div>
+                )}
+                <div style={{ fontSize: 13, color: 'var(--schwarz)', whiteSpace: 'pre-wrap', lineHeight: 1.6, marginTop: 4 }}>
+                  {details.goldeimer_prices}
+                </div>
+              </div>
+            )
+          }
+
+          // ── Abschluss-Text (letzter Tag Supporti) ──
+          if (item.type === 'danke_text') {
+            return (
+              <div key={i} style={{ fontSize: 14, color: 'var(--schwarz)', lineHeight: 1.65, marginBottom: 12 }}>
+                Danke für euer Engagement! Wir sehen uns bei der AfterShit 🎉
+              </div>
+            )
+          }
+
           // ── Sicherheitsbriefing-Item ──
           if (item.type === 'sicherheitsbriefing') {
             return (
@@ -1596,6 +1786,7 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName, inAccordion = fa
       {/* Sheets */}
       {showBriefing    && <SicherheitsbriefingSheet onClose={() => setShowBriefing(false)} />}
       {showAnleitung   && <AnleitungSheet onClose={() => setShowAnleitung(false)} />}
+      {showPutzen      && <PutzenSheet onClose={() => setShowPutzen(false)} />}
       {showRueckmeldung && festivalId && (
         <RueckmeldungSheet
           festivalId={festivalId}
@@ -1704,100 +1895,50 @@ const ROLLE_LABEL_KONTAKT = { lead: 'Lead', operator: 'Operator' }
 
 // Telefonnummer aus einem Freitext extrahieren und als klickbaren Link rendern.
 // Alles andere wird als normaler Text angezeigt.
-function PhoneText({ text }) {
+function ContactText({ text }) {
   if (!text) return null
-  // Matcht gängige Nummernformate: +49..., 0..., mit Leerzeichen/Bindestrichen
-  const phoneRegex = /(\+?[\d][\d\s\-/]{6,}[\d])/g
-  const parts = []
-  let last = 0
-  let match
-  while ((match = phoneRegex.exec(text)) !== null) {
-    if (match.index > last) parts.push(text.slice(last, match.index))
-    const raw = match[1].replace(/[\s\-/]/g, '')
-    parts.push(
-      <a key={match.index} href={`tel:${raw}`}
-        style={{ color: 'var(--schwarz)', fontWeight: 700, textDecoration: 'underline' }}>
-        {match[1]}
-      </a>
-    )
-    last = match.index + match[0].length
-  }
-  if (last < text.length) parts.push(text.slice(last))
-  return <span>{parts}</span>
-}
-
-// Parst Freitext in einzelne Personen-Karten.
-// Neue Person beginnt wenn:
-//   (a) eine reine Namenszeile nach Telefonnummern kommt, ODER
-//   (b) eine Zeile Name+Nummer enthält UND wir bereits eine Nummer haben
-//       (= jede "Name + Nummer auf einer Zeile" ist immer eine eigene Person)
-// So können mehrere Nummern zu einer Person (reiner Nummernblock) trotzdem
-// in einer Karte landen.
-function PersonBlocks({ value }) {
-  if (!value) return null
   const phoneRegex = /(\+?[\d][\d\s\-/]{6,}[\d])/
-
-  const lines = value.split('\n').map(l => l.trim()).filter(Boolean)
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
   const persons = []
   let current = { nameLines: [], phones: [] }
-
   lines.forEach(line => {
     const match = line.match(phoneRegex)
     if (match) {
       const before = line.slice(0, match.index).trim()
-      // Hat die Zeile einen Namen VOR der Nummer UND wir haben schon eine Nummer
-      // → das ist eine neue Person (z.B. "Mona Lisa +49..." nach "Shia LaBoef +49...")
-      if (before && current.phones.length > 0) {
-        persons.push(current)
-        current = { nameLines: [], phones: [] }
-      }
+      if (before && current.phones.length > 0) { persons.push(current); current = { nameLines: [], phones: [] } }
       if (before) current.nameLines.push(before)
       current.phones.push(match[1])
     } else {
-      // Reine Namenszeile — nach Nummern startet immer eine neue Person
-      if (current.phones.length > 0) {
-        persons.push(current)
-        current = { nameLines: [], phones: [] }
-      }
+      if (current.phones.length > 0) { persons.push(current); current = { nameLines: [], phones: [] } }
       current.nameLines.push(line)
     }
   })
-  if (current.nameLines.length > 0 || current.phones.length > 0) {
-    persons.push(current)
-  }
-
+  if (current.nameLines.length > 0 || current.phones.length > 0) persons.push(current)
   return (
-    <>
-      {persons.map((person, i) => {
-        const name = person.nameLines.join(' ')
-        return (
-          <div key={i} className="card" style={{ marginBottom: 8 }}>
-            {name && (
-              <h4 className="card-title" style={{ margin: 0, marginBottom: person.phones.length ? 8 : 0 }}>
-                {name}
-              </h4>
-            )}
-            {person.phones.map((phone, j) => (
-              <a key={j} href={`tel:${phone.replace(/[\s\-/]/g, '')}`}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  background: 'var(--schwarz)', color: 'var(--weiss)',
-                  padding: '8px 14px', borderRadius: 8,
-                  fontSize: 13, fontWeight: 700, textDecoration: 'none',
-                  marginRight: 6, marginTop: 4,
-                }}>
-                <IconTelefon size={15} /> {phone}
-              </a>
-            ))}
-          </div>
-        )
-      })}
-    </>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {persons.map((person, i) => (
+        <div key={i}>
+          {person.nameLines.length > 0 && (
+            <div style={{ fontSize: 14, color: 'var(--schwarz)', lineHeight: 1.5 }}>
+              {person.nameLines.join(' ')}
+            </div>
+          )}
+          {person.phones.map((phone, j) => (
+            <a key={j} href={`tel:${phone.replace(/[\s\-/]/g, '')}`}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
+                fontSize: 13, color: 'var(--grau-text)', textDecoration: 'none', marginTop: 2 }}>
+              <IconTelefon size={12} /> {phone}
+            </a>
+          ))}
+        </div>
+      ))}
+    </div>
   )
 }
 
 function KontakteTab({ details, role, festivalName, crew, festivalId, attendanceSubmission }) {
-  const isLeadOp = role === 'lead' || role === 'operator'
+  const isLeadOp   = role === 'lead' || role === 'operator'
+  const isSupporti = role === 'supporti'
   const [showCrewSheet, setShowCrewSheet] = useState(false)
 
   const crewLoaded  = Array.isArray(crew)
@@ -1809,18 +1950,20 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
   const opCrew       = sortedCrew.filter(m => m.role === 'operator')
   const suppPlusCrew = sortedCrew.filter(m => m.role === 'supporti_plus')
 
-  const lbl      = { fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', marginBottom: 4 }
+  const lbl      = { margin: 0, fontSize: 'var(--text-h4)', color: 'var(--schwarz)', marginBottom: 4 }
   const val      = { fontSize: 14, fontWeight: 400, color: 'var(--schwarz)' }
   const valMulti = { fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--schwarz)' }
 
-  const hasCrewSection = leadCrew.length > 0 || opCrew.length > 0 || suppPlusCrew.length > 0 ||
-    details.crew_care || details.social_media_fotos || details.crew_sonstiges
+  const hasCrewSection = isSupporti || leadCrew.length > 0 || opCrew.length > 0 ||
+    (!isSupporti && suppPlusCrew.length > 0) ||
+    details.crew_care ||
+    (!isSupporti && (details.social_media_fotos || details.crew_sonstiges))
 
   // NUR Telegram-Links – shift_table_link kommt in die eigene Crew-Sektion
   const hasTelegramButtons = details.telegram_link || details.telegram_op_link
 
-  // Crew-Sektion: Schichtplan und/oder Crew-Liste (Lead/Op)
-  const hasCrewCard = details.shift_table_link || (isLeadOp && crewLoaded)
+  // Crew-Sektion: für Leads/Ops immer anzeigen (ggf. mit Placeholder)
+  const hasCrewCard = isSupporti || details.shift_table_link || isLeadOp
 
   return (
     <div>
@@ -1832,7 +1975,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
             <ul className="info-list">
               <li>
                 <div>
-                  <div style={lbl}>Telegram-Gruppe(n)</div>
+                  <h4 style={lbl}>Telegram-Gruppe(n)</h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6, alignItems: 'flex-start' }}>
                     {details.telegram_link && (
                       <a
@@ -1866,36 +2009,44 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
           <h3 className="section-title">Crew</h3>
           <div className="card">
             <ul className="info-list">
-              {details.shift_table_link && (
+              {(details.shift_table_link || isSupporti) && (
                 <li>
                   <div>
-                    <div style={lbl}>Schichtplan</div>
-                    <div style={{ marginTop: 6 }}>
-                      <a
-                        href={details.shift_table_link}
-                        target="_blank" rel="noopener noreferrer"
-                        className="button button--yellow button--sm"
-                        style={{ textDecoration: 'none', width: 'auto' }}
-                      >
-                        Schichtplan öffnen
-                      </a>
-                    </div>
+                    <h4 style={lbl}>Schichtplan</h4>
+                    {details.shift_table_link ? (
+                      <div style={{ marginTop: 6 }}>
+                        <a
+                          href={details.shift_table_link}
+                          target="_blank" rel="noopener noreferrer"
+                          className="button button--yellow button--sm"
+                          style={{ textDecoration: 'none', width: 'auto' }}
+                        >
+                          Schichtplan öffnen
+                        </a>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2 }}>Wird noch bekannt gegeben</div>
+                    )}
                   </div>
                 </li>
               )}
-              {isLeadOp && crewLoaded && (
+              {isLeadOp && (
                 <li>
                   <div>
-                    <div style={lbl}>Crew-Liste</div>
-                    <div style={{ marginTop: 6 }}>
-                      <button
-                        onClick={() => setShowCrewSheet(true)}
-                        className="button button--sm"
-                        style={{ border: 'none', cursor: 'pointer' }}
-                      >
-                        Crew-Liste öffnen & Anwesenheit feedbacken
-                      </button>
-                    </div>
+                    <h4 style={lbl}>Crew-Liste</h4>
+                    {crewLoaded ? (
+                      <div style={{ marginTop: 6 }}>
+                        <button
+                          onClick={() => setShowCrewSheet(true)}
+                          className="button button--sm"
+                          style={{ border: 'none', cursor: 'pointer' }}
+                        >
+                          Crew-Liste & Anwesenheit feedbacken
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2 }}>Wird noch bekannt gegeben</div>
+                    )}
                   </div>
                 </li>
               )}
@@ -1904,57 +2055,100 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
         </>
       )}
 
+      {/* CREW-LISTE SHEET */}
+      {showCrewSheet && (
+        <CrewListSheet
+          crew={sortedCrew}
+          festivalId={role === 'lead' ? festivalId : null}
+          festivalName={festivalName}
+          attendanceSubmission={attendanceSubmission}
+          details={details}
+          onClose={() => setShowCrewSheet(false)}
+        />
+      )}
+
       {/* [3] SPECIAL CREW (Lead/Op/Supporti+/crew_care etc.) */}
       {hasCrewSection && (
         <>
           <h3 className="section-title">Special Crew</h3>
           <div className="card">
             <ul className="info-list">
-              {leadCrew.length > 0 && (
+              {(leadCrew.length > 0 || isSupporti) && (
                 <li>
                   <div>
-                    <div style={lbl}>Lead</div>
-                    {leadCrew.map((m, i) => (
-                      <p key={i}>{m.full_name}</p>
-                    ))}
+                    <h4 style={lbl}>Lead</h4>
+                    {leadCrew.length > 0 ? leadCrew.map((m, i) => (
+                      <div key={i} style={{ marginTop: i === 0 ? 2 : 6 }}>
+                        <div style={{ fontSize: 14, color: 'var(--schwarz)' }}>{m.full_name}</div>
+                        {m.phone && (
+                          <a href={`tel:${m.phone.replace(/[\s\-/]/g, '')}`}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
+                              fontSize: 13, color: 'var(--grau-text)', textDecoration: 'none', marginTop: 2 }}>
+                            <IconTelefon size={12} /> {m.phone}
+                          </a>
+                        )}
+                      </div>
+                    )) : (
+                      <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2 }}>Wird noch bekannt gegeben</div>
+                    )}
                   </div>
                 </li>
               )}
-              {opCrew.length > 0 && (
+              {(opCrew.length > 0 || isSupporti) && (
                 <li>
                   <div>
-                    <div style={lbl}>Operator</div>
-                    {opCrew.map((m, i) => (
-                      <p key={i}>{m.full_name}</p>
-                    ))}
+                    <h4 style={lbl}>Operator</h4>
+                    {opCrew.length > 0 ? opCrew.map((m, i) => (
+                      <div key={i} style={{ marginTop: i === 0 ? 2 : 6 }}>
+                        <div style={{ fontSize: 14, color: 'var(--schwarz)' }}>{m.full_name}</div>
+                        {m.phone && (
+                          <a href={`tel:${m.phone.replace(/[\s\-/]/g, '')}`}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
+                              fontSize: 13, color: 'var(--grau-text)', textDecoration: 'none', marginTop: 2 }}>
+                            <IconTelefon size={12} /> {m.phone}
+                          </a>
+                        )}
+                      </div>
+                    )) : (
+                      <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2 }}>Wird noch bekannt gegeben</div>
+                    )}
                   </div>
                 </li>
               )}
-              {suppPlusCrew.length > 0 && (
+              {!isSupporti && suppPlusCrew.length > 0 && (
                 <li>
                   <div>
-                    <div style={lbl}>Supporti+</div>
+                    <h4 style={lbl}>Supporti+</h4>
                     {suppPlusCrew.map((m, i) => (
                       <p key={i}>{m.full_name}</p>
                     ))}
                   </div>
                 </li>
               )}
-              {details.crew_care && (
+              {(details.crew_care || isSupporti) && (
                 <li><div>
-                  <div style={lbl}>Crew Care</div>
-                  <div style={valMulti}><PhoneText text={details.crew_care} /></div>
+                  <h4 style={lbl}>Crew Care</h4>
+                  {details.crew_care
+                    ? <div style={valMulti}><ContactText text={details.crew_care} /></div>
+                    : <div style={{ fontSize: 13, color: 'var(--grau-text)', marginTop: 2 }}>Wird noch bekannt gegeben</div>
+                  }
                 </div></li>
               )}
-              {details.social_media_fotos && (
+              {!isSupporti && details.social_media_fotos && (
                 <li><div>
-                  <div style={lbl}>Social Media / Fotos</div>
-                  <div style={valMulti}><PhoneText text={details.social_media_fotos} /></div>
+                  <h4 style={lbl}>Social Media / Fotos</h4>
+                  <div style={valMulti}><ContactText text={details.social_media_fotos} /></div>
                 </div></li>
               )}
-              {details.crew_sonstiges && (
+              {!isSupporti && details.vca_crew && (
                 <li><div>
-                  <div style={lbl}>Sonstiges</div>
+                  <h4 style={lbl}>VCA Crew</h4>
+                  <div style={valMulti}><ContactText text={details.vca_crew} /></div>
+                </div></li>
+              )}
+              {!isSupporti && details.crew_sonstiges && (
+                <li><div>
+                  <h4 style={lbl}>Sonstiges</h4>
                   <div style={valMulti}>{details.crew_sonstiges}</div>
                 </div></li>
               )}
@@ -1970,23 +2164,13 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
         </div>
       )}
 
-      {/* [4] CREW-LISTE BOTTOM SHEET */}
-      {showCrewSheet && (
-        <CrewListSheet
-          crew={sortedCrew}
-          festivalId={role === 'lead' ? festivalId : null}
-          festivalName={festivalName}
-          attendanceSubmission={attendanceSubmission}
-          onClose={() => setShowCrewSheet(false)}
-        />
-      )}
     </div>
   )
 }
 
 // ── CrewListSheet ─────────────────────────────────────────────────────────────
 
-function CrewListSheet({ crew, festivalId, festivalName, attendanceSubmission, onClose }) {
+function CrewListSheet({ crew, festivalId, festivalName, attendanceSubmission, details, onClose }) {
   return (
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 400 }} />
@@ -2001,9 +2185,9 @@ function CrewListSheet({ crew, festivalId, festivalName, attendanceSubmission, o
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '14px var(--sp-4)', borderBottom: '1px solid var(--border)', flexShrink: 0,
         }}>
-          <div style={{ fontWeight: 800, fontSize: 'var(--text-base)', fontFamily: 'var(--font-heading)' }}>
+          <h3 style={{ margin: 0, fontSize: 'var(--text-h3)' }}>
             Crew-Liste
-          </div>
+          </h3>
           <button onClick={onClose} aria-label="Schließen" style={{
             background: 'var(--papier)', border: 'none', borderRadius: '50%',
             width: 32, height: 32, cursor: 'pointer',
@@ -2012,14 +2196,13 @@ function CrewListSheet({ crew, festivalId, festivalName, attendanceSubmission, o
           }}>✕</button>
         </div>
         <div style={{ overflowY: 'auto', padding: 'var(--sp-4)', paddingBottom: 'calc(var(--sp-8) + env(safe-area-inset-bottom, 0px))' }}>
-          <div style={{ marginBottom: 'var(--sp-3)', fontSize: 'var(--text-sm)', color: 'var(--grau-text)' }}>
-            {crew.length} Personen
-          </div>
           <CrewListSection
             crew={crew}
             festivalId={festivalId}
             festivalName={festivalName}
             attendanceSubmission={attendanceSubmission}
+            details={details}
+            defaultOpen
           />
         </div>
       </div>
@@ -2037,16 +2220,20 @@ const ROLLE_ORDER = ['lead', 'operator', 'supporti_plus', 'supporti', 'catering'
 // (tri-state: offen / anwesend / nicht anwesend). Jede Änderung wird sofort als
 // Entwurf gespeichert (attendance_entries), das Abschicken (→ Crew-Management)
 // ist beliebig oft möglich, auch zur Korrektur.
-function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission }) {
-  const [open, setOpen]               = useState(false)
-  const [attendance, setAttendance]   = useState({})        // assignment_id -> true | false | null
-  const [savingIds, setSavingIds]     = useState(() => new Set())
-  const [submitting, setSubmitting]   = useState(false)
-  const [submitError, setSubmitError] = useState('')
-  const [submission, setSubmission]   = useState(attendanceSubmission || null)
-  const saveTimers = useRef({})
+function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission, details, defaultOpen = false }) {
+  const [open, setOpen]                       = useState(defaultOpen)
+  const [attendance, setAttendance]           = useState({})
+  const [savingIds, setSavingIds]             = useState(() => new Set())
+  const [submitting, setSubmitting]           = useState(false)
+  const [submitError, setSubmitError]         = useState('')
+  const [submission, setSubmission]           = useState(attendanceSubmission || null)
+  const saveTimers  = useRef({})
 
-  // Anwesenheits-Stand aus dem Crew-Array initialisieren (kommt aus get_my_festival_info)
+  useEffect(() => { setSubmission(attendanceSubmission || null) }, [attendanceSubmission])
+
+  // Schnell-Initialisierung aus dem Crew-Array (kommt aus get_my_festival_info, kann gecacht sein).
+  // Wird sofort gesetzt — der Loading-Indikator blendet die Liste aus, bis die DB-Abfrage
+  // fertig ist und diesen Stand überschreibt. So gibt es einen Fallback falls der DB-Fetch scheitert.
   useEffect(() => {
     if (!crew) return
     setAttendance(prev => {
@@ -2058,11 +2245,9 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission 
     })
   }, [crew])
 
-  useEffect(() => { setSubmission(attendanceSubmission || null) }, [attendanceSubmission])
-
-  // Beim Öffnen sofort frische Daten holen (bypassed Cache), danach alle 20s
-  // wiederholen — so sieht man nach Reload immer den gespeicherten Stand, und
-  // zwei gleichzeitig abhakende Leads überschreiben sich nicht unbemerkt.
+  // Beim Öffnen sofort frische DB-Daten holen (bypassed Cache), danach alle 20s
+  // wiederholen — so sieht man immer den aktuellen Stand, auch wenn ein Kollege
+  // zwischenzeitlich Einträge gemacht hat.
   useEffect(() => {
     if (!open || !festivalId) return
     let cancelled = false
@@ -2183,15 +2368,20 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission 
   const presentCount = Object.values(attendance).filter(v => v === true).length
   const decidedCount = Object.values(attendance).filter(v => v !== null && v !== undefined).length
 
+  const festStart = parseDeDate(details?.start_leadop)
+  const festEnd   = parseDeDate(details?.end_takedown)
+
   return (
     <div>
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="button button--yellow"
-        style={{ width: '100%', marginBottom: open ? 8 : 0 }}
-      >
-        {open ? 'Crew-Liste schließen' : 'Crew-Liste anzeigen'}
-      </button>
+      {!defaultOpen && (
+        <button
+          onClick={() => setOpen(o => !o)}
+          className="button button--yellow"
+          style={{ width: '100%', marginBottom: open ? 8 : 0 }}
+        >
+          {open ? 'Crew-Liste schließen' : 'Crew-Liste anzeigen'}
+        </button>
+      )}
 
       {open && crew && (
         <div className="card">
@@ -2201,12 +2391,13 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission 
             <>
               {festivalId && (
                 <div style={{ marginBottom: 12 }}>
-                  <div style={{
+                  <h4 style={{
+                    margin: 0, marginBottom: 4,
                     fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em',
-                    color: 'var(--grau-text)', fontFamily: 'var(--font-heading)', marginBottom: 4,
+                    color: 'var(--grau-text)', fontFamily: 'var(--font-heading)',
                   }}>
                     Anwesenheit beim Festival
-                  </div>
+                  </h4>
                   <p style={{ fontSize: 12, color: 'var(--grau-text)', lineHeight: 1.5, marginBottom: 8 }}>
                     Tippe auf den Kreis neben einer Person, um sie als anwesend ✓ oder nicht anwesend ✕
                     zu markieren. Das wird automatisch zwischengespeichert. Erst nach „Anwesenheit abschicken“
@@ -2247,6 +2438,11 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission 
                           {a.detail_pronouns && (
                             <span style={{ fontWeight: 400, color: 'var(--grau-text)', marginLeft: 4 }}>
                               ({a.detail_pronouns})
+                            </span>
+                          )}
+                          {a.birthday && hasBirthdayDuring(a.birthday, festStart, festEnd) && (
+                            <span style={{ fontWeight: 400, color: 'var(--grau-text)', marginLeft: 6, fontSize: 13 }}>
+                              🎂 {formatBirthdayDe(a.birthday)}
                             </span>
                           )}
                         </div>
@@ -2346,7 +2542,7 @@ function InfosTab({ details, role, content, festivalId }) {
   const isLeadOp         = role === 'lead' || role === 'operator'
   const isKitchenVisible = role === 'catering' || role === 'operator' || role === 'lead'
 
-  const lbl      = { fontSize: 'var(--text-base)', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--schwarz)', marginBottom: 4 }
+  const lbl      = { margin: 0, fontSize: 'var(--text-h4)', color: 'var(--schwarz)', marginBottom: 4 }
   const val      = { fontSize: 14, fontWeight: 400, color: 'var(--schwarz)' }
   const valMulti = { fontSize: 14, fontWeight: 400, whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--schwarz)' }
 
@@ -2374,8 +2570,8 @@ function InfosTab({ details, role, content, festivalId }) {
 
   return (
     <div>
-      {/* ── Besonderheiten (roter Kasten, ganz oben) ── */}
-      {details.special_notes && (
+      {/* ── Besonderheiten (roter Kasten, ganz oben) — nicht für Supportis ── */}
+      {details.special_notes && role !== 'supporti' && (
         <div style={{
           background: '#fde8e3',
           border: '2px solid var(--rot)',
@@ -2397,15 +2593,15 @@ function InfosTab({ details, role, content, festivalId }) {
       <div className="card">
         <ul className="info-list">
           <li><div>
-            <div style={lbl}>Anreise</div>
+            <h4 style={lbl}>Anreise</h4>
             <div style={val}>{getAnreise(details, role) || 'Wird noch bekannt gegeben'}</div>
           </div></li>
           <li><div>
-            <div style={lbl}>Abreise</div>
+            <h4 style={lbl}>Abreise</h4>
             <div style={val}>{getAbreise(details, role) || 'Wird noch bekannt gegeben'}</div>
           </div></li>
           {details.festival_address && (
-            <li><div><div style={lbl}>Anschrift</div><div style={valMulti}>{details.festival_address}</div></div></li>
+            <li><div><h4 style={lbl}>Anschrift</h4><div style={valMulti}>{details.festival_address}</div></div></li>
           )}
         </ul>
       </div>
@@ -2418,7 +2614,7 @@ function InfosTab({ details, role, content, festivalId }) {
             <ul className="info-list">
               {details.shift_table_link && (
                 <li><div>
-                  <div style={lbl}>Schichtplan</div>
+                  <h4 style={lbl}>Schichtplan</h4>
                   <a href={details.shift_table_link} target="_blank" rel="noopener noreferrer"
                     className="button button--yellow button--sm"
                     style={{ textDecoration: 'none', display: 'inline-flex', marginTop: 6 }}>
@@ -2427,16 +2623,16 @@ function InfosTab({ details, role, content, festivalId }) {
                 </div></li>
               )}
               {details.count_module && (
-                <li><div><div style={lbl}>Anzahl Module</div><div style={val}>{details.count_module}</div></div></li>
+                <li><div><h4 style={lbl}>Anzahl Module</h4><div style={val}>{details.count_module}</div></div></li>
               )}
               {details.goldeimer_hours && (
-                <li><div><div style={lbl}>Öffnungszeiten</div><div style={valMulti}>{details.goldeimer_hours}</div></div></li>
+                <li><div><h4 style={lbl}>Öffnungszeiten</h4><div style={valMulti}>{details.goldeimer_hours}</div></div></li>
               )}
               {details.goldeimer_prices && (
-                <li><div><div style={lbl}>Preise</div><div style={valMulti}>{details.goldeimer_prices}</div></div></li>
+                <li><div><h4 style={lbl}>Preise</h4><div style={valMulti}>{details.goldeimer_prices}</div></div></li>
               )}
               {isKitchenVisible && details.festival_money_info && (
-                <li><div><div style={lbl}>Kassensystem</div><div style={valMulti}>{details.festival_money_info}</div></div></li>
+                <li><div><h4 style={lbl}>Kassensystem</h4><div style={valMulti}>{details.festival_money_info}</div></div></li>
               )}
             </ul>
           </div>
@@ -2451,44 +2647,44 @@ function InfosTab({ details, role, content, festivalId }) {
             <ul className="info-list">
               {details.production_mgmt && (
                 <li><div>
-                  <div style={lbl}>Produktion</div>
-                  <div style={valMulti}><PhoneText text={details.production_mgmt} /></div>
+                  <h4 style={lbl}>Produktion</h4>
+                  <div style={valMulti}><ContactText text={details.production_mgmt} /></div>
                 </div></li>
               )}
               {(details.production_arbeitssicherheit || details.job_safety) && (
                 <li><div>
-                  <div style={lbl}>Arbeitssicherheit</div>
-                  <div style={valMulti}><PhoneText text={details.production_arbeitssicherheit || details.job_safety} /></div>
+                  <h4 style={lbl}>Arbeitssicherheit</h4>
+                  <div style={valMulti}><ContactText text={details.production_arbeitssicherheit || details.job_safety} /></div>
                 </div></li>
               )}
               {details.urin_pump && (
                 <li><div>
-                  <div style={lbl}>IBC Abpumpung</div>
-                  <div style={valMulti}><PhoneText text={details.urin_pump} /></div>
+                  <h4 style={lbl}>IBC Abpumpung</h4>
+                  <div style={valMulti}><ContactText text={details.urin_pump} /></div>
                 </div></li>
               )}
               {details.fsb_spedition && (
                 <li><div>
-                  <div style={lbl}>FSB Spedition</div>
-                  <div style={valMulti}><PhoneText text={details.fsb_spedition} /></div>
+                  <h4 style={lbl}>FSB Spedition</h4>
+                  <div style={valMulti}><ContactText text={details.fsb_spedition} /></div>
                 </div></li>
               )}
               {details.anhaenger_spedition && (
                 <li><div>
-                  <div style={lbl}>Anhänger Spedition</div>
-                  <div style={valMulti}><PhoneText text={details.anhaenger_spedition} /></div>
+                  <h4 style={lbl}>Anhänger Spedition</h4>
+                  <div style={valMulti}><ContactText text={details.anhaenger_spedition} /></div>
                 </div></li>
               )}
               {details.vca_asp && (
                 <li><div>
-                  <div style={lbl}>VcA</div>
-                  <div style={valMulti}><PhoneText text={details.vca_asp} /></div>
+                  <h4 style={lbl}>VcA</h4>
+                  <div style={valMulti}><ContactText text={details.vca_asp} /></div>
                 </div></li>
               )}
               {details.awareness_team && (
                 <li><div>
-                  <div style={lbl}>Awareness-Team</div>
-                  <div style={valMulti}><PhoneText text={details.awareness_team} /></div>
+                  <h4 style={lbl}>Awareness-Team</h4>
+                  <div style={valMulti}><ContactText text={details.awareness_team} /></div>
                 </div></li>
               )}
             </ul>
@@ -2504,7 +2700,7 @@ function InfosTab({ details, role, content, festivalId }) {
             <ul className="info-list">
               {details.lead_rider_link && (
                 <li><div>
-                  <div style={lbl}>Anleitungen</div>
+                  <h4 style={lbl}>Anleitungen</h4>
                   <a href={details.lead_rider_link} target="_blank" rel="noopener noreferrer"
                     className="button button--yellow button--sm"
                     style={{ textDecoration: 'none', display: 'inline-flex', marginTop: 6 }}>
@@ -2514,7 +2710,7 @@ function InfosTab({ details, role, content, festivalId }) {
               )}
               {details.production_arbeitssicherheit && (
                 <li><div>
-                  <div style={lbl}>Arbeitssicherheit</div>
+                  <h4 style={lbl}>Arbeitssicherheit</h4>
                   <a href={details.production_arbeitssicherheit} target="_blank" rel="noopener noreferrer"
                     className="button button--yellow button--sm"
                     style={{ textDecoration: 'none', display: 'inline-flex', marginTop: 6 }}>
@@ -2523,13 +2719,13 @@ function InfosTab({ details, role, content, festivalId }) {
                 </div></li>
               )}
               {details.location_info && (
-                <li><div><div style={lbl}>Standorte</div><div style={valMulti}>{details.location_info}</div></div></li>
+                <li><div><h4 style={lbl}>Standorte</h4><div style={valMulti}>{details.location_info}</div></div></li>
               )}
               {details.material_order && (
-                <li><div><div style={lbl}>Bestellung</div><div style={valMulti}>{details.material_order}</div></div></li>
+                <li><div><h4 style={lbl}>Bestellung</h4><div style={valMulti}>{details.material_order}</div></div></li>
               )}
               {details.logistic_info && (
-                <li><div><div style={lbl}>Logistik</div><div style={valMulti}>{details.logistic_info}</div></div></li>
+                <li><div><h4 style={lbl}>Logistik</h4><div style={valMulti}>{details.logistic_info}</div></div></li>
               )}
             </ul>
           </div>
@@ -2544,7 +2740,7 @@ function InfosTab({ details, role, content, festivalId }) {
             <ul className="info-list">
               {details.kitchen_crew_list && (
                 <li><div>
-                  <div style={lbl}>Küchen-Liste</div>
+                  <h4 style={lbl}>Küchen-Liste</h4>
                   <a href={details.kitchen_crew_list} target="_blank" rel="noopener noreferrer"
                     className="button button--yellow button--sm"
                     style={{ textDecoration: 'none', display: 'inline-flex', marginTop: 6 }}>
@@ -2553,13 +2749,13 @@ function InfosTab({ details, role, content, festivalId }) {
                 </div></li>
               )}
               {details.kitchen_op && (
-                <li><div><div style={lbl}>Küche-Operator</div><div style={valMulti}>{details.kitchen_op}</div></div></li>
+                <li><div><h4 style={lbl}>Küche-Operator</h4><div style={valMulti}>{details.kitchen_op}</div></div></li>
               )}
               {details.kitchen_cost && (
-                <li><div><div style={lbl}>Pauschale</div><div style={valMulti}>{details.kitchen_cost}</div></div></li>
+                <li><div><h4 style={lbl}>Pauschale</h4><div style={valMulti}>{details.kitchen_cost}</div></div></li>
               )}
               {details.kitchen_info && (
-                <li><div><div style={lbl}>Infos</div><div style={valMulti}>{details.kitchen_info}</div></div></li>
+                <li><div><h4 style={lbl}>Infos</h4><div style={valMulti}>{details.kitchen_info}</div></div></li>
               )}
             </ul>
           </div>
@@ -3089,6 +3285,24 @@ function getAbreise(details, role) {
   if (role === 'lead' || role === 'operator') return details.end_leadop
   if (role === 'catering')      return details.end_kitchen
   return null
+}
+
+// Prüft ob ein Geburtstag (ISO-Date 'YYYY-MM-DD') in den Festivaltagen liegt
+function hasBirthdayDuring(birthday, start, end) {
+  if (!birthday || !start || !end) return false
+  const [yr, mo, dy] = birthday.split('-').map(Number)
+  // Festival kann Jahreswechsel überspannen → beide Jahre prüfen
+  for (const year of new Set([start.getFullYear(), end.getFullYear()])) {
+    const bd = new Date(year, mo - 1, dy)
+    if (bd >= start && bd <= end) return true
+  }
+  return false
+}
+
+function formatBirthdayDe(isoDate) {
+  if (!isoDate) return ''
+  const [year, month, day] = isoDate.split('-')
+  return `${day}.${month}.${year}`
 }
 
 function parseDeDate(str) {

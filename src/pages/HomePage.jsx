@@ -5,6 +5,7 @@ import { useAuth } from '../components/AuthContext'
 import { cacheGet, cacheSet } from '../lib/cache'
 import { fetchWithTimeout } from '../lib/fetchWithTimeout'
 import { IconStar } from '../components/Icons'
+import { HUB_ADMIN_EMAILS } from '../lib/admins'
 
 const ROLLE_LABEL = {
   lead: 'Lead', operator: 'Operator',
@@ -117,10 +118,11 @@ const ALL_TOPICS = [
 
 export default function HomePage() {
   const { profile, signOut } = useAuth()
+  const isHubAdmin = HUB_ADMIN_EMAILS.includes(profile?.email)
   const cacheKey = `assignments_${profile?.id}`
-  // Lazy-Init: wenn Cache warm → sofort Daten + kein Spinner
-  const [assignments, setAssignments] = useState(() => cacheGet(cacheKey) || [])
-  const [loading, setLoading] = useState(() => !cacheGet(cacheKey))
+  // Admins: kein Cache (merged Liste kann nicht gecacht werden), immer frisch laden
+  const [assignments, setAssignments] = useState(() => isHubAdmin ? [] : (cacheGet(cacheKey) || []))
+  const [loading, setLoading] = useState(() => isHubAdmin ? true : !cacheGet(cacheKey))
   const [fetchError, setFetchError] = useState(false)
   const [authError, setAuthError] = useState(false)
 
@@ -138,35 +140,40 @@ export default function HomePage() {
         .eq('profile_id', profile.id)
         .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
     )
-    if (!error && data) {
-      let merged = data
 
-      // Hub-Admins sehen alle Festivals, nicht nur die mit eigenem Assignment
-      if (profile.hub_admin) {
-        const { data: allFests } = await fetchWithTimeout(
-          supabase.from('festivals').select('id, name, details')
-        )
-        if (allFests) {
-          const assignedIds = new Set(data.map(a => a.festival?.id))
-          const extras = allFests
-            .filter(f => !assignedIds.has(f.id))
-            .map(f => ({ id: `hub_${f.id}`, role: 'hub_admin', status: 'zugesagt', festival: f }))
-          merged = [...data, ...extras]
-        }
+    let merged = data || []
+
+    if (isHubAdmin) {
+      const { data: allFestivals } = await supabase
+        .from('festivals')
+        .select('id, name, details')
+        .order('created_at', { ascending: true })
+
+      if (allFestivals) {
+        const assignedIds = new Set((data || []).map(a => a.festival?.id))
+        const adminOnly = allFestivals
+          .filter(f => !assignedIds.has(f.id))
+          .map(f => ({ id: `admin_${f.id}`, role: 'lead', status: 'zugesagt', festival: f }))
+        merged = [...(data || []), ...adminOnly]
       }
+    }
 
+    if (!error && data) {
       setAssignments(merged)
-      cacheSet(cacheKey, merged, 48 * 60 * 60 * 1000)
+      cacheSet(cacheKey, data, 48 * 60 * 60 * 1000)
     } else if (error) {
       if (isAuthError) setAuthError(true)
       else if (!cached) setFetchError(true)
-      // Bestehende Daten (aus Cache-Init) bei Netzwerkfehler behalten
+      // Bei Fehler: gecachte Daten behalten (aus useState-Initializer) oder Admin-Merge zeigen
+      if (isHubAdmin && merged.length > 0) setAssignments(merged)
+      else if (cached) setAssignments(cached)
     }
+    // else (!error && !data): sollte nicht vorkommen, aber Assignments nicht löschen
     setLoading(false)
   }
 
   const vorname = profile?.full_name?.split(' ')[0] || 'Hey'
-  const isLeadOrOp = profile?.hub_admin || assignments.some(a => a.role === 'lead' || a.role === 'operator')
+  const isLeadOrOp = isHubAdmin || assignments.some(a => a.role === 'lead' || a.role === 'operator')
 
   const topics = ALL_TOPICS.filter(t => !t.leadOnly || isLeadOrOp)
 
@@ -317,7 +324,7 @@ export default function HomePage() {
                 alignItems: 'center',
                 gap: 'var(--sp-3)',
                 padding: 'var(--sp-3) var(--sp-4)',
-                borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
+                borderBottom: '1px solid var(--border)',
                 textDecoration: 'none',
                 color: 'var(--schwarz)',
               }}
@@ -331,6 +338,26 @@ export default function HomePage() {
               <ChevronIcon dir="right" size={16} color="rgba(29,29,27,0.45)" />
             </Link>
           ))}
+          <a
+            href="https://docs.google.com/forms/d/e/1FAIpQLSeXVxdCv2lGa-h98Fhiyoc23Ofji_BAWZL5AJrz1QVPF3GOVg/viewform"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
+              padding: 'var(--sp-3) var(--sp-4)',
+              textDecoration: 'none', color: 'var(--schwarz)',
+            }}
+          >
+            <span style={{ width: 36, height: 36, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </span>
+            <span style={{ flex: 1, fontWeight: 600, fontSize: 'var(--text-sm)' }}>Anonymes Awareness-Formular</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(29,29,27,0.45)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 17L17 7M17 7H7M17 7v10" />
+            </svg>
+          </a>
         </div>
 
       </div>

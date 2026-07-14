@@ -232,12 +232,12 @@ export function AuthProvider({ children }) {
       if (assignments?.length) {
         for (const a of assignments) {
           const festivalId = a.festival?.id
-          if (!festivalId || cacheGet(`festival_v3_${festivalId}`)) continue
+          if (!festivalId || cacheGet(`festival_v4_${festivalId}`)) continue
           // fire & forget — kein await, blockiert nicht den Rest des Logins
           supabase.rpc('get_my_festival_info', { p_festival_id: festivalId })
             .then(({ data: rpcData }) => {
               if (rpcData && !rpcData.error) {
-                cacheSet(`festival_v3_${festivalId}`, rpcData, DATA_TTL)
+                cacheSet(`festival_v4_${festivalId}`, rpcData, DATA_TTL)
               }
             })
             .catch(() => {}) // best-effort, Fehler ignorieren

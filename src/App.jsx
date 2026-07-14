@@ -7,7 +7,7 @@ import InfosPage    from './pages/InfosPage'
 import ProfilPage   from './pages/ProfilPage'
 
 function AppRoutes() {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
 
   if (loading) {
     return (
@@ -27,7 +27,9 @@ function AppRoutes() {
     )
   }
 
-  if (!user) {
+  // Wenn Profil im Cache ist, App zeigen und Session im Hintergrund prüfen.
+  // Nur zur LoginPage, wenn weder User noch gecachtes Profil vorhanden sind.
+  if (!user && !profile) {
     return (
       <Routes>
         <Route path="*" element={<LoginPage />} />
