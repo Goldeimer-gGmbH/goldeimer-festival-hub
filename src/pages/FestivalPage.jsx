@@ -12,7 +12,7 @@ import {
 } from '../components/Icons'
 
 function ChevronIcon({ dir = 'right', size = 16, color = 'currentColor' }) {
-  const deg = { down: 0, up: 180, left: -90, right: 90 }[dir] ?? 0
+  const deg = { down: 0, up: 180, left: 90, right: -90 }[dir] ?? 0
   return (
     <svg width={size} height={size} viewBox="0 0 18 18" fill="none"
       style={{ display: 'block', flexShrink: 0, transform: `rotate(${deg}deg)` }}>
@@ -311,7 +311,7 @@ export default function FestivalPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  useEffect(() => { loadFestivalInfo() }, [id])
+  useEffect(() => { loadFestivalInfo() }, [id, profile?.hub_admin])
 
   async function loadFestivalInfo(retryCount = 0) {
     setFetchError(false); setAuthError(false); setNotFound(false); setDebugMsg('')
@@ -357,12 +357,13 @@ export default function FestivalPage() {
           setFetchError(true)
         }
       } else if (rpcData?.error) {
-        // RPC hat application-level Fehler zurückgegeben — nie cachen
-        if (!validCached) {
+        // Hub-Admin ohne persönliches Assignment → Admin-RPC als Fallback
+        if (rpcData.error === 'No assignment found' && profile?.hub_admin) {
+          await loadAdminFallback(id, cacheKey, validCached)
+        } else if (!validCached) {
           setDebugMsg(`rpc: ${String(rpcData.error)}`)
           setFetchError(true)
         }
-        console.error('get_my_festival_info RPC error:', rpcData.error)
       } else if (!rpcData && !validCached) {
         setNotFound(true)
       }
@@ -373,6 +374,26 @@ export default function FestivalPage() {
       }
     } finally {
       setLoading(false)  // immer aufrufen – verhindert dauerhaftes Laden
+    }
+  }
+
+  async function loadAdminFallback(festivalId, cacheKey, validCached) {
+    try {
+      const { data: adminData, error } = await fetchWithTimeout(
+        supabase.rpc('get_festival_info_for_admin', { p_festival_id: festivalId })
+      )
+      if (!error && adminData && !adminData.error) {
+        setData(adminData)
+        cacheSet(cacheKey, adminData, 48 * 60 * 60 * 1000)
+      } else if (!validCached) {
+        setDebugMsg(`admin: ${error?.message || adminData?.error || 'Kein Zugriff'}`)
+        setFetchError(true)
+      }
+    } catch (e) {
+      if (!validCached) {
+        setDebugMsg(`admin: ${e?.message || String(e)}`)
+        setFetchError(true)
+      }
     }
   }
 
@@ -422,7 +443,7 @@ export default function FestivalPage() {
       {/* ── Logo-Header (cremefarben) ── */}
       <div className="header">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1, display: 'flex', alignItems: 'center' }}
         ><ChevronIcon dir="left" size={22} color="var(--schwarz)" /></button>
         <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
@@ -1506,7 +1527,7 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName, inAccordion = fa
                 {item.detail && !item.bullets && (
                   <div style={{ fontSize: 13, color: 'var(--grau-text)', marginBottom: 6, lineHeight: 1.5 }}>{item.detail}</div>
                 )}
-                <button onClick={() => setShowRueckmeldung(true)} className="button button--yellow button--sm" style={{ width: 'auto' }}>
+                <button onClick={() => setShowRueckmeldung(true)} className="button button--sm" style={{ width: 'auto' }}>
                   Rückmeldung Aufbau
                 </button>
               </div>
@@ -1812,7 +1833,7 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
               <li>
                 <div>
                   <div style={lbl}>Telegram-Gruppe(n)</div>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6, alignItems: 'flex-start' }}>
                     {details.telegram_link && (
                       <a
                         href={details.telegram_link.startsWith('http') ? details.telegram_link : `https://${details.telegram_link}`}
@@ -1869,10 +1890,10 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
                     <div style={{ marginTop: 6 }}>
                       <button
                         onClick={() => setShowCrewSheet(true)}
-                        className="button button--yellow button--sm"
+                        className="button button--sm"
                         style={{ border: 'none', cursor: 'pointer' }}
                       >
-                        Crew anzeigen
+                        Crew-Liste öffnen & Anwesenheit feedbacken
                       </button>
                     </div>
                   </div>
@@ -2687,8 +2708,7 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew, inSheet = false })
       : [{ name: '', tasks: [] }]
   )
   const [report, setReport]           = useState(() => cachedReport || null)
-  // Kein Ladescreen wenn gecachte Daten vorhanden
-  const [loadingReport, setLoadingReport] = useState(!cachedReport)
+  const [loadingReport, setLoadingReport] = useState(false)
   const [submitting, setSubmitting]   = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [saveStatus, setSaveStatus]   = useState('') // 'saving' | 'saved' | ''

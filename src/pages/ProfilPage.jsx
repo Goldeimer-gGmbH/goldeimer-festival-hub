@@ -3,7 +3,7 @@ import { useAuth } from '../components/AuthContext'
 import { IconStar, IconBrief } from '../components/Icons'
 
 function ChevronIcon({ dir = 'right', size = 16, color = 'currentColor' }) {
-  const deg = { down: 0, up: 180, left: -90, right: 90 }[dir] ?? 0
+  const deg = { down: 0, up: 180, left: 90, right: -90 }[dir] ?? 0
   return (
     <svg width={size} height={size} viewBox="0 0 18 18" fill="none"
       style={{ display: 'block', flexShrink: 0, transform: `rotate(${deg}deg)` }}>
