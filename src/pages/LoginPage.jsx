@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
-const COOLDOWN_NORMAL    = 60          // Sekunden nach erfolgreichem Senden
-const COOLDOWN_RATELIMIT = 10 * 60     // 10 Minuten nach Rate-Limit-Fehler
-const STORAGE_KEY        = 'gfh_otp_cooldown_until'
+const COOLDOWN_NORMAL = 60        // Sekunden nach erfolgreichem Senden
+const STORAGE_KEY     = 'gfh_otp_cooldown_until'
 
 // Verbleibende Sekunden aus gespeichertem Timestamp berechnen
 function getStoredCooldown() {
@@ -90,8 +89,7 @@ export default function LoginPage() {
           setError('Diese E-Mail ist nicht in unserem System. Wende dich an Goldeimer.')
         } else if (error.message?.includes('rate') || error.status === 429) {
           setIsRateLimit(true)
-          setError('Zu viele Versuche. Bitte warte 10 Minuten bevor du es erneut versuchst.')
-          startCooldown(COOLDOWN_RATELIMIT)
+          setError('Zu viele Versuche. Bitte warte kurz und versuche es nochmal.')
         } else if (error.message?.includes('network') || error.status >= 500) {
           setError('Server nicht erreichbar. Bitte versuche es gleich nochmal.')
         } else {
