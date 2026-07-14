@@ -8,7 +8,8 @@ import { IconStar } from '../components/Icons'
 
 const ROLLE_LABEL = {
   lead: 'Lead', operator: 'Operator',
-  supporti_plus: 'Supporti+', supporti: 'Supporti', catering: 'Catering'
+  supporti_plus: 'Supporti+', supporti: 'Supporti', catering: 'Catering',
+  hub_admin: 'Hub Admin',
 }
 
 function ChevronIcon({ dir = 'right', size = 16, color = 'currentColor' }) {
@@ -123,7 +124,7 @@ export default function HomePage() {
   const [fetchError, setFetchError] = useState(false)
   const [authError, setAuthError] = useState(false)
 
-  useEffect(() => { loadAssignments() }, [])
+  useEffect(() => { loadAssignments() }, [profile?.id, profile?.hub_admin])
 
   async function loadAssignments() {
     if (!profile?.id) { setLoading(false); return }
@@ -138,18 +139,34 @@ export default function HomePage() {
         .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
     )
     if (!error && data) {
-      setAssignments(data)
-      cacheSet(cacheKey, data, 48 * 60 * 60 * 1000)
+      let merged = data
+
+      // Hub-Admins sehen alle Festivals, nicht nur die mit eigenem Assignment
+      if (profile.hub_admin) {
+        const { data: allFests } = await fetchWithTimeout(
+          supabase.from('festivals').select('id, name, details')
+        )
+        if (allFests) {
+          const assignedIds = new Set(data.map(a => a.festival?.id))
+          const extras = allFests
+            .filter(f => !assignedIds.has(f.id))
+            .map(f => ({ id: `hub_${f.id}`, role: 'hub_admin', status: 'zugesagt', festival: f }))
+          merged = [...data, ...extras]
+        }
+      }
+
+      setAssignments(merged)
+      cacheSet(cacheKey, merged, 48 * 60 * 60 * 1000)
     } else if (error) {
       if (isAuthError) setAuthError(true)
       else if (!cached) setFetchError(true)
+      // Bestehende Daten (aus Cache-Init) bei Netzwerkfehler behalten
     }
     setLoading(false)
   }
 
   const vorname = profile?.full_name?.split(' ')[0] || 'Hey'
-  // Zeige Lead-spezifische Inhalte, wenn die Person bei IRGENDEINEM Festival Lead/Operator ist
-  const isLeadOrOp = assignments.some(a => a.role === 'lead' || a.role === 'operator')
+  const isLeadOrOp = profile?.hub_admin || assignments.some(a => a.role === 'lead' || a.role === 'operator')
 
   const topics = ALL_TOPICS.filter(t => !t.leadOnly || isLeadOrOp)
 
