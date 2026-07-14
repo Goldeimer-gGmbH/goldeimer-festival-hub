@@ -371,7 +371,7 @@ export default function FestivalPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  useEffect(() => { loadFestivalInfo() }, [id])
+  useEffect(() => { loadFestivalInfo() }, [id, profile?.hub_admin])
 
   async function loadFestivalInfo(retryCount = 0) {
     setFetchError(false); setAuthError(false); setNotFound(false); setDebugMsg('')
@@ -417,17 +417,16 @@ export default function FestivalPage() {
           setFetchError(true)
         }
       } else if (rpcData?.error) {
-        // RPC hat application-level Fehler zurückgegeben (z.B. kein Assignment)
-        if (isHubAdmin) {
-          await loadAdminFallback()
+        // Hub-Admin ohne persönliches Assignment → Admin-RPC als Fallback
+        if (rpcData.error === 'No assignment found' && isHubAdmin) {
+          await loadAdminFallback(id, cacheKey, validCached)
         } else if (!validCached) {
           setDebugMsg(`rpc: ${String(rpcData.error)}`)
           setFetchError(true)
         }
-        if (!isHubAdmin) console.error('get_my_festival_info RPC error:', rpcData.error)
       } else if (!rpcData && !validCached) {
         if (isHubAdmin) {
-          await loadAdminFallback()
+          await loadAdminFallback(id, cacheKey, validCached)
         } else {
           setNotFound(true)
         }
@@ -442,40 +441,23 @@ export default function FestivalPage() {
     }
   }
 
-  async function loadAdminFallback() {
-    const [{ data: festival, error }, { data: crewRaw }] = await Promise.all([
-      supabase.from('festivals').select('id, name, details').eq('id', id).single(),
-      supabase.from('assignments')
-        .select('id, role, detail_pronouns, detail_carpass, detail_arrival, profile:profiles(full_name, email, phone, birthday)')
-        .eq('festival_id', id)
-        .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
-        .order('role'),
-    ])
-    if (!error && festival) {
-      const crew = (crewRaw || []).map(a => ({
-        assignment_id: a.id,
-        role: a.role,
-        full_name: a.profile?.full_name,
-        email: a.profile?.email,
-        phone: a.profile?.phone,
-        birthday: a.profile?.birthday,
-        detail_pronouns: a.detail_pronouns,
-        detail_carpass: a.detail_carpass,
-        detail_arrival: a.detail_arrival,
-        attendance_present: null,
-        attendance_checked_by_name: null,
-        attendance_checked_at: null,
-      }))
-      setData({
-        festival,
-        assignment_role: 'lead',
-        crew,
-        checklists: null,
-        content: null,
-        attendance_submission: null,
-      })
-    } else {
-      setNotFound(true)
+  async function loadAdminFallback(festivalId, cacheKey, validCached) {
+    try {
+      const { data: adminData, error } = await fetchWithTimeout(
+        supabase.rpc('get_festival_info_for_admin', { p_festival_id: festivalId })
+      )
+      if (!error && adminData && !adminData.error) {
+        setData(adminData)
+        cacheSet(cacheKey, adminData, 48 * 60 * 60 * 1000)
+      } else if (!validCached) {
+        setDebugMsg(`admin: ${error?.message || adminData?.error || 'Kein Zugriff'}`)
+        setFetchError(true)
+      }
+    } catch (e) {
+      if (!validCached) {
+        setDebugMsg(`admin: ${e?.message || String(e)}`)
+        setFetchError(true)
+      }
     }
   }
 

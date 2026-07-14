@@ -9,7 +9,8 @@ import { HUB_ADMIN_EMAILS } from '../lib/admins'
 
 const ROLLE_LABEL = {
   lead: 'Lead', operator: 'Operator',
-  supporti_plus: 'Supporti+', supporti: 'Supporti', catering: 'Catering'
+  supporti_plus: 'Supporti+', supporti: 'Supporti', catering: 'Catering',
+  hub_admin: 'Hub Admin',
 }
 
 function ChevronIcon({ dir = 'right', size = 16, color = 'currentColor' }) {
@@ -125,7 +126,7 @@ export default function HomePage() {
   const [fetchError, setFetchError] = useState(false)
   const [authError, setAuthError] = useState(false)
 
-  useEffect(() => { loadAssignments() }, [profile?.id])
+  useEffect(() => { loadAssignments() }, [profile?.id, profile?.hub_admin])
 
   async function loadAssignments() {
     if (!profile?.id) { setLoading(false); return }
@@ -172,7 +173,6 @@ export default function HomePage() {
   }
 
   const vorname = profile?.full_name?.split(' ')[0] || 'Hey'
-  // Zeige Lead-spezifische Inhalte, wenn die Person bei IRGENDEINEM Festival Lead/Operator ist
   const isLeadOrOp = isHubAdmin || assignments.some(a => a.role === 'lead' || a.role === 'operator')
 
   const topics = ALL_TOPICS.filter(t => !t.leadOnly || isLeadOrOp)
