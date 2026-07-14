@@ -28,12 +28,32 @@ export function cacheSet(key, data, ttlMs = 10 * 60 * 1000) {
       expiresAt: Date.now() + ttlMs,
     }))
   } catch {
-    // localStorage voll → alten Cache leeren und nochmal versuchen
-    cacheClearAll()
+    // localStorage voll → erst nur abgelaufene Einträge entfernen (schont aktive Daten)
+    cacheEvictExpired()
     try {
       localStorage.setItem(PREFIX + key, JSON.stringify({ data, expiresAt: Date.now() + ttlMs }))
-    } catch { /* ignore */ }
+    } catch {
+      // Immer noch voll → nukleares Löschen als letzter Ausweg
+      cacheClearAll()
+      try {
+        localStorage.setItem(PREFIX + key, JSON.stringify({ data, expiresAt: Date.now() + ttlMs }))
+      } catch { /* ignore */ }
+    }
   }
+}
+
+export function cacheEvictExpired() {
+  try {
+    const now = Date.now()
+    Object.keys(localStorage)
+      .filter(k => k.startsWith(PREFIX))
+      .forEach(k => {
+        try {
+          const { expiresAt } = JSON.parse(localStorage.getItem(k) || '{}')
+          if (!expiresAt || now > expiresAt) localStorage.removeItem(k)
+        } catch { localStorage.removeItem(k) }
+      })
+  } catch { /* ignore */ }
 }
 
 export function cacheClear(key) {

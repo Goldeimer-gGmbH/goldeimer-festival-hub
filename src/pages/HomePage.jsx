@@ -125,7 +125,7 @@ export default function HomePage() {
   const [fetchError, setFetchError] = useState(false)
   const [authError, setAuthError] = useState(false)
 
-  useEffect(() => { loadAssignments() }, [])
+  useEffect(() => { loadAssignments() }, [profile?.id])
 
   async function loadAssignments() {
     if (!profile?.id) { setLoading(false); return }
@@ -163,12 +163,11 @@ export default function HomePage() {
     } else if (error) {
       if (isAuthError) setAuthError(true)
       else if (!cached) setFetchError(true)
-      if (isHubAdmin && merged.length > 0) {
-        setAssignments(merged)
-      }
-    } else {
-      setAssignments(merged)
+      // Bei Fehler: gecachte Daten behalten (aus useState-Initializer) oder Admin-Merge zeigen
+      if (isHubAdmin && merged.length > 0) setAssignments(merged)
+      else if (cached) setAssignments(cached)
     }
+    // else (!error && !data): sollte nicht vorkommen, aber Assignments nicht löschen
     setLoading(false)
   }
 
