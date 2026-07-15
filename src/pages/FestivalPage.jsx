@@ -582,7 +582,7 @@ export default function FestivalPage() {
         )}
 
         {activeTab === 'kontakte' && (
-          <KontakteTab details={details} role={role} festivalName={festivalName} crew={data.crew} festivalId={id} attendanceSubmission={data.attendance_submission} />
+          <KontakteTab details={details} role={role} festivalName={festivalName} crew={data.crew} contacts={data.contacts} festivalId={id} attendanceSubmission={data.attendance_submission} />
         )}
 
       </div>
@@ -1936,7 +1936,7 @@ function ContactText({ text }) {
   )
 }
 
-function KontakteTab({ details, role, festivalName, crew, festivalId, attendanceSubmission }) {
+function KontakteTab({ details, role, festivalName, crew, contacts, festivalId, attendanceSubmission }) {
   const isLeadOp   = role === 'lead' || role === 'operator'
   const isSupporti = role === 'supporti'
   const [showCrewSheet, setShowCrewSheet] = useState(false)
@@ -1946,8 +1946,10 @@ function KontakteTab({ details, role, festivalName, crew, festivalId, attendance
     ? [...crew].sort((a, b) => ROLLE_ORDER.indexOf(a.role) - ROLLE_ORDER.indexOf(b.role))
     : []
 
-  const leadCrew     = sortedCrew.filter(m => m.role === 'lead')
-  const opCrew       = sortedCrew.filter(m => m.role === 'operator')
+  // Für Leads/Ops: aus crew gefiltert. Für Supportis: aus contacts (enthält Lead+Op mit role-Feld)
+  const contactsArr  = Array.isArray(contacts) ? contacts : []
+  const leadCrew     = crewLoaded ? sortedCrew.filter(m => m.role === 'lead')     : contactsArr.filter(m => m.role === 'lead')
+  const opCrew       = crewLoaded ? sortedCrew.filter(m => m.role === 'operator') : contactsArr.filter(m => m.role === 'operator')
   const suppPlusCrew = sortedCrew.filter(m => m.role === 'supporti_plus')
 
   const lbl      = { margin: 0, fontSize: 'var(--text-h4)', color: 'var(--schwarz)', marginBottom: 4 }

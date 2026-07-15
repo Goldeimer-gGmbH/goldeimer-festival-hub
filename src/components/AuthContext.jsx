@@ -54,23 +54,30 @@ export function AuthProvider({ children }) {
     let cancelled = false
     const timeout = setTimeout(() => { if (!cancelled) setLoading(false) }, 10000)
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Hilfsfunktion: Session herstellen. getSession() refresht intern wenn nötig.
+    // Schlägt das fehl (abgelaufenes Refresh-Token), explizit refreshSession() versuchen.
+    // Liefert null wenn wirklich keine gültige Session herstellbar ist.
+    async function resolveSession() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) return session
+      // getSession() hat null geliefert — letzter Versuch mit explizitem Refresh
+      if (hasSupabaseRefreshToken()) {
+        try {
+          const { data } = await supabase.auth.refreshSession()
+          if (data?.session?.user) return data.session
+        } catch {}
+      }
+      return null
+    }
+
+    resolveSession().then(session => {
       if (cancelled) return
       setUser(session?.user ?? null)
       if (session?.user) {
         loadProfile(session.user.id)
       } else {
-        // getSession() null ≠ ausgeloggt. Auf Mobile schlägt der Token-Refresh
-        // regelmäßig fehl (schlechtes Netz, Timer-Throttling im Hintergrund).
-        // Wenn Supabase noch einen Refresh-Token hat, ist der User wahrscheinlich
-        // noch eingeloggt — gecachte Daten weiter zeigen, nicht löschen.
-        if (profileRef.current && hasSupabaseRefreshToken()) {
-          setLoading(false)
-          return
-        }
-        // Nur das Profil-Marker löschen — Daten-Caches bleiben erhalten.
-        // cacheClearAll() hier würde gfh_last_profile löschen und den
-        // nächsten App-Start ohne Sofort-Rendering starten (sichtbarer Ladescreen).
+        // Kein Session herstellbar → ausloggen.
+        // Nur Profil-Marker löschen, Daten-Caches bleiben erhalten.
         localStorage.removeItem('gfh_last_profile')
         setProfile(null)
         profileRef.current = null
@@ -86,12 +93,6 @@ export function AuthProvider({ children }) {
         if (session?.user) {
           await loadProfile(session.user.id)
         } else {
-          if (profileRef.current && hasSupabaseRefreshToken()) {
-            setLoading(false)
-            return
-          }
-          // Nur Profil-Marker entfernen, keine Daten-Caches löschen.
-          // Vollständiges Löschen nur bei explizitem signOut().
           localStorage.removeItem('gfh_last_profile')
           setProfile(null)
           profileRef.current = null
@@ -105,18 +106,14 @@ export function AuthProvider({ children }) {
     // daher explizit beim App-Fokus triggern.
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        resolveSession().then(session => {
           if (cancelled) return
           if (session?.user) {
             setUser(session.user)
-            // profileRef.current statt profile — verhindert Stale-Closure-Bug
-            // (dieser Handler wird nur einmal registriert, daher muss der
-            // aktuelle Wert immer aus dem Ref gelesen werden)
-            if (!profileRef.current) loadProfile(session.user.id)
+            // Immer loadProfile aufrufen — auch wenn Profil schon gecacht.
+            // Das triggert prefetchAll() und hält Festival-Daten frisch.
+            loadProfile(session.user.id)
           } else {
-            if (profileRef.current && hasSupabaseRefreshToken()) return
-            // Session wirklich abgelaufen (kein Refresh-Token mehr) → ausloggen.
-            // Nur Profil-Marker entfernen, Daten-Caches bleiben erhalten.
             localStorage.removeItem('gfh_last_profile')
             setProfile(null)
             profileRef.current = null
@@ -128,11 +125,9 @@ export function AuthProvider({ children }) {
     document.addEventListener('visibilitychange', handleVisibility)
 
     // Wenn das Gerät wieder online geht: Session-Refresh nachholen.
-    // Wichtig für den Fall dass der Token-Refresh vorher wegen fehlenden Netzes
-    // still übergangen wurde — jetzt nachholen ohne den User zu stören.
     const handleOnline = () => {
       if (!profileRef.current) return
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      resolveSession().then(session => {
         if (cancelled || !session?.user) return
         setUser(session.user)
         loadProfile(session.user.id)

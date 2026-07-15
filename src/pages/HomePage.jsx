@@ -117,7 +117,7 @@ const ALL_TOPICS = [
 ]
 
 export default function HomePage() {
-  const { profile, signOut } = useAuth()
+  const { profile, signOut, user } = useAuth()
   const isHubAdmin = HUB_ADMIN_EMAILS.includes(profile?.email)
   const cacheKey = `assignments_${profile?.id}`
   // Admins: kein Cache (merged Liste kann nicht gecacht werden), immer frisch laden
@@ -126,7 +126,10 @@ export default function HomePage() {
   const [fetchError, setFetchError] = useState(false)
   const [authError, setAuthError] = useState(false)
 
-  useEffect(() => { loadAssignments() }, [profile?.id, profile?.hub_admin])
+  // user?.id als Dep: wenn die Session nach dem ersten Mount erst bestätigt wird
+  // (gecachtes Profil aber noch kein user-Objekt), wird loadAssignments erneut
+  // ausgeführt sobald user gesetzt ist — verhindert Steckenbleiben beim Zurückkehren.
+  useEffect(() => { loadAssignments() }, [profile?.id, profile?.hub_admin, user?.id])
 
   async function loadAssignments() {
     if (!profile?.id) { setLoading(false); return }
@@ -134,42 +137,75 @@ export default function HomePage() {
     setAuthError(false)
     const cached = cacheGet(cacheKey)
 
-    const { data, error, isAuthError } = await fetchWithTimeout(
-      supabase.from('assignments')
-        .select(`id, role, status, festival:festivals(id, name, details)`)
-        .eq('profile_id', profile.id)
-        .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
-    )
+    try {
+      let { data, error, isAuthError } = await fetchWithTimeout(
+        supabase.from('assignments')
+          .select(`id, role, status, festival:festivals(id, name, details)`)
+          .eq('profile_id', profile.id)
+          .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
+      )
 
-    let merged = data || []
-
-    if (isHubAdmin) {
-      const { data: allFestivals } = await supabase
-        .from('festivals')
-        .select('id, name, details')
-        .order('created_at', { ascending: true })
-
-      if (allFestivals) {
-        const assignedIds = new Set((data || []).map(a => a.festival?.id))
-        const adminOnly = allFestivals
-          .filter(f => !assignedIds.has(f.id))
-          .map(f => ({ id: `admin_${f.id}`, role: 'lead', status: 'zugesagt', festival: f }))
-        merged = [...(data || []), ...adminOnly]
+      // Auth-Fehler: Session einmal explizit auffrischen und Query wiederholen.
+      // refreshSession() mit eigenem Timeout absichern — bei Netzproblemen hängt es
+      // sonst ewig und setLoading(false) wird nie erreicht.
+      if (isAuthError) {
+        try {
+          const refreshPromise = supabase.auth.refreshSession()
+          const refreshTimeout = new Promise(r => setTimeout(() => r({ data: {} }), 10000))
+          const { data: refreshed } = await Promise.race([refreshPromise, refreshTimeout])
+          if (refreshed?.session) {
+            const retry = await fetchWithTimeout(
+              supabase.from('assignments')
+                .select(`id, role, status, festival:festivals(id, name, details)`)
+                .eq('profile_id', profile.id)
+                .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
+            )
+            data = retry.data
+            error = retry.error
+            isAuthError = retry.isAuthError
+          }
+        } catch { /* refresh fehlgeschlagen → isAuthError bleibt true */ }
       }
-    }
 
-    if (!error && data) {
-      setAssignments(merged)
-      cacheSet(cacheKey, data, 48 * 60 * 60 * 1000)
-    } else if (error) {
-      if (isAuthError) setAuthError(true)
-      else if (!cached) setFetchError(true)
-      // Bei Fehler: gecachte Daten behalten (aus useState-Initializer) oder Admin-Merge zeigen
-      if (isHubAdmin && merged.length > 0) setAssignments(merged)
-      else if (cached) setAssignments(cached)
+      let merged = data || []
+
+      if (isHubAdmin) {
+        // fetchWithTimeout schützt vor hängendem DB-Call für Admin-Query
+        const { data: allFestivals } = await fetchWithTimeout(
+          supabase
+            .from('festivals')
+            .select('id, name, details')
+            .order('created_at', { ascending: true }),
+          10000
+        )
+
+        if (allFestivals) {
+          const assignedIds = new Set((data || []).map(a => a.festival?.id))
+          const adminOnly = allFestivals
+            .filter(f => !assignedIds.has(f.id))
+            .map(f => ({ id: `admin_${f.id}`, role: 'lead', status: 'zugesagt', festival: f }))
+          merged = [...(data || []), ...adminOnly]
+        }
+      }
+
+      if (!error && data) {
+        setAssignments(merged)
+        cacheSet(cacheKey, data, 48 * 60 * 60 * 1000)
+      } else if (error) {
+        if (isAuthError) setAuthError(true)
+        else if (!cached) setFetchError(true)
+        // Bei Fehler: gecachte Daten behalten (aus useState-Initializer) oder Admin-Merge zeigen
+        if (isHubAdmin && merged.length > 0) setAssignments(merged)
+        else if (cached) setAssignments(cached)
+      }
+    } catch {
+      // Unerwarteter Fehler (z.B. Netzwerk-Exception) — Fallback auf Cache
+      if (cached) setAssignments(cached)
+      if (!cached) setFetchError(true)
+    } finally {
+      // setLoading(false) IMMER aufrufen — egal ob Erfolg, Fehler oder Exception
+      setLoading(false)
     }
-    // else (!error && !data): sollte nicht vorkommen, aber Assignments nicht löschen
-    setLoading(false)
   }
 
   const vorname = profile?.full_name?.split(' ')[0] || 'Hey'
