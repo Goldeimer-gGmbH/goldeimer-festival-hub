@@ -117,7 +117,7 @@ const ALL_TOPICS = [
 ]
 
 export default function HomePage() {
-  const { profile, signOut } = useAuth()
+  const { profile, signOut, user } = useAuth()
   const isHubAdmin = HUB_ADMIN_EMAILS.includes(profile?.email)
   const cacheKey = `assignments_${profile?.id}`
   // Admins: kein Cache (merged Liste kann nicht gecacht werden), immer frisch laden
@@ -126,7 +126,10 @@ export default function HomePage() {
   const [fetchError, setFetchError] = useState(false)
   const [authError, setAuthError] = useState(false)
 
-  useEffect(() => { loadAssignments() }, [profile?.id, profile?.hub_admin])
+  // user?.id als Dep: wenn die Session nach dem ersten Mount erst bestätigt wird
+  // (gecachtes Profil aber noch kein user-Objekt), wird loadAssignments erneut
+  // ausgeführt sobald user gesetzt ist — verhindert Steckenbleiben beim Zurückkehren.
+  useEffect(() => { loadAssignments() }, [profile?.id, profile?.hub_admin, user?.id])
 
   async function loadAssignments() {
     if (!profile?.id) { setLoading(false); return }
@@ -134,12 +137,29 @@ export default function HomePage() {
     setAuthError(false)
     const cached = cacheGet(cacheKey)
 
-    const { data, error, isAuthError } = await fetchWithTimeout(
+    let { data, error, isAuthError } = await fetchWithTimeout(
       supabase.from('assignments')
         .select(`id, role, status, festival:festivals(id, name, details)`)
         .eq('profile_id', profile.id)
         .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
     )
+
+    // Auth-Fehler: Session einmal explizit auffrischen und Query wiederholen.
+    // Tritt auf wenn der Access-Token beim ersten Mount noch abgelaufen war.
+    if (isAuthError) {
+      const { data: refreshed } = await supabase.auth.refreshSession()
+      if (refreshed?.session) {
+        const retry = await fetchWithTimeout(
+          supabase.from('assignments')
+            .select(`id, role, status, festival:festivals(id, name, details)`)
+            .eq('profile_id', profile.id)
+            .in('status', ['zugesagt', 'akkreditiert', 'teilgenommen'])
+        )
+        data = retry.data
+        error = retry.error
+        isAuthError = retry.isAuthError
+      }
+    }
 
     let merged = data || []
 
