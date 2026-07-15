@@ -136,6 +136,8 @@ export default function HomePage() {
     setFetchError(false)
     setAuthError(false)
     const cached = cacheGet(cacheKey)
+    // Skeleton immer zeigen wenn noch keine Assignments sichtbar sind
+    if (assignments.length === 0) setLoading(true)
 
     try {
       let { data, error, isAuthError } = await fetchWithTimeout(
