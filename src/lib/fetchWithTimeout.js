@@ -9,7 +9,12 @@ export async function fetchWithTimeout(queryPromise, ms = 8000) {
     timer = setTimeout(() => resolve({ data: null, error: new Error('timeout') }), ms)
   )
   try {
-    const result = await Promise.race([queryPromise, timeout])
+    // Query-Builder-Aufrufe (.from()/.rpc()) resolven bei Fehlern normalerweise
+    // mit { error }. supabase.auth.getSession()/refreshSession() können aber
+    // werfen (z.B. bei einem gestohlenen Web-Lock) — ohne dieses .catch() würde
+    // das hier ungefangen an den Aufrufer durchgereicht statt sauber {error}
+    // zurückzugeben.
+    const result = await Promise.race([queryPromise, timeout]).catch(err => ({ data: null, error: err }))
     // Auth-Fehler erkennen: abgelaufener JWT oder fehlende Berechtigung
     const isAuthError = !!(
       result.error && (

@@ -58,9 +58,16 @@ export function AuthProvider({ children }) {
     // Schlägt das fehl (abgelaufenes Refresh-Token), explizit refreshSession() versuchen.
     // Liefert null wenn wirklich keine gültige Session herstellbar ist.
     async function resolveSession() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) return session
-      // getSession() hat null geliefert — letzter Versuch mit explizitem Refresh
+      // Wie refreshSession() unten abgesichert: getSession() kann bei einem
+      // gestohlenen Web-Lock (navigator.locks, intern von Supabase genutzt)
+      // werfen statt zu resolven — ohne try/catch bliebe das eine unbehandelte
+      // Promise-Rejection und die Session-Auffrischung würde stillschweigend
+      // ausbleiben (z.B. bei App-Fokus nach Tab-Wechsel).
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) return session
+      } catch {}
+      // getSession() hat null geliefert (oder ist fehlgeschlagen) — letzter Versuch mit explizitem Refresh
       if (hasSupabaseRefreshToken()) {
         try {
           const { data } = await supabase.auth.refreshSession()
