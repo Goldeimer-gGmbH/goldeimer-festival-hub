@@ -120,9 +120,13 @@ export default function HomePage() {
   const { profile, signOut, user } = useAuth()
   const isHubAdmin = HUB_ADMIN_EMAILS.includes(profile?.email)
   const cacheKey = `assignments_${profile?.id}`
-  // Cache für persönliche Assignments — auch für Hub-Admins als sofortige Phase-1-Anzeige
-  const [assignments, setAssignments] = useState(() => cacheGet(cacheKey) || [])
-  const [loading, setLoading] = useState(() => !cacheGet(cacheKey))
+  const adminCacheKey = `assignments_admin_${profile?.id}`
+  // Hub-Admins: gemergte Liste (alle Festivals) bevorzugt aus Cache laden.
+  // Sonst zeigt jeder Neustart (z.B. nach PWA-Hintergrund-Kill) erst wieder nur
+  // die persönlichen Assignments, bis Phase 2 im Hintergrund erneut durchläuft.
+  const bestCached = () => (isHubAdmin && cacheGet(adminCacheKey)) || cacheGet(cacheKey)
+  const [assignments, setAssignments] = useState(() => bestCached() || [])
+  const [loading, setLoading] = useState(() => !bestCached())
   const [fetchError, setFetchError] = useState(false)
   const [authError, setAuthError] = useState(false)
 
@@ -135,7 +139,7 @@ export default function HomePage() {
     if (!profile?.id) { setLoading(false); return }
     setFetchError(false)
     setAuthError(false)
-    const cached = cacheGet(cacheKey)
+    const cached = bestCached()
     // Skeleton immer zeigen wenn noch keine Assignments sichtbar sind
     if (assignments.length === 0) setLoading(true)
 
@@ -169,11 +173,17 @@ export default function HomePage() {
       }
 
       if (!error && data) {
-        // Phase 1 abgeschlossen: persönliche Assignments sofort anzeigen
-        setAssignments(data)
         cacheSet(cacheKey, data, 48 * 60 * 60 * 1000)
-        // Phase 2 feuert im Hintergrund — blockiert setLoading(false) NICHT
-        if (isHubAdmin) loadAdminFestivals(data)
+        if (isHubAdmin) {
+          // Nur auf "nur eigene Festivals" zurückfallen, wenn noch keine (gemergte)
+          // Liste sichtbar ist — sonst flackert die Startseite bei jedem Laden kurz
+          // auf den persönlichen Stand, bevor Phase 2 wieder mergt.
+          if (assignments.length === 0) setAssignments(data)
+          // Phase 2 feuert im Hintergrund — blockiert setLoading(false) NICHT
+          loadAdminFestivals(data)
+        } else {
+          setAssignments(data)
+        }
       } else if (error) {
         if (isAuthError) setAuthError(true)
         else if (!cached) setFetchError(true)
@@ -203,7 +213,7 @@ export default function HomePage() {
         15000
       )
       if (data !== null) {
-        cacheSet('admin_all_festivals', data, 4 * 60 * 60 * 1000)
+        cacheSet('admin_all_festivals', data, 48 * 60 * 60 * 1000)
         mergeAdminFestivals(personalData, data)
         return
       }
@@ -217,7 +227,9 @@ export default function HomePage() {
     const adminOnly = allFestivals
       .filter(f => !assignedIds.has(f.id))
       .map(f => ({ id: `admin_${f.id}`, role: 'lead', status: 'zugesagt', festival: f }))
-    setAssignments([...personalData, ...adminOnly])
+    const merged = [...personalData, ...adminOnly]
+    setAssignments(merged)
+    cacheSet(adminCacheKey, merged, 48 * 60 * 60 * 1000)
   }
 
   const vorname = profile?.full_name?.split(' ')[0] || 'Hey'
