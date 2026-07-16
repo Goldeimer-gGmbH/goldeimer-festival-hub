@@ -2797,8 +2797,8 @@ function InfosTab({ details, role, content, festivalId }) {
 
 // ── AufbauRueckmeldung ────────────────────────────────────────────────────────
 
-// Alle Rollen, die beim Aufbau dabei sein können
-const AUFBAU_CREW_ROLES = ['lead', 'operator', 'supporti_plus', 'catering']
+// Rollen, die im Auf-/Abbau-Raster erscheinen (Catering wird separat abgerechnet)
+const AUFBAU_CREW_ROLES = ['lead', 'operator', 'supporti_plus']
 
 const WOCHENTAGE_KURZ = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
 
@@ -3203,10 +3203,10 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew, details, inSheet =
       <div className="card" style={ inSheet ? { borderRadius: 0, boxShadow: 'none', border: 'none' } : {} }>
         {!inSheet && <h4 className="card-title" style={{ marginBottom: 6 }}>Rückmeldung Auf- und Abbau-Crew</h4>}
         <p style={{ fontSize: 13, color: 'var(--grau-text)', lineHeight: 1.6, marginBottom: 'var(--sp-4)' }}>
-          Hakt pro Person ab, an welchen Tagen sie beim Auf- und Abbau dabei war – für den
-          Aufbautag, jeden Tag dazwischen und den Abbautag. Alles wird automatisch
-          zwischengespeichert; ihr seht den Stand des jeweils anderen Leads. „Rückmeldung
-          abschicken“ überträgt den Stand ins Büro (Pauschalen) – das geht beliebig oft, auch zur Korrektur.
+          Als Lead hakst du pro Person ab, ob sie am Aufbau/Abbau mitgeholfen haben und an welchen
+          Tagen sie anwesend war. Alles wird zwischengespeichert, sodass du es beliebig oft
+          aktualisieren und parallel zu anderen Leads bearbeiten kannst. Diese Info wird ans Büro
+          übertragen und dient der Berechnung der Ehrenamtspauschalen nach dem Festival.
         </p>
 
         {submission?.submitted_at && (
