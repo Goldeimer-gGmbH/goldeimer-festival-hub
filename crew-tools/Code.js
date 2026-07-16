@@ -5922,9 +5922,14 @@ function writeAufbauReport_(data) {
     })
   }
 
+  // Sonstiges ist festival-weit → nur in die erste Personenzeile des Festivals schreiben,
+  // die übrigen Zeilen leeren (bereinigt automatisch früher wiederholte Werte).
+  let sonstigesWritten = false
   entries.forEach(e => {
     if (!e.name) return
-    const rowValues = [data.festival_name, e.name, e.role_label, e.days, sonstiges, data.submitted_by_name, ts]
+    const rowSonstiges = sonstigesWritten ? '' : sonstiges
+    sonstigesWritten = true
+    const rowValues = [data.festival_name, e.name, e.role_label, e.days, rowSonstiges, data.submitted_by_name, ts]
     const key = String(data.festival_name || '').trim() + '||' + String(e.name).trim()
     const existingRow = rowByKey.get(key)
     if (existingRow) {
