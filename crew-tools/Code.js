@@ -5861,33 +5861,78 @@ function writeAnwesenheitReport_(data) {
   })
 }
 
+// Schreibt/aktualisiert die Auf-/Abbau-Rückmeldung pro Person (Upsert über Festival+Name),
+// NICHT append-only — sonst würde jedes erneute Abschicken (Korrektur) Karteileichen erzeugen.
+// Spalten sind tage-basiert ("Tage anwesend" als Textliste), da die Tagesanzahl je Festival
+// variiert. Verarbeitet bevorzugt das neue Format (data.entries mit day_labels) und fällt auf
+// das alte tasks-Format (crew_entries/extra_entries) zurück (robust während des Deploy-Fensters).
 function writeAufbauReport_(data) {
   const sheetId = PropertiesService.getScriptProperties().getProperty('REPORTS_SS_ID')
     || '19RLr7RQ0yZQ84NGd6ShgJp_tKWwVLfH6-ibsRXhaq_E'
   const ss = SpreadsheetApp.openById(sheetId)
 
+  const HEADER = ['Festival', 'Name', 'Rolle', 'Tage anwesend', 'Sonstiges', 'Eingabe durch', 'Eingabe am']
+
+  // Bestehendes 'Aufbau'-Sheet mit alter Spaltenstruktur (Packen/Fahren/…) archivieren,
+  // damit die neuen tage-basierten Zeilen nicht mit dem alten Header kollidieren.
   let sheet = ss.getSheetByName('Aufbau')
+  if (sheet) {
+    const existing = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), HEADER.length)).getValues()[0]
+    const matches = HEADER.every((h, i) => existing[i] === h)
+    if (!matches) {
+      let altName = 'Aufbau_alt', n = 1
+      while (ss.getSheetByName(altName)) altName = 'Aufbau_alt_' + (n++)
+      sheet.setName(altName)
+      sheet = null
+    }
+  }
   if (!sheet) {
     sheet = ss.insertSheet('Aufbau')
-    sheet.appendRow(['Festival', 'Name', 'Rolle', 'Packen', 'Fahren', 'Ausladen', 'Aufbau', 'Eingabe durch', 'Eingabe am'])
-    sheet.getRange(1, 1, 1, 9).setFontWeight('bold')
+    sheet.appendRow(HEADER)
+    sheet.getRange(1, 1, 1, HEADER.length).setFontWeight('bold')
   }
 
-  const ts = new Date(data.submitted_at).toLocaleString('de-DE')
-  ;(data.crew_entries || []).forEach(e => {
-    const t = e.tasks || []
-    sheet.appendRow([data.festival_name, e.name, e.role_label,
-      t.includes('packen') ? '✓' : '', t.includes('fahren') ? '✓' : '',
-      t.includes('ausladen') ? '✓' : '', t.includes('aufbau') ? '✓' : '',
-      data.submitted_by_name, ts])
-  })
-  ;(data.extra_entries || []).forEach(e => {
+  const ts        = new Date(data.submitted_at).toLocaleString('de-DE')
+  const sonstiges = data.sonstiges || ''
+
+  // Einträge normalisieren → { name, role_label, days (Textliste) }
+  let entries = []
+  if (Array.isArray(data.entries) && data.entries.length) {
+    entries = data.entries.map(e => ({
+      name:       e.name || '',
+      role_label: e.role_label || (e.is_extra ? 'Weitere' : ''),
+      days:       Array.isArray(e.day_labels) ? e.day_labels.join(', ') : '',
+    }))
+  } else {
+    const legacy = (data.crew_entries || []).concat(data.extra_entries || [])
+    entries = legacy.map(e => ({
+      name:       e.name || '',
+      role_label: e.role_label || 'Weitere',
+      days:       (e.tasks || []).join(', '),
+    }))
+  }
+
+  // Upsert-Index über (Festival + Name)
+  const lastRow = sheet.getLastRow()
+  const rowByKey = new Map()
+  if (lastRow > 1) {
+    const vals = sheet.getRange(2, 1, lastRow - 1, 2).getValues() // Festival, Name
+    vals.forEach((r, i) => {
+      if (r[1]) rowByKey.set(String(r[0] || '').trim() + '||' + String(r[1]).trim(), i + 2)
+    })
+  }
+
+  entries.forEach(e => {
     if (!e.name) return
-    const t = e.tasks || []
-    sheet.appendRow([data.festival_name, e.name, 'Weitere',
-      t.includes('packen') ? '✓' : '', t.includes('fahren') ? '✓' : '',
-      t.includes('ausladen') ? '✓' : '', t.includes('aufbau') ? '✓' : '',
-      data.submitted_by_name, ts])
+    const rowValues = [data.festival_name, e.name, e.role_label, e.days, sonstiges, data.submitted_by_name, ts]
+    const key = String(data.festival_name || '').trim() + '||' + String(e.name).trim()
+    const existingRow = rowByKey.get(key)
+    if (existingRow) {
+      sheet.getRange(existingRow, 1, 1, rowValues.length).setValues([rowValues])
+    } else {
+      sheet.appendRow(rowValues)
+      rowByKey.set(key, sheet.getLastRow())
+    }
   })
 }
 

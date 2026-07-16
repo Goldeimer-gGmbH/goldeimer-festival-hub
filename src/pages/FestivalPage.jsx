@@ -124,9 +124,9 @@ const CONTENT_AUFBAUTAG = [
     type: 'rueckmeldung',
     title: 'Nachbereitung',
     bullets: [
-      'Gib Rückmeldung zurück ans Büro, wer alles bei welchen Aufgaben mitgeholfen hat.',
+      'Meldet zurück ans Büro, wer an welchen Tagen beim Auf- und Abbau dabei war.',
       'Auf Basis dessen berechnen wir die Pauschalen.',
-      'Achtung: Dieses Formular kannst du nur einmal ausfüllen.',
+      'Ihr könnt jederzeit ergänzen und erneut abschicken – beide Leads sehen denselben Stand.',
     ],
   },
 ]
@@ -1533,7 +1533,7 @@ function AnleitungSheet({ onClose }) {
 
 // ── Rückmeldung Aufbau Sheet ──────────────────────────────────────────────────
 
-function RueckmeldungSheet({ festivalId, festivalName, crew, onClose }) {
+function RueckmeldungSheet({ festivalId, festivalName, crew, details, onClose }) {
   return (
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 400 }} />
@@ -1552,7 +1552,7 @@ function RueckmeldungSheet({ festivalId, festivalName, crew, onClose }) {
           flexShrink: 0, background: 'var(--weiss)', borderRadius: '16px 16px 0 0',
         }}>
           <div style={{ fontWeight: 800, fontSize: 'var(--text-base)', fontFamily: 'var(--font-heading)' }}>
-            Rückmeldung Aufbau
+            Rückmeldung Auf- und Abbau-Crew
           </div>
           <button onClick={onClose} aria-label="Schließen" style={{
             background: 'var(--papier)', border: 'none', borderRadius: '50%',
@@ -1562,7 +1562,7 @@ function RueckmeldungSheet({ festivalId, festivalName, crew, onClose }) {
           }}>✕</button>
         </div>
         <div style={{ overflowY: 'auto', flex: 1, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-          <AufbauRueckmeldung festivalId={festivalId} festivalName={festivalName} crew={crew} inSheet />
+          <AufbauRueckmeldung festivalId={festivalId} festivalName={festivalName} crew={crew} details={details} inSheet />
         </div>
       </div>
     </>
@@ -1663,7 +1663,7 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName, details, inAccor
                   <div style={{ fontSize: 13, color: 'var(--grau-text)', marginBottom: 6, lineHeight: 1.5 }}>{item.detail}</div>
                 )}
                 <button onClick={() => setShowRueckmeldung(true)} className="button button--sm" style={{ width: 'auto' }}>
-                  Rückmeldung Aufbau
+                  Rückmeldung Auf- und Abbau-Crew
                 </button>
               </div>
             )
@@ -1796,6 +1796,7 @@ function AblaufDayDetail({ day, crew, festivalId, festivalName, details, inAccor
           festivalId={festivalId}
           festivalName={festivalName}
           crew={crew}
+          details={details}
           onClose={() => setShowRueckmeldung(false)}
         />
       )}
@@ -2796,65 +2797,99 @@ function InfosTab({ details, role, content, festivalId }) {
 
 // ── AufbauRueckmeldung ────────────────────────────────────────────────────────
 
-const AUFBAU_TASKS = [
-  { id: 'packen', label: 'Packen' },
-  { id: 'fahren', label: 'Fahren' },
-  { id: 'aufbau', label: 'Aufbau' },
-]
-
 // Alle Rollen, die beim Aufbau dabei sein können
 const AUFBAU_CREW_ROLES = ['lead', 'operator', 'supporti_plus', 'catering']
 
-// ── Außerhalb der Komponente definiert: verhindert Unmount/Remount bei Re-Render ──
+const WOCHENTAGE_KURZ = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
 
-function AufbauTaskHeader() {
+// Baut die Tag-Spalten der Auf-/Abbau-Rückmeldung aus der Festival-Config:
+// von start_setup bis end_takedown, ein Eintrag pro Kalendertag.
+// Erster Tag = "Aufbau", letzter = "Abbau", dazwischen "Do 14.07.".
+// key = DD.MM.YYYY (stabil, wird in aufbau_day_entries.days gespeichert).
+function buildAufbauDays(details) {
+  const start = parseDeDate(details?.start_setup)
+  const end   = parseDeDate(details?.end_takedown)
+  if (!start || !end || end < start) return []
+  const MS_DAY = 24 * 60 * 60 * 1000
+  const total  = Math.round((end - start) / MS_DAY) + 1
+  const days = []
+  for (let i = 0; i < total; i++) {
+    const d   = new Date(start.getTime() + i * MS_DAY)
+    const key = toDeDate(d)
+    const dm  = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.`
+    const dated = `${WOCHENTAGE_KURZ[d.getDay()]} ${dm}`
+    const label = i === 0 ? 'Aufbau' : i === total - 1 ? 'Abbau' : dated
+    days.push({ key, label, dated, isEdge: i === 0 || i === total - 1 })
+  }
+  return days
+}
+
+const AUFBAU_NAME_COL = 140   // Breite der (sticky) Namensspalte
+const AUFBAU_DAY_COL  = 50    // Breite je Tag-Spalte
+
+function AufbauDayHeader({ days }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
-      <div style={{ flex: 1, minWidth: 0 }} />
-      {AUFBAU_TASKS.map(t => (
-        <div key={t.id} style={{
-          width: 52, textAlign: 'center', flexShrink: 0,
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, marginBottom: 8 }}>
+      <div style={{ width: AUFBAU_NAME_COL, flexShrink: 0, position: 'sticky', left: 0, background: 'var(--weiss)', zIndex: 2 }} />
+      {days.map(day => (
+        <div key={day.key} style={{
+          width: AUFBAU_DAY_COL, flexShrink: 0, textAlign: 'center',
           fontSize: 9, fontWeight: 800, fontFamily: 'var(--font-heading)',
-          letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--grau-text)',
+          letterSpacing: '0.02em', color: 'var(--grau-text)', lineHeight: 1.25,
         }}>
-          {t.label}
+          {day.isEdge ? (
+            <>
+              <div style={{ textTransform: 'uppercase' }}>{day.label}</div>
+              <div style={{ fontWeight: 600, fontSize: 8 }}>{day.dated.split(' ')[1]}</div>
+            </>
+          ) : (
+            <>
+              <div>{day.label.split(' ')[0]}</div>
+              <div style={{ fontWeight: 600, fontSize: 8 }}>{day.label.split(' ')[1]}</div>
+            </>
+          )}
         </div>
       ))}
     </div>
   )
 }
 
-function AufbauTaskRow({ name, sublabel, checkedTasks, onToggle, isLast, readOnly }) {
+function AufbauDayRow({ name, sublabel, nameNode, days, checkedKeys, onToggle, isLast, readOnly }) {
+  const checked = new Set(checkedKeys || [])
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 4,
       paddingBottom: isLast ? 0 : 10, marginBottom: isLast ? 0 : 10,
       borderBottom: isLast ? 'none' : '1px solid var(--border)',
     }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--schwarz)',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {name || '—'}
-        </div>
-        {sublabel && (
-          <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase',
-            letterSpacing: '0.04em', color: 'var(--grau-text)', fontFamily: 'var(--font-heading)' }}>
-            {sublabel}
-          </div>
+      <div style={{ width: AUFBAU_NAME_COL, flexShrink: 0, minWidth: 0, position: 'sticky', left: 0, background: 'var(--weiss)', zIndex: 1, paddingRight: 6 }}>
+        {nameNode ? nameNode : (
+          <>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--schwarz)',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {name || '—'}
+            </div>
+            {sublabel && (
+              <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase',
+                letterSpacing: '0.04em', color: 'var(--grau-text)', fontFamily: 'var(--font-heading)' }}>
+                {sublabel}
+              </div>
+            )}
+          </>
         )}
       </div>
-      {AUFBAU_TASKS.map(t => {
-        const checked = (checkedTasks || []).includes(t.id)
+      {days.map(day => {
+        const isOn = checked.has(day.key)
         return (
           <button
-            key={t.id}
+            key={day.key}
             type="button"
-            onClick={e => { e.preventDefault(); !readOnly && onToggle && onToggle(t.id) }}
+            onClick={e => { e.preventDefault(); !readOnly && onToggle && onToggle(day.key) }}
             style={{
-              width: 52, height: 36, flexShrink: 0,
-              border: `1.5px solid ${checked ? 'var(--schwarz)' : 'var(--border)'}`,
+              width: AUFBAU_DAY_COL, height: 36, flexShrink: 0,
+              border: `1.5px solid ${isOn ? 'var(--schwarz)' : 'var(--border)'}`,
               borderRadius: 6,
-              background: checked ? 'var(--gelb)' : 'transparent',
+              background: isOn ? 'var(--gelb)' : 'transparent',
               cursor: readOnly ? 'default' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 14, fontWeight: 700,
@@ -2862,7 +2897,7 @@ function AufbauTaskRow({ name, sublabel, checkedTasks, onToggle, isLast, readOnl
               WebkitTapHighlightColor: 'transparent',
             }}
           >
-            {checked ? '✓' : ''}
+            {isOn ? '✓' : ''}
           </button>
         )
       })}
@@ -2870,7 +2905,7 @@ function AufbauTaskRow({ name, sublabel, checkedTasks, onToggle, isLast, readOnl
   )
 }
 
-function AufbauRueckmeldung({ festivalId, festivalName, crew, inSheet = false }) {
+function AufbauRueckmeldung({ festivalId, festivalName, crew, details, inSheet = false }) {
   const { profile } = useAuth()
 
   // Crew auf Aufbau-relevante Rollen filtern, nach Rolle sortieren
@@ -2878,168 +2913,225 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew, inSheet = false })
     .filter(m => AUFBAU_CREW_ROLES.includes(m.role))
     .sort((a, b) => ROLLE_ORDER.indexOf(a.role) - ROLLE_ORDER.indexOf(b.role))
 
-  // Pro Crew-Mitglied ein tasks-Array; wird aus DB wiederhergestellt
+  // Tag-Spalten aus der Festival-Config (start_setup..end_takedown)
+  const days = buildAufbauDays(details)
+
   const reportCacheKey = `aufbau_report_${festivalId}`
-
-  function applyReportData(data) {
-    setReport(data)
-    if (data.crew_entries?.length) {
-      setEntries(aufbauCrew.map(member => {
-        const saved = data.crew_entries.find(e => e.name === member.full_name)
-        return { tasks: saved?.tasks || [] }
-      }))
-    }
-    if (data.extra_entries?.length) {
-      setExtraPeople(data.extra_entries.map(e => ({ name: e.name, tasks: e.tasks || [] })))
-    }
-  }
-
   const cachedReport = cacheGet(reportCacheKey)
-  const [entries, setEntries]         = useState(() => {
-    if (cachedReport?.crew_entries?.length) {
-      return aufbauCrew.map(member => {
-        const saved = cachedReport.crew_entries.find(e => e.name === member.full_name)
-        return { tasks: saved?.tasks || [] }
-      })
-    }
-    return aufbauCrew.map(() => ({ tasks: [] }))
-  })
-  const [extraPeople, setExtraPeople] = useState(() =>
-    cachedReport?.extra_entries?.length
-      ? cachedReport.extra_entries.map(e => ({ name: e.name, tasks: e.tasks || [] }))
-      : [{ name: '', tasks: [] }]
+
+  // Stabiler Schlüssel je Crew-Mitglied (assignment_id, sonst Name-Fallback)
+  const crewKey = m => m.assignment_id || `crew_${m.full_name || ''}`
+  const genKey = () => 'extra_' + (
+    (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : Date.now().toString(36) + Math.random().toString(36).slice(2)
   )
-  const [report, setReport]           = useState(() => cachedReport || null)
-  const [loadingReport, setLoadingReport] = useState(false)
-  const [submitting, setSubmitting]   = useState(false)
+
+  // State: crewDays = { [crewKey]: string[] }; extras = [{ key, name, days:[] }]
+  const [crewDays, setCrewDays]   = useState(() => cachedReport?.crew_days || {})
+  const [extras, setExtras]       = useState(() => cachedReport?.extras || [])
+  const [sonstiges, setSonstiges] = useState(() => cachedReport?.sonstiges || '')
+  const [submission, setSubmission] = useState(() =>
+    cachedReport?.submitted_at
+      ? { submitted_by_name: cachedReport.submitted_by_name, submitted_at: cachedReport.submitted_at, submission_count: cachedReport.submission_count }
+      : null
+  )
+  const [loadingReport, setLoadingReport] = useState(() => !cachedReport)
+  const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
-  const [saveStatus, setSaveStatus]   = useState('') // 'saving' | 'saved' | ''
-  const saveTimer = useRef(null)
+  const [saveStatus, setSaveStatus] = useState('') // 'saving' | 'saved' | ''
 
-  useEffect(() => { loadReport() }, [festivalId])
+  // Keys die gerade lokal editiert/gespeichert werden — schützt vor dem
+  // Überschreiben durch den 20s-Poll mitten in einer Eingabe.
+  const dirtyKeys       = useRef(new Set())
+  const sonstigesDirty  = useRef(false)
+  const saveTimers      = useRef({})
+  const sonstigesTimer  = useRef(null)
 
-  async function loadReport() {
-    try {
-      const { data, error } = await fetchWithTimeout(
-        supabase
-          .from('aufbau_reports')
-          .select('*')
-          .eq('festival_id', festivalId)
-          .maybeSingle(),
-        8000
-      )
+  // Cache spiegeln, damit die Rückmeldung beim nächsten Öffnen sofort da ist.
+  useEffect(() => {
+    cacheSet(reportCacheKey, {
+      crew_days: crewDays, extras, sonstiges,
+      submitted_by_name: submission?.submitted_by_name,
+      submitted_at: submission?.submitted_at,
+      submission_count: submission?.submission_count,
+    }, 48 * 60 * 60 * 1000)
+  }, [crewDays, extras, sonstiges, submission])
 
-      if (!error && data) {
-        applyReportData(data)
-        cacheSet(reportCacheKey, data, 48 * 60 * 60 * 1000)
-      }
-    } catch (e) {
-      console.error('loadReport error:', e)
-    } finally {
-      setLoadingReport(false)
+  // Geteilter Live-Draft: beim Öffnen + alle 20s frisch laden und mergen,
+  // sodass beide Leads den Stand des jeweils anderen sehen.
+  useEffect(() => {
+    if (!festivalId) return
+    let cancelled = false
+    const refresh = async () => {
+      try {
+        const [entriesRes, reportRes] = await Promise.all([
+          fetchWithTimeout(
+            supabase.from('aufbau_day_entries')
+              .select('entry_key, name, is_extra, days')
+              .eq('festival_id', festivalId),
+            8000
+          ),
+          fetchWithTimeout(
+            supabase.from('aufbau_reports')
+              .select('sonstiges, submitted_by_name, submitted_at, submission_count')
+              .eq('festival_id', festivalId).maybeSingle(),
+            8000
+          ),
+        ])
+        if (cancelled) return
+        if (entriesRes.data) applyEntries(entriesRes.data)
+        if (reportRes.data) applyReport(reportRes.data)
+      } catch { /* Netzfehler ignorieren, lokaler Stand bleibt */ }
+      finally { if (!cancelled) setLoadingReport(false) }
+    }
+    refresh()
+    const interval = setInterval(refresh, 20000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [festivalId])
+
+  function applyEntries(rows) {
+    // Crew-Zeilen: days je Key übernehmen, außer der Key wird gerade editiert
+    setCrewDays(prev => {
+      const next = { ...prev }
+      rows.filter(r => !r.is_extra).forEach(r => {
+        if (dirtyKeys.current.has(r.entry_key)) return
+        next[r.entry_key] = r.days || []
+      })
+      return next
+    })
+    // Extra-Zeilen: DB-Stand mergen, lokal-editierte/noch-nicht-gespeicherte behalten
+    setExtras(prev => {
+      const byKey = new Map(prev.map(e => [e.key, e]))
+      const seen = new Set()
+      const result = []
+      rows.filter(r => r.is_extra).forEach(r => {
+        seen.add(r.entry_key)
+        const local = byKey.get(r.entry_key)
+        if (local && dirtyKeys.current.has(r.entry_key)) result.push(local)
+        else result.push({ key: r.entry_key, name: r.name || '', days: r.days || [] })
+      })
+      prev.forEach(e => { if (!seen.has(e.key)) result.push(e) }) // lokal-only behalten
+      return result
+    })
+  }
+
+  function applyReport(r) {
+    if (!sonstigesDirty.current) setSonstiges(r.sonstiges || '')
+    if (r.submitted_at) {
+      setSubmission({ submitted_by_name: r.submitted_by_name, submitted_at: r.submitted_at, submission_count: r.submission_count })
     }
   }
 
-  // Debounced Draft-Speicherung (1,5 s nach letzter Änderung)
-  function scheduleSave(nextEntries, nextExtra) {
-    if (report?.is_submitted) return
-    clearTimeout(saveTimer.current)
+  // Debounced per-Person-Upsert (nur diese eine Zeile → kein Clobbering zwischen Leads)
+  function persistEntry(key, row) {
+    dirtyKeys.current.add(key)
     setSaveStatus('saving')
-    saveTimer.current = setTimeout(() => saveDraft(nextEntries, nextExtra), 1500)
+    clearTimeout(saveTimers.current[key])
+    saveTimers.current[key] = setTimeout(async () => {
+      try {
+        await supabase.from('aufbau_day_entries').upsert({
+          festival_id: festivalId,
+          entry_key:   key,
+          name:        row.name || '',
+          role:        row.role || null,
+          role_label:  row.role_label || null,
+          is_extra:    !!row.is_extra,
+          days:        row.days || [],
+          updated_at:  new Date().toISOString(),
+        }, { onConflict: 'festival_id,entry_key' })
+        setSaveStatus('saved')
+      } catch { setSaveStatus('') }
+      finally { dirtyKeys.current.delete(key) }
+    }, 600)
   }
 
-  async function saveDraft(curEntries, curExtra) {
-    const crewPayload = aufbauCrew.map((m, i) => ({
-      name:       m.full_name || '',
-      role:       m.role,
-      role_label: ROLLE_LABEL[m.role] || m.role,
-      tasks:      curEntries[i]?.tasks || [],
-    }))
-    const extraPayload = curExtra
-      .filter(e => e.name.trim())
-      .map(e => ({ name: e.name.trim(), tasks: e.tasks || [] }))
-
-    const { error } = await supabase
-      .from('aufbau_reports')
-      .upsert(
-        { festival_id: festivalId, crew_entries: crewPayload, extra_entries: extraPayload,
-          updated_at: new Date().toISOString() },
-        { onConflict: 'festival_id' }
-      )
-    setSaveStatus(error ? '' : 'saved')
+  function toggleCrewDay(member, dayKey) {
+    const key = crewKey(member)
+    setCrewDays(prev => {
+      const cur = prev[key] || []
+      const nextDays = cur.includes(dayKey) ? cur.filter(d => d !== dayKey) : [...cur, dayKey]
+      persistEntry(key, { name: member.full_name || '', role: member.role, role_label: ROLLE_LABEL[member.role] || member.role, is_extra: false, days: nextDays })
+      return { ...prev, [key]: nextDays }
+    })
   }
 
-  function toggleCrewTask(memberIdx, taskId) {
-    if (report?.is_submitted) return
-    setEntries(prev => {
-      const next = prev.map((e, i) => {
-        if (i !== memberIdx) return e
-        const tasks = e.tasks.includes(taskId)
-          ? e.tasks.filter(t => t !== taskId)
-          : [...e.tasks, taskId]
-        return { ...e, tasks }
+  function toggleExtraDay(key, dayKey) {
+    setExtras(prev => {
+      const next = prev.map(e => {
+        if (e.key !== key) return e
+        const nextDays = e.days.includes(dayKey) ? e.days.filter(d => d !== dayKey) : [...e.days, dayKey]
+        return { ...e, days: nextDays }
       })
-      scheduleSave(next, extraPeople)
+      const row = next.find(e => e.key === key)
+      persistEntry(key, { name: (row?.name || '').trim(), is_extra: true, days: row?.days || [] })
       return next
     })
   }
 
-  function toggleExtraTask(idx, taskId) {
-    if (report?.is_submitted) return
-    setExtraPeople(prev => {
-      const next = prev.map((e, i) => {
-        if (i !== idx) return e
-        const tasks = e.tasks.includes(taskId)
-          ? e.tasks.filter(t => t !== taskId)
-          : [...e.tasks, taskId]
-        return { ...e, tasks }
-      })
-      scheduleSave(entries, next)
-      return next
-    })
-  }
-
-  function updateExtraName(idx, name) {
-    if (report?.is_submitted) return
-    setExtraPeople(prev => {
-      const next = prev.map((e, i) => i === idx ? { ...e, name } : e)
-      scheduleSave(entries, next)
+  function updateExtraName(key, name) {
+    setExtras(prev => {
+      const next = prev.map(e => e.key === key ? { ...e, name } : e)
+      const row = next.find(e => e.key === key)
+      persistEntry(key, { name: name.trim(), is_extra: true, days: row?.days || [] })
       return next
     })
   }
 
   function addExtraPerson() {
-    setExtraPeople(prev => [...prev, { name: '', tasks: [] }])
+    setExtras(prev => [...prev, { key: genKey(), name: '', days: [] }])
   }
 
-  function removeExtraPerson(idx) {
-    if (report?.is_submitted) return
-    setExtraPeople(prev => {
-      const next = prev.filter((_, i) => i !== idx)
-      scheduleSave(entries, next)
-      return next
-    })
+  function removeExtraPerson(key) {
+    clearTimeout(saveTimers.current[key])
+    dirtyKeys.current.delete(key)
+    setExtras(prev => prev.filter(e => e.key !== key))
+    supabase.from('aufbau_day_entries').delete()
+      .eq('festival_id', festivalId).eq('entry_key', key)
+      .then(() => {}, () => {})
+  }
+
+  function onSonstigesChange(v) {
+    setSonstiges(v)
+    sonstigesDirty.current = true
+    setSaveStatus('saving')
+    clearTimeout(sonstigesTimer.current)
+    sonstigesTimer.current = setTimeout(async () => {
+      try {
+        await supabase.from('aufbau_reports').upsert(
+          { festival_id: festivalId, sonstiges: v, updated_at: new Date().toISOString() },
+          { onConflict: 'festival_id' }
+        )
+        setSaveStatus('saved')
+      } catch { setSaveStatus('') }
+      finally { sonstigesDirty.current = false }
+    }, 1200)
   }
 
   async function handleSubmit() {
     setSubmitting(true)
     setSubmitError('')
-
     try {
-      const crewPayload = aufbauCrew.map((m, i) => ({
+      // Tag-Keys je Person in Spaltenreihenfolge zu Labels ("Aufbau", "Do 14.07.", "Abbau")
+      const orderIdx = k => days.findIndex(d => d.key === k)
+      const labelFor = k => { const d = days.find(x => x.key === k); return d ? d.label : k }
+      const buildLabels = ks => [...(ks || [])].sort((a, b) => orderIdx(a) - orderIdx(b)).map(labelFor)
+
+      const crewEntries = aufbauCrew.map(m => ({
         name:       m.full_name || '',
         role:       m.role,
         role_label: ROLLE_LABEL[m.role] || m.role,
-        tasks:      entries[i]?.tasks || [],
+        is_extra:   false,
+        day_labels: buildLabels(crewDays[crewKey(m)]),
       }))
-      const extraPayload = extraPeople
-        .filter(e => e.name.trim())
-        .map(e => ({ name: e.name.trim(), tasks: e.tasks || [] }))
+      const extraEntries = extras.filter(e => e.name.trim()).map(e => ({
+        name:       e.name.trim(),
+        role_label: 'Weitere',
+        is_extra:   true,
+        day_labels: buildLabels(e.days),
+      }))
+      const entries = [...crewEntries, ...extraEntries]
 
-      // Plain fetch statt supabase.functions.invoke — invoke blockiert intern
-      // beim Session-Refresh (Web-Lock-Problem). Mit getAccessTokenFast() holen
-      // wir den Token mit Timeout + LocalStorage-Fallback, damit der Button nie
-      // ewig auf "Wird abgeschickt…" hängen bleibt.
       const token = await getAccessTokenFast()
       if (!token) throw new Error('Nicht eingeloggt – bitte Seite neu laden')
 
@@ -3058,10 +3150,10 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew, inSheet = false })
               'apikey':        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzZGttZ2xrcXhzenl2b21yZmltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNTk4NjYsImV4cCI6MjA5MTczNTg2Nn0.CkX010BgVGjJUOs7RSYHlXJSwA-0jL4iPvi4gA59dTM',
             },
             body:    JSON.stringify({
-              festival_id:    festivalId,
-              festival_name:  festivalName,
-              crew_entries:   crewPayload,
-              extra_entries:  extraPayload,
+              festival_id:   festivalId,
+              festival_name: festivalName,
+              entries,
+              sonstiges,
             }),
             signal: controller.signal,
           }
@@ -3070,20 +3162,15 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew, inSheet = false })
         clearTimeout(timeoutId)
       }
 
-      const invokeData = await res.json()
-
-      if (!res.ok || invokeData?.error) {
-        setSubmitError(invokeData?.error || `Fehler ${res.status}`)
+      const resData = await res.json()
+      if (!res.ok || resData?.error) {
+        setSubmitError(resData?.error || `Fehler ${res.status}`)
       } else {
-        const updated = {
-          ...(report || {}),
-          is_submitted:      true,
-          submitted_by_name: invokeData.submitted_by,
+        setSubmission({
+          submitted_by_name: resData.submitted_by,
           submitted_at:      new Date().toISOString(),
-          submission_count:  invokeData.submission_count || 1,
-        }
-        setReport(updated)
-        cacheSet(reportCacheKey, updated, 48 * 60 * 60 * 1000)
+          submission_count:  resData.submission_count || 1,
+        })
       }
     } catch (e) {
       setSubmitError(e?.name === 'AbortError' ? 'Netz zu langsam – Daten wurden wahrscheinlich trotzdem gespeichert, bitte prüfen.' : (e?.message || 'Unbekannter Fehler beim Abschicken'))
@@ -3100,8 +3187,7 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew, inSheet = false })
     )
   }
 
-  const isSubmitted = !!report?.is_submitted
-  const isLocked = isSubmitted
+  const gridWidth = AUFBAU_NAME_COL + days.length * (AUFBAU_DAY_COL + 4)
 
   return (
     <div style={{ marginTop: inSheet ? 0 : 'var(--sp-6)' }}>
@@ -3115,160 +3201,137 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew, inSheet = false })
       )}
 
       <div className="card" style={ inSheet ? { borderRadius: 0, boxShadow: 'none', border: 'none' } : {} }>
-        {!inSheet && <h4 className="card-title" style={{ marginBottom: 6 }}>Rückmeldung Aufbau</h4>}
+        {!inSheet && <h4 className="card-title" style={{ marginBottom: 6 }}>Rückmeldung Auf- und Abbau-Crew</h4>}
         <p style={{ fontSize: 13, color: 'var(--grau-text)', lineHeight: 1.6, marginBottom: 'var(--sp-4)' }}>
-          Bitte gib uns am Ende des Aufbaus Rückmeldung über Anwesenheiten und Aufgabenverteilungen,
-          damit wir im Büro die richtigen Pauschalen berechnen können.
+          Hakt pro Person ab, an welchen Tagen sie beim Auf- und Abbau dabei war – für den
+          Aufbautag, jeden Tag dazwischen und den Abbautag. Alles wird automatisch
+          zwischengespeichert; ihr seht den Stand des jeweils anderen Leads. „Rückmeldung
+          abschicken“ überträgt den Stand ins Büro (Pauschalen) – das geht beliebig oft, auch zur Korrektur.
         </p>
 
-        {/* Crew-Liste */}
-        {aufbauCrew.length > 0 && (
-          <div style={{ marginBottom: 'var(--sp-4)', opacity: submitting ? 0.4 : 1, pointerEvents: submitting ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
-            <AufbauTaskHeader />
-            {aufbauCrew.map((member, idx) => (
-              <AufbauTaskRow
-                key={idx}
-                name={member.full_name}
-                sublabel={ROLLE_LABEL[member.role]}
-                checkedTasks={entries[idx]?.tasks || []}
-                onToggle={taskId => toggleCrewTask(idx, taskId)}
-                isLast={idx === aufbauCrew.length - 1}
-                readOnly={isLocked || submitting}
-              />
-            ))}
+        {submission?.submitted_at && (
+          <div style={{
+            background: '#e8f5e9', border: '1.5px solid var(--gruen)', borderRadius: 8,
+            padding: '8px 12px', fontSize: 12, color: 'var(--gruen)', fontWeight: 600, lineHeight: 1.5,
+            marginBottom: 'var(--sp-4)',
+          }}>
+            ✓ Zuletzt abgeschickt von <strong>{submission.submitted_by_name}</strong> um{' '}
+            {new Date(submission.submitted_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} Uhr
+            {submission.submission_count > 1 && <> ({submission.submission_count}. Mal)</>}
           </div>
         )}
 
-        {/* Weitere Personen – bearbeitbar */}
-        {!isLocked && (
-          <div style={{ marginBottom: 'var(--sp-4)', opacity: submitting ? 0.4 : 1, pointerEvents: submitting ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
-            <div style={{
-              fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em',
-              color: 'var(--grau-text)', fontFamily: 'var(--font-heading)', marginBottom: 8,
-            }}>
-              Weitere Personen
-            </div>
-            {extraPeople.map((person, idx) => (
-              <div key={idx} style={{ marginBottom: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <input
-                    type="text"
-                    value={person.name}
-                    onChange={e => updateExtraName(idx, e.target.value)}
-                    placeholder="Name eingeben"
-                    style={{
-                      flex: 1, padding: '7px 10px',
-                      border: '1.5px solid var(--border)', borderRadius: 6,
-                      fontSize: 13, fontFamily: 'var(--font-body)',
-                      background: 'var(--papier)', color: 'var(--schwarz)',
-                    }}
+        {days.length === 0 ? (
+          <p style={{ fontSize: 13, color: 'var(--grau-text)', lineHeight: 1.6 }}>
+            Für dieses Festival sind noch kein Aufbau-Datum (start_setup) und/oder Abbau-Datum
+            (end_takedown) hinterlegt. Sobald die Daten in der Festival-Config stehen, erscheinen
+            hier die Tages-Kästchen.
+          </p>
+        ) : (
+          <>
+            {/* Raster: Crew + weitere Personen × Tage */}
+            <div style={{ overflowX: 'auto', marginBottom: 'var(--sp-4)', opacity: submitting ? 0.4 : 1, pointerEvents: submitting ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
+              <div style={{ minWidth: gridWidth }}>
+                <AufbauDayHeader days={days} />
+                {aufbauCrew.map((member, idx) => (
+                  <AufbauDayRow
+                    key={crewKey(member)}
+                    name={member.full_name}
+                    sublabel={ROLLE_LABEL[member.role]}
+                    days={days}
+                    checkedKeys={crewDays[crewKey(member)] || []}
+                    onToggle={dayKey => toggleCrewDay(member, dayKey)}
+                    isLast={idx === aufbauCrew.length - 1 && extras.length === 0}
+                    readOnly={submitting}
                   />
-                  {extraPeople.length > 1 && (
-                    <button type="button" onClick={e => { e.preventDefault(); removeExtraPerson(idx) }} style={{
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      color: 'var(--grau-text)', fontSize: 18, padding: '2px 4px', lineHeight: 1,
-                      WebkitTapHighlightColor: 'transparent',
-                    }}>✕</button>
-                  )}
-                </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {AUFBAU_TASKS.map(t => {
-                    const checked = person.tasks.includes(t.id)
-                    return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={e => { e.preventDefault(); toggleExtraTask(idx, t.id) }}
-                        style={{
-                          flex: 1, padding: '6px 4px',
-                          border: `1.5px solid ${checked ? 'var(--schwarz)' : 'var(--border)'}`,
-                          borderRadius: 6,
-                          background: checked ? 'var(--gelb)' : 'transparent',
-                          cursor: 'pointer',
-                          fontSize: 10, fontWeight: 800, fontFamily: 'var(--font-heading)',
-                          textTransform: 'uppercase', letterSpacing: '0.04em',
-                          color: checked ? 'var(--schwarz)' : 'var(--grau-text)',
-                          transition: 'all 0.1s',
+                ))}
+                {extras.map((person, idx) => (
+                  <AufbauDayRow
+                    key={person.key}
+                    days={days}
+                    checkedKeys={person.days}
+                    onToggle={dayKey => toggleExtraDay(person.key, dayKey)}
+                    isLast={idx === extras.length - 1}
+                    readOnly={submitting}
+                    nameNode={
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <input
+                          type="text"
+                          value={person.name}
+                          onChange={e => updateExtraName(person.key, e.target.value)}
+                          placeholder="Name"
+                          style={{
+                            width: '100%', minWidth: 0, padding: '5px 7px',
+                            border: '1.5px solid var(--border)', borderRadius: 6,
+                            fontSize: 12, fontFamily: 'var(--font-body)',
+                            background: 'var(--papier)', color: 'var(--schwarz)',
+                          }}
+                        />
+                        <button type="button" onClick={e => { e.preventDefault(); removeExtraPerson(person.key) }} style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: 'var(--grau-text)', fontSize: 16, padding: '0 2px', lineHeight: 1, flexShrink: 0,
                           WebkitTapHighlightColor: 'transparent',
-                        }}
-                      >
-                        {t.label}
-                      </button>
-                    )
-                  })}
-                </div>
+                        }}>✕</button>
+                      </div>
+                    }
+                  />
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* Person hinzufügen */}
             <button type="button" onClick={e => { e.preventDefault(); addExtraPerson() }} style={{
               background: 'none', border: '1.5px dashed var(--border)', borderRadius: 6,
-              padding: '8px 14px', cursor: 'pointer', width: '100%',
+              padding: '8px 14px', cursor: 'pointer', width: '100%', marginBottom: 'var(--sp-4)',
               fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--grau-text)',
               WebkitTapHighlightColor: 'transparent',
             }}>
               + Person hinzufügen
             </button>
-          </div>
-        )}
 
-        {/* Weitere Personen – read-only (gesperrt) */}
-        {isLocked && extraPeople.some(e => e.name) && (
-          <div style={{ marginBottom: 'var(--sp-4)' }}>
-            <div style={{
-              fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em',
-              color: 'var(--grau-text)', fontFamily: 'var(--font-heading)', marginBottom: 8,
-            }}>
-              Weitere Personen
-            </div>
-            <AufbauTaskHeader />
-            {extraPeople.filter(e => e.name).map((person, idx, arr) => (
-              <AufbauTaskRow
-                key={idx}
-                name={person.name}
-                sublabel="Weitere"
-                checkedTasks={person.tasks}
-                isLast={idx === arr.length - 1}
-                readOnly
+            {/* Sonstiges */}
+            <div style={{ marginBottom: 'var(--sp-4)' }}>
+              <div style={{
+                fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em',
+                color: 'var(--grau-text)', fontFamily: 'var(--font-heading)', marginBottom: 6,
+              }}>
+                Sonstiges
+              </div>
+              <textarea
+                value={sonstiges}
+                onChange={e => onSonstigesChange(e.target.value)}
+                placeholder="z.B. jemand ist einen Tag früher angereist, Sonderfälle …"
+                rows={3}
+                style={{
+                  width: '100%', padding: '8px 10px', boxSizing: 'border-box',
+                  border: '1.5px solid var(--border)', borderRadius: 6,
+                  fontSize: 13, fontFamily: 'var(--font-body)', lineHeight: 1.5,
+                  background: 'var(--papier)', color: 'var(--schwarz)', resize: 'vertical',
+                }}
               />
-            ))}
-          </div>
-        )}
+            </div>
 
-        {/* Zwischenstand */}
-        {!isLocked && saveStatus && (
-          <div style={{ fontSize: 11, color: 'var(--grau-text)', marginBottom: 8, textAlign: 'right' }}>
-            {saveStatus === 'saving' ? 'Wird gespeichert…' : '✓ Zwischenstand gespeichert'}
-          </div>
-        )}
-
-        {/* Fehler */}
-        {submitError && (
-          <div style={{
-            background: '#FFF0ED', border: '1px solid var(--rot)', borderRadius: 6,
-            padding: '10px 14px', marginBottom: 12, fontSize: 13, color: 'var(--rot)',
-          }}>
-            ⚠ {submitError}
-          </div>
-        )}
-
-        {/* Abschicken-Button (nicht gesperrt) */}
-        {!isLocked && (
-          <button onClick={handleSubmit} disabled={submitting} className="button" style={{ width: '100%' }}>
-            {submitting ? 'Wird abgeschickt…' : 'Rückmeldung abschicken'}
-          </button>
-        )}
-
-        {/* Grüne Bestätigung (gesperrt, kein Nachtrag-Button) */}
-        {isLocked && (
-          <div style={{
-            background: '#e8f5e9', border: '1.5px solid var(--gruen)', borderRadius: 8,
-            padding: '10px 14px',
-            fontSize: 13, color: 'var(--gruen)', fontWeight: 600, lineHeight: 1.5,
-          }}>
-            ✓ Abgeschickt von <strong>{report.submitted_by_name}</strong>
-            {report.submitted_at && (
-              <> um {new Date(report.submitted_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</>
+            {/* Zwischenstand */}
+            {saveStatus && (
+              <div style={{ fontSize: 11, color: 'var(--grau-text)', marginBottom: 8, textAlign: 'right' }}>
+                {saveStatus === 'saving' ? 'Wird gespeichert…' : '✓ Zwischenstand gespeichert'}
+              </div>
             )}
-          </div>
+
+            {/* Fehler */}
+            {submitError && (
+              <div style={{
+                background: '#FFF0ED', border: '1px solid var(--rot)', borderRadius: 6,
+                padding: '10px 14px', marginBottom: 12, fontSize: 13, color: 'var(--rot)',
+              }}>
+                ⚠ {submitError}
+              </div>
+            )}
+
+            <button onClick={handleSubmit} disabled={submitting} className="button" style={{ width: '100%' }}>
+              {submitting ? 'Wird abgeschickt…' : 'Rückmeldung abschicken'}
+            </button>
+          </>
         )}
       </div>
     </div>
