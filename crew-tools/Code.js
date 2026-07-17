@@ -52,6 +52,15 @@ const STATUS_SORT_ORDER = {
   "zurueckgezogen": 11
 };
 
+// Untere Sortier-Gruppen fürs Festival-Dashboard (rollenübergreifend ans Ende):
+// 0 = normal (nach Rolle/Status), 1 = Friends, 2 = zurückgezogen/final abgesagt (ganz unten).
+function dashBottomTier_(status) {
+  const s = normalizeStatus_(status);
+  if (s === "zurueckgezogen" || s === "final abgesagt") return 2;
+  if (s === "friend") return 1;
+  return 0;
+}
+
 const STATUS = {
   EINGEGANGEN: "eingegangen",
   IN_PRUEFUNG: "in_pruefung",
@@ -1244,10 +1253,11 @@ function buildFestivalDashboards_() {
     const sorted = rowsForFestival
       .slice()
       .sort((a, b) => {
-        // Friends immer ganz ans Ende, unabhängig von der Rolle
-        const aIsFriend = normalizeStatus_(a.status) === "friend" ? 1 : 0;
-        const bIsFriend = normalizeStatus_(b.status) === "friend" ? 1 : 0;
-        if (aIsFriend !== bIsFriend) return aIsFriend - bIsFriend;
+        // Untere Gruppen rollenübergreifend ans Ende ziehen:
+        // Tier 1 = Friends, Tier 2 = zurückgezogen/final abgesagt (ganz unten, unter den Friends)
+        const tA = dashBottomTier_(a.status);
+        const tB = dashBottomTier_(b.status);
+        if (tA !== tB) return tA - tB;
         const rA = ROLE_SORT_ORDER[normalizeRole_(a.role)] || 99;
         const rB = ROLE_SORT_ORDER[normalizeRole_(b.role)] || 99;
         if (rA !== rB) return rA - rB;
