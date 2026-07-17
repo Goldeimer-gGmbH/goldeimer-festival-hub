@@ -5919,12 +5919,15 @@ function writeAufbauReport_(data) {
     })
     if (rows.length) sheet.getRange(2, 1, rows.length, HEADER.length).setValues(rows)
 
-    // Sonstiges: eigene Zeile unten, nur die letzte Spalte gefüllt.
+    // Sonstiges: eigene Zeile unten. Festivalname in Spalte 1, "Sonstiges" als
+    // Label in der Name-Spalte, der eigentliche Text in der letzten Spalte.
     const sonstiges = data.sonstiges || ''
     if (sonstiges) {
       const sonstigesRow = []
-      for (let i = 0; i < HEADER.length - 1; i++) sonstigesRow.push('')
-      sonstigesRow.push(sonstiges)
+      for (let i = 0; i < HEADER.length; i++) sonstigesRow.push('')
+      sonstigesRow[0] = data.festival_name        // Festival
+      sonstigesRow[1] = 'Sonstiges'               // Name-Spalte
+      sonstigesRow[HEADER.length - 1] = sonstiges // letzte Spalte
       sheet.appendRow(sonstigesRow)
     }
   } finally {
