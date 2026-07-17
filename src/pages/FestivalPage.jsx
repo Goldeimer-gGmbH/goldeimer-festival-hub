@@ -2347,7 +2347,7 @@ function CrewListSection({ crew, festivalId, festivalName, attendanceSubmission,
               'Authorization': `Bearer ${token}`,
               'apikey':        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzZGttZ2xrcXhzenl2b21yZmltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNTk4NjYsImV4cCI6MjA5MTczNTg2Nn0.CkX010BgVGjJUOs7RSYHlXJSwA-0jL4iPvi4gA59dTM',
             },
-            body: JSON.stringify({ festival_id: festivalId, festival_name: festivalName, entries }),
+            body: JSON.stringify({ festival_id: festivalId, festival_code: details?.festival_id || '', festival_name: festivalName, entries }),
             signal: controller.signal,
           }
         )
@@ -3151,7 +3151,9 @@ function AufbauRueckmeldung({ festivalId, festivalName, crew, details, inSheet =
             },
             body:    JSON.stringify({
               festival_id:   festivalId,
+              festival_code: details?.festival_id || '',
               festival_name: festivalName,
+              day_columns:   days.map(d => d.label),
               entries,
               sonstiges,
             }),

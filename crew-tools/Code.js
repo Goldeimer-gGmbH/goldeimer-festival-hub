@@ -5814,131 +5814,122 @@ function doPost(e) {
   }
 }
 
-// Schreibt/aktualisiert die Anwesenheits-Daten pro Person (Upsert über Assignment-ID),
-// NICHT append-only — sonst würde jedes erneute Abschicken (Korrektur) Karteileichen
-// erzeugen statt den Stand pro Person zu aktualisieren.
-function writeAnwesenheitReport_(data) {
+// Report-Spreadsheet öffnen (ID aus Script-Property, sonst Default).
+function openReportsSs_() {
   const sheetId = PropertiesService.getScriptProperties().getProperty('REPORTS_SS_ID')
     || '19RLr7RQ0yZQ84NGd6ShgJp_tKWwVLfH6-ibsRXhaq_E'
-  const ss = SpreadsheetApp.openById(sheetId)
-
-  const HEADER = ['Festival', 'Name', 'Email', 'Rolle', 'Anwesend', 'Vorheriger Status', 'Eingabe durch', 'Eingabe am', 'AssignmentID']
-  let sheet = ss.getSheetByName('Anwesenheit')
-  if (!sheet) {
-    sheet = ss.insertSheet('Anwesenheit')
-    sheet.appendRow(HEADER)
-    sheet.getRange(1, 1, 1, HEADER.length).setFontWeight('bold')
-  }
-
-  const ts = new Date(data.submitted_at).toLocaleString('de-DE')
-  const lastRow = sheet.getLastRow()
-  const idColIdx = HEADER.indexOf('AssignmentID') // 0-basiert
-
-  // AssignmentID -> Zeilennummer (1-basiert), für Upsert statt Append
-  const rowByAssignmentId = new Map()
-  if (lastRow > 1) {
-    const ids = sheet.getRange(2, idColIdx + 1, lastRow - 1, 1).getValues()
-    ids.forEach((r, i) => {
-      const id = String(r[0] || '').trim()
-      if (id) rowByAssignmentId.set(id, i + 2) // +2: 1-basiert + Header-Zeile
-    })
-  }
-
-  ;(data.entries || []).forEach(e => {
-    if (!e.assignment_id) return // ohne Assignment-ID kein verlässlicher Abgleich möglich
-    const present = e.present === true ? 'Ja' : e.present === false ? 'Nein' : ''
-    const rowValues = [
-      data.festival_name, e.full_name || '', e.email || '', e.role || '',
-      present, e.prior_status || '', data.submitted_by_name, ts, e.assignment_id,
-    ]
-    const existingRow = rowByAssignmentId.get(String(e.assignment_id))
-    if (existingRow) {
-      sheet.getRange(existingRow, 1, 1, rowValues.length).setValues([rowValues])
-    } else {
-      sheet.appendRow(rowValues)
-      rowByAssignmentId.set(String(e.assignment_id), sheet.getLastRow())
-    }
-  })
+  return SpreadsheetApp.openById(sheetId)
 }
 
-// Schreibt/aktualisiert die Auf-/Abbau-Rückmeldung pro Person (Upsert über Festival+Name),
-// NICHT append-only — sonst würde jedes erneute Abschicken (Korrektur) Karteileichen erzeugen.
-// Spalten sind tage-basiert ("Tage anwesend" als Textliste), da die Tagesanzahl je Festival
-// variiert. Verarbeitet bevorzugt das neue Format (data.entries mit day_labels) und fällt auf
-// das alte tasks-Format (crew_entries/extra_entries) zurück (robust während des Deploy-Fensters).
-function writeAufbauReport_(data) {
-  const sheetId = PropertiesService.getScriptProperties().getProperty('REPORTS_SS_ID')
-    || '19RLr7RQ0yZQ84NGd6ShgJp_tKWwVLfH6-ibsRXhaq_E'
-  const ss = SpreadsheetApp.openById(sheetId)
+// Reiter-Name je Festival: "<festival_id>_<Suffix>", z.B. "HURR_2026_Anwesenheit".
+function reportTabName_(data, suffix) {
+  const base = String(data.festival_code || data.festival_name || 'Unbekannt').trim()
+  return base + '_' + suffix
+}
 
-  const HEADER = ['Festival', 'Name', 'Rolle', 'Tage anwesend', 'Sonstiges', 'Eingabe durch', 'Eingabe am']
-
-  // Bestehendes 'Aufbau'-Sheet mit alter Spaltenstruktur (Packen/Fahren/…) archivieren,
-  // damit die neuen tage-basierten Zeilen nicht mit dem alten Header kollidieren.
-  let sheet = ss.getSheetByName('Aufbau')
-  if (sheet) {
-    const existing = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), HEADER.length)).getValues()[0]
-    const matches = HEADER.every((h, i) => existing[i] === h)
-    if (!matches) {
-      let altName = 'Aufbau_alt', n = 1
-      while (ss.getSheetByName(altName)) altName = 'Aufbau_alt_' + (n++)
-      sheet.setName(altName)
-      sheet = null
+// Anwesenheit: ein Reiter pro Festival (<festival_id>_Anwesenheit), Upsert je AssignmentID.
+function writeAnwesenheitReport_(data) {
+  const lock = LockService.getScriptLock()
+  try { lock.waitLock(15000) } catch (e) { /* notfalls ohne Lock weiter */ }
+  try {
+    const ss = openReportsSs_()
+    const HEADER = ['Festival', 'Name', 'Email', 'Rolle', 'Anwesend', 'Vorheriger Status', 'Eingabe durch', 'Eingabe am', 'AssignmentID']
+    const tabName = reportTabName_(data, 'Anwesenheit')
+    let sheet = ss.getSheetByName(tabName)
+    if (!sheet) {
+      sheet = ss.insertSheet(tabName)
+      sheet.appendRow(HEADER)
+      sheet.getRange(1, 1, 1, HEADER.length).setFontWeight('bold')
     }
+
+    const ts = new Date(data.submitted_at).toLocaleString('de-DE')
+    const lastRow = sheet.getLastRow()
+    const idColIdx = HEADER.indexOf('AssignmentID') // 0-basiert
+
+    const rowByAssignmentId = new Map()
+    if (lastRow > 1) {
+      const ids = sheet.getRange(2, idColIdx + 1, lastRow - 1, 1).getValues()
+      ids.forEach((r, i) => {
+        const id = String(r[0] || '').trim()
+        if (id) rowByAssignmentId.set(id, i + 2)
+      })
+    }
+
+    ;(data.entries || []).forEach(e => {
+      if (!e.assignment_id) return
+      const present = e.present === true ? 'Ja' : e.present === false ? 'Nein' : ''
+      const rowValues = [
+        data.festival_name, e.full_name || '', e.email || '', e.role || '',
+        present, e.prior_status || '', data.submitted_by_name, ts, e.assignment_id,
+      ]
+      const existingRow = rowByAssignmentId.get(String(e.assignment_id))
+      if (existingRow) {
+        sheet.getRange(existingRow, 1, 1, rowValues.length).setValues([rowValues])
+      } else {
+        sheet.appendRow(rowValues)
+        rowByAssignmentId.set(String(e.assignment_id), sheet.getLastRow())
+      }
+    })
+  } finally {
+    try { lock.releaseLock() } catch (e) {}
   }
-  if (!sheet) {
-    sheet = ss.insertSheet('Aufbau')
+}
+
+// Auf-/Abbau: ein Reiter pro Festival (<festival_id>_Auf/Abbau). Spalten: Festival, Name, Rolle,
+// je eine Spalte pro Tag (Aufbau … Abbau), Eingabe durch, Eingabe am, Sonstiges.
+// Da ein Festival = ein Reiter ist, wird der Reiter bei jedem Absenden komplett neu geschrieben
+// (Vollbild des geteilten Stands) → keine Dubletten, kein Vermischen paralleler Absendungen.
+// Sonstiges steht einmalig als eigene Zeile unten, nur in der letzten Spalte.
+function writeAufbauReport_(data) {
+  const lock = LockService.getScriptLock()
+  try { lock.waitLock(15000) } catch (e) {}
+  try {
+    const ss = openReportsSs_()
+    const tabName = reportTabName_(data, 'Auf/Abbau')
+    const dayCols = Array.isArray(data.day_columns) ? data.day_columns : []
+    const HEADER = ['Festival', 'Name', 'Rolle'].concat(dayCols).concat(['Eingabe durch', 'Eingabe am', 'Sonstiges'])
+    const ts = new Date(data.submitted_at).toLocaleString('de-DE')
+
+    // Einträge normalisieren → { name, role_label, present:Set(anwesende Tag-Labels) }.
+    // Bevorzugt neues Format (entries mit day_labels), Fallback aufs alte tasks-Format.
+    let entries = []
+    if (Array.isArray(data.entries) && data.entries.length) {
+      entries = data.entries.map(e => ({
+        name:       e.name || '',
+        role_label: e.role_label || (e.is_extra ? 'Weitere' : ''),
+        present:    new Set(Array.isArray(e.day_labels) ? e.day_labels : []),
+      }))
+    } else {
+      const legacy = (data.crew_entries || []).concat(data.extra_entries || [])
+      entries = legacy.map(e => ({
+        name: e.name || '', role_label: e.role_label || 'Weitere', present: new Set(),
+      }))
+    }
+    entries = entries.filter(e => e.name)
+
+    let sheet = ss.getSheetByName(tabName)
+    if (!sheet) sheet = ss.insertSheet(tabName)
+    sheet.clear()
     sheet.appendRow(HEADER)
     sheet.getRange(1, 1, 1, HEADER.length).setFontWeight('bold')
-  }
 
-  const ts        = new Date(data.submitted_at).toLocaleString('de-DE')
-  const sonstiges = data.sonstiges || ''
-
-  // Einträge normalisieren → { name, role_label, days (Textliste) }
-  let entries = []
-  if (Array.isArray(data.entries) && data.entries.length) {
-    entries = data.entries.map(e => ({
-      name:       e.name || '',
-      role_label: e.role_label || (e.is_extra ? 'Weitere' : ''),
-      days:       Array.isArray(e.day_labels) ? e.day_labels.join(', ') : '',
-    }))
-  } else {
-    const legacy = (data.crew_entries || []).concat(data.extra_entries || [])
-    entries = legacy.map(e => ({
-      name:       e.name || '',
-      role_label: e.role_label || 'Weitere',
-      days:       (e.tasks || []).join(', '),
-    }))
-  }
-
-  // Upsert-Index über (Festival + Name)
-  const lastRow = sheet.getLastRow()
-  const rowByKey = new Map()
-  if (lastRow > 1) {
-    const vals = sheet.getRange(2, 1, lastRow - 1, 2).getValues() // Festival, Name
-    vals.forEach((r, i) => {
-      if (r[1]) rowByKey.set(String(r[0] || '').trim() + '||' + String(r[1]).trim(), i + 2)
+    const rows = entries.map(e => {
+      const dayCells = dayCols.map(c => e.present.has(c) ? '✓' : '')
+      return [data.festival_name, e.name, e.role_label].concat(dayCells).concat([data.submitted_by_name, ts, ''])
     })
-  }
+    if (rows.length) sheet.getRange(2, 1, rows.length, HEADER.length).setValues(rows)
 
-  // Sonstiges ist festival-weit → nur in die erste Personenzeile des Festivals schreiben,
-  // die übrigen Zeilen leeren (bereinigt automatisch früher wiederholte Werte).
-  let sonstigesWritten = false
-  entries.forEach(e => {
-    if (!e.name) return
-    const rowSonstiges = sonstigesWritten ? '' : sonstiges
-    sonstigesWritten = true
-    const rowValues = [data.festival_name, e.name, e.role_label, e.days, rowSonstiges, data.submitted_by_name, ts]
-    const key = String(data.festival_name || '').trim() + '||' + String(e.name).trim()
-    const existingRow = rowByKey.get(key)
-    if (existingRow) {
-      sheet.getRange(existingRow, 1, 1, rowValues.length).setValues([rowValues])
-    } else {
-      sheet.appendRow(rowValues)
-      rowByKey.set(key, sheet.getLastRow())
+    // Sonstiges: eigene Zeile unten, nur die letzte Spalte gefüllt.
+    const sonstiges = data.sonstiges || ''
+    if (sonstiges) {
+      const sonstigesRow = []
+      for (let i = 0; i < HEADER.length - 1; i++) sonstigesRow.push('')
+      sonstigesRow.push(sonstiges)
+      sheet.appendRow(sonstigesRow)
     }
-  })
+  } finally {
+    try { lock.releaseLock() } catch (e) {}
+  }
 }
 
 function loadSperrlisteMap_() {
