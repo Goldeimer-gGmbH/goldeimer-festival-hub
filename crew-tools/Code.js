@@ -2676,8 +2676,9 @@ function normalizePhone_(raw) {
 function normalizeBlockPref_(raw) {
   const s = String(raw || "").trim().toUpperCase();
   if (!s) return "";
-  // akzeptiert: "A", "Block A", "BLOCK B", "b", "Block C"
-  const m = s.match(/([ABC])\s*$/);
+  // akzeptiert: "A", "Block A", "BLOCK B", "b", "Block C", "Block D" …
+  // A–E statt nur A/B/C: Festivals wie Wacken haben mehr als 3 Blöcke.
+  const m = s.match(/([A-E])\s*$/);
   return m ? m[1] : "";
 }
 
