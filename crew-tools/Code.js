@@ -1790,10 +1790,18 @@ const respKey = {
     if (!appRow) { skipped++; return; }
     if (String(appRow.festival_id || "").trim() !== String(festivalId).trim()) { skipped++; return; }
 
-    // ⚡ Bereits importiert? Überspringen wenn Timestamp identisch und Status schon "ausgefüllt"
+    // ⚡ Bereits importiert? Überspringen wenn Timestamp identisch und Status schon "ausgefüllt".
+    // ABER: nicht überspringen, wenn eine Schichtwahl in der Antwort steht, im
+    // APPLICATIONS-Sheet aber fehlt (z.B. weil ein früherer Import mit altem Matcher
+    // die 1. Wahl nicht erkannt hat). So heilt ein erneuter Import solche Altlasten.
     const alreadyDone = String(appRow.detail_status || "").trim() === DETAIL_STATUS.DONE;
     const sameTs = respTs && String(appRow.detail_ts || "").trim() === respTs;
-    if (alreadyDone && sameTs) { alreadyCurrent++; return; }
+    const respP1 = String(getRespVal_(rr, respKey.detail_shift_pref_1) || "").trim();
+    const respP2 = String(getRespVal_(rr, respKey.detail_shift_pref_2) || "").trim();
+    const missingShiftPref =
+      (respP1 && !String(appRow.detail_shift_pref_1 || "").trim()) ||
+      (respP2 && !String(appRow.detail_shift_pref_2 || "").trim());
+    if (alreadyDone && sameTs && !missingShiftPref) { alreadyCurrent++; return; }
 
     const appsUpdates = {
   detail_last_import_at: new Date(),
