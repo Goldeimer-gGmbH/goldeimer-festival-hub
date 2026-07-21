@@ -5,7 +5,6 @@ import { useAuth } from '../components/AuthContext'
 import { cacheGet, cacheSet } from '../lib/cache'
 import { fetchWithTimeout } from '../lib/fetchWithTimeout'
 import { IconStar } from '../components/Icons'
-import { HUB_ADMIN_EMAILS } from '../lib/admins'
 
 const ROLLE_LABEL = {
   lead: 'Lead', operator: 'Operator',
@@ -118,7 +117,8 @@ const ALL_TOPICS = [
 
 export default function HomePage() {
   const { profile, signOut, user } = useAuth()
-  const isHubAdmin = HUB_ADMIN_EMAILS.includes(profile?.email)
+  // Single Source of Truth: DB-Flag profiles.hub_admin (nicht mehr eine E-Mail-Liste)
+  const isHubAdmin = profile?.hub_admin === true
   const cacheKey = `assignments_${profile?.id}`
   const adminCacheKey = `assignments_admin_${profile?.id}`
   // Hub-Admins: gemergte Liste (alle Festivals) bevorzugt aus Cache laden.

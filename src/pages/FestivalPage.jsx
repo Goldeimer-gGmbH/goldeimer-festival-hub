@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
 import { cacheGet, cacheSet, cacheClear } from '../lib/cache'
 import { fetchWithTimeout } from '../lib/fetchWithTimeout'
-import { HUB_ADMIN_EMAILS } from '../lib/admins'
 import {
   IconAblauf, IconInfos, IconKontakte,
   IconKalender, IconTransport, IconOrderbird, IconStift, IconLupe,
@@ -356,7 +355,8 @@ export default function FestivalPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const { profile, signOut } = useAuth()
-  const isHubAdmin = HUB_ADMIN_EMAILS.includes(profile?.email)
+  // Single Source of Truth: DB-Flag profiles.hub_admin (nicht mehr eine E-Mail-Liste)
+  const isHubAdmin = profile?.hub_admin === true
   const [data, setData]           = useState(null)
   const [loading, setLoading]     = useState(true)
   const [fetchError, setFetchError] = useState(false)
