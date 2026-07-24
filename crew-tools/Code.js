@@ -576,6 +576,11 @@ function sendOffers_({ festivalId, role, forceTest }) {
 
         // B. Supabase Auth User anlegen (ohne Einladungs-E-Mail, direkt bestätigt)
         //    → Person kann sich sofort per Magic Link einloggen
+        //    FIX: Der POST-Body für /auth/v1/admin/users (Supabase GoTrue Admin-API)
+        //    erwartet {email, email_confirm}, NICHT die RPC-Parameter (p_email etc.),
+        //    die für sync_assignment gedacht sind. Mit dem falschen Payload schlug die
+        //    Auth-User-Erstellung bei JEDEM Zusage-Versand fehl (email fehlte im Body) —
+        //    nur lautlos geloggt, nie bemerkt. Payload wie in backfillAuthUsers() (Zeile ~5482).
         try {
           const adminUrl = sbUrl + "/auth/v1/admin/users";
           const authRes = UrlFetchApp.fetch(adminUrl, {
@@ -587,10 +592,8 @@ function sendOffers_({ festivalId, role, forceTest }) {
             },
             muteHttpExceptions: true,
             payload: JSON.stringify({
-              p_email:          r.email,
-              p_google_fest_id: festivalId,
-              p_status:         'zugesagt',
-              p_role:           normalizeRole_(r.role).toLowerCase(),
+              email:         r.email,
+              email_confirm: true,
             })
           });
           const authCode = authRes.getResponseCode();
