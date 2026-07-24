@@ -4123,24 +4123,57 @@ function assignPeopleToBlocks_({ people, slots }) {
     return m ? m[1] : "";
   }
 
-  // Gewichtung nach Camp-Positionen (numCamps × 3), nicht nur Slot-Anzahl
-  // → Block B mit mehr Camps pro Slot bekommt proportional mehr Leute zugewiesen
-  const slotCounts = {};
-  BLOCKS.forEach(b => slotCounts[b] = 0);
+  const totalPeople = (people || []).length;
+
+  // Bedarf je Block:
+  // - minNeeded = größter gleichzeitiger Personenbedarf EINER Schicht (num_camps × people_per_shift).
+  //   So viele Leute braucht ein Block MINDESTENS, um seine vollste Schicht lückenlos zu besetzen.
+  // - slotCount = Gesamt-Positionen über alle Schichten (nur für den Fallback bei Personenmangel).
+  const minNeeded = {};
+  const slotCount = {};
+  BLOCKS.forEach(b => { minNeeded[b] = 0; slotCount[b] = 0; });
   (slots || []).forEach((s) => {
     const b = String(s.block).toUpperCase();
-    if (slotCounts[b] !== undefined) {
-      slotCounts[b] += Math.max(1, Number(s.num_camps || 1));
-    }
+    if (minNeeded[b] === undefined) return;
+    const need = Math.max(1, Number(s.num_camps || 1)) * Math.max(1, Number(s.people_per_shift || 3));
+    if (need > minNeeded[b]) minNeeded[b] = need;
+    slotCount[b] += need;
   });
 
-  const totalPeople = (people || []).length;
-  const weights = {};
-  BLOCKS.forEach(b => weights[b] = slotCounts[b] || 1);
-  
-  const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
+  // 1.-Wahl-Nachfrage je Block
+  const demand = {};
+  BLOCKS.forEach(b => demand[b] = 0);
+  (people || []).forEach((p) => {
+    const b = normBlock_(p.pref1);
+    if (demand[b] !== undefined) demand[b]++;
+  });
+
+  // Ziel-Größen: zuerst das Minimum (Coverage) je Block sichern, dann den ÜBERSCHUSS
+  // dorthin geben, wo die meiste unerfüllte 1.-Wahl-Nachfrage ist. So bekommen möglichst
+  // viele ihre 1. Wahl, statt Blöcke künstlich gleich groß zu machen (1. Wahl > Ausgewogenheit).
   const targets = {};
-  BLOCKS.forEach(b => targets[b] = Math.round(totalPeople * (weights[b] / totalWeight)));
+  const minSum = BLOCKS.reduce((s, b) => s + minNeeded[b], 0);
+  if (totalPeople < minSum) {
+    // Zu wenige Leute, um jede Schicht voll zu besetzen → proportional zum Gesamtbedarf
+    // verteilen (graceful degrade; einzelne Slots bleiben ggf. unterbesetzt wie bisher).
+    const totalNeed = BLOCKS.reduce((s, b) => s + (slotCount[b] || 1), 0) || 1;
+    BLOCKS.forEach(b => targets[b] = Math.round(totalPeople * ((slotCount[b] || 1) / totalNeed)));
+  } else {
+    BLOCKS.forEach(b => targets[b] = minNeeded[b]);
+    let remaining = totalPeople - minSum;
+    while (remaining > 0) {
+      // Block mit der größten noch offenen 1.-Wahl-Nachfrage (demand über aktuellem target)
+      let best = null, bestGap = 0;
+      BLOCKS.forEach(b => {
+        const gap = demand[b] - targets[b];
+        if (gap > bestGap) { bestGap = gap; best = b; }
+      });
+      // Keine offene Nachfrage mehr → Rest gleichmäßig auf den bisher kleinsten Block
+      if (!best) best = BLOCKS.slice().sort((x, y) => targets[x] - targets[y])[0];
+      targets[best]++;
+      remaining--;
+    }
+  }
 
   const sorted = (people || []).slice().sort((a, b) =>
     String(a.application_id).localeCompare(String(b.application_id))
