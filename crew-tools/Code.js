@@ -4099,19 +4099,19 @@ function buildUniversalSchichtplan_({ festivalId, targetSpreadsheetId }) {
 
 
 /**
- * Verteilt People auf Blocks A/B/C:
- * - chosen = pref1, sonst pref2, sonst "kleinster Block"
- * - pro Block werden activePerBlock als "active roster" gesetzt,
- *   Rest wird "reserve" (nicht eingeplant)
- */
-/**
- * Stabilere Block-Zuordnung A/B/C:
- * - Ziel: Leute möglichst "fest" in einem Block halten
- * - Wenn ein Block (z.B. C) zu wenig Leute hat, werden bewusst ein paar Personen "umgezogen"
- *   (lieber Präferenz opfern, dafür Stabilität & weniger Gemischt).
+ * Verteilt People auf Blocks (A/B/C/…).
+ * Ziel: möglichst viele 1. Wünsche erfüllen, begrenzt durch die Blockkapazität.
  *
- * Targets werden proportional zur Anzahl Slots pro Block berechnet (falls slots übergeben werden),
- * sonst ungefähr gleich verteilt.
+ * Vorgehen (3 Runden, kein "Ausgleichen" auf gleich große Blöcke):
+ *  1. 1. Wahl: jeder bekommt seinen Wunschblock, solange dort Kapazität ist.
+ *     Bei Übernachfrage entscheidet die Anmeldereihenfolge (application_id).
+ *  2. 2. Wahl: Überzählige kommen in ihren Zweitwunsch, falls dort noch Platz.
+ *  3. Rest: in den Block mit der größten Restkapazität (Coverage auffüllen).
+ *
+ * Kapazität (targets) ist proportional zu den Slots je Block ("ausreichend besetzt"),
+ * NICHT ein Zwang zu exakt gleich großen Blöcken. Stabilität (eine Person = ein Block)
+ * ist dadurch garantiert; niemand wird gegen den Wunsch verschoben, nur um zu balancieren.
+ * Erfahrungs-Verteilung ist bewusst nachrangig zur 1. Wahl (greift erst beim Schicht-Füllen).
  */
 function assignPeopleToBlocks_({ people, slots }) {
   // Ermittle dynamisch alle Blöcke, die in der Config vorkommen (z.B. A, B, C, D, E)
@@ -4150,122 +4150,39 @@ function assignPeopleToBlocks_({ people, slots }) {
   BLOCKS.forEach(b => blockPeople[b] = []);
   const blockChosenById = {};
 
-  const neediest_ = () => BLOCKS.slice().sort((x, y) =>
-    (targets[y] - blockPeople[y].length) - (targets[x] - blockPeople[x].length)
-  )[0];
+  // Restkapazität eines Blocks. targets ist der Kapazitäts-Korridor ("ausreichend
+  // besetzt", proportional zu den Slots) — NICHT ein Zwang zu exakt gleich großen Blöcken.
+  const cap = (b) => targets[b] - blockPeople[b].length;
+  const place = (p, b) => { blockPeople[b].push(p); blockChosenById[p.application_id] = b; };
 
-  // Pass 1: pref1 – alle die Platz haben bekommen 1. Wahl
-  const afterPass1 = [];
+  // ── Ziel: möglichst viele 1. Wünsche erfüllen, begrenzt nur durch die Blockkapazität. ──
+  // Stabilität bleibt erhalten (jede Person genau EIN Block das ganze Festival).
+  // Niemand wird gegen seinen Wunsch verschoben, nur um Blöcke gleich groß zu machen.
+
+  // Runde 1: 1. Wahl. Pro Block bis zur Kapazität; bei Übernachfrage entscheidet die
+  // Anmeldereihenfolge (application_id). Überzählige + Leute ohne gültige 1. Wahl → Overflow.
+  const overflow = [];
+  BLOCKS.forEach((b) => {
+    sorted.filter(p => normBlock_(p.pref1) === b).forEach((p) => {
+      if (cap(b) > 0) place(p, b); else overflow.push(p);
+    });
+  });
   sorted.forEach((p) => {
-    const b1 = normBlock_(p.pref1);
-    if (BLOCKS.includes(b1) && (targets[b1] - blockPeople[b1].length) > 0) {
-      blockPeople[b1].push(p);
-      blockChosenById[p.application_id] = b1;
-    } else {
-      afterPass1.push(p);
-    }
+    if (!(p.application_id in blockChosenById) && overflow.indexOf(p) === -1) overflow.push(p);
   });
 
-  // Pass 2: pref2 – vergleiche Überfülldruck von pref2 vs. neediest.
-  // Wenn pref2 nicht schlechter ausgelastet ist als der Block, den neediest_ wählen würde,
-  // gib der Präferenz den Vorzug – auch wenn pref2 schon am Target ist.
-  const afterPass2 = [];
-  afterPass1.forEach((p) => {
+  // Runde 2: 2. Wahl, sofern der Block noch Kapazität hat.
+  const overflow2 = [];
+  overflow.forEach((p) => {
     const b2 = normBlock_(p.pref2);
-    if (!BLOCKS.includes(b2)) { afterPass2.push(p); return; }
-    // slack < 0 = Platz, 0 = genau am Ziel, > 0 = überfüllt
-    const b2Slack = blockPeople[b2].length - targets[b2];
-    const neediestB = neediest_();
-    const neediestSlack = blockPeople[neediestB].length - targets[neediestB];
-    if (b2Slack <= neediestSlack) {
-      blockPeople[b2].push(p);
-      blockChosenById[p.application_id] = b2;
-    } else {
-      afterPass2.push(p);
-    }
+    if (BLOCKS.includes(b2) && cap(b2) > 0) place(p, b2); else overflow2.push(p);
   });
 
-  // Pass 3: neediest – Rest auf den Block mit dem größten Bedarf
-  afterPass2.forEach((p) => {
-    const target = neediest_();
-    blockPeople[target].push(p);
-    blockChosenById[p.application_id] = target;
+  // Runde 3: Rest in den Block mit der größten Restkapazität (füllt die Coverage auf).
+  overflow2.forEach((p) => {
+    const target = BLOCKS.slice().sort((x, y) => cap(y) - cap(x))[0];
+    place(p, target);
   });
-
-  // Pass 4: Preference-Swaps – verbessere Gesamtzufriedenheit durch paarweise Tausche.
-  // Bewertung: pref1-Match = 2, pref2-Match = 1, kein Match = 0.
-  // Tausch wenn: netto > 0 (strenge Verbesserung) ODER netto = 0 und mindestens
-  // eine Person rettet sich aus "anderer Block" (score 0 → score > 0).
-  // Kein Zyklus möglich: anderer-Block-Zahl kann nur sinken.
-  function prefScore_(p, block) {
-    if (normBlock_(p.pref1) === block) return 2;
-    if (normBlock_(p.pref2) === block) return 1;
-    return 0;
-  }
-
-  // Jedes Block-Paar bekommt pro Iteration genau einen Swap (falls möglich).
-  // Kein globaler Abbruch nach erstem Swap – alle Paare (A↔B, A↔C, B↔C ...) werden geprüft.
-  let maxIter = 30;
-  let anySwap = true;
-  while (anySwap && maxIter-- > 0) {
-    anySwap = false;
-    for (let xi = 0; xi < BLOCKS.length; xi++) {
-      for (let yi = xi + 1; yi < BLOCKS.length; yi++) {
-        const bx = BLOCKS[xi];
-        const by = BLOCKS[yi];
-        let swapDone = false;
-        for (let i = 0; i < blockPeople[bx].length && !swapDone; i++) {
-          for (let j = 0; j < blockPeople[by].length && !swapDone; j++) {
-            const px = blockPeople[bx][i];
-            const py = blockPeople[by][j];
-            const gain = (prefScore_(px, by) - prefScore_(px, bx))
-                       + (prefScore_(py, bx) - prefScore_(py, by));
-            // Rescue gilt nur wenn:
-            // - py war anderer Block (score=0) und wird nach bx besser (score>0)
-            // - px war zufrieden (score>0) UND landet nach by auch in pref1 oder pref2
-            //   (verhindert Zyklus: px muss pref2=by haben, sonst tauscht es nächste Runde zurück)
-            const rescues = prefScore_(py, by) === 0 && prefScore_(py, bx) > 0
-                         && prefScore_(px, bx) > 0 && prefScore_(px, by) > 0;
-            if (gain > 0 || (gain === 0 && rescues)) {
-              blockPeople[bx][i] = py;
-              blockPeople[by][j] = px;
-              blockChosenById[px.application_id] = by;
-              blockChosenById[py.application_id] = bx;
-              anySwap = true;
-              swapDone = true; // nur dieser Block-Paar-Durchlauf endet, nicht die äußere Schleife
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // Pass 5: Freiwilligen-Einzug – Blöcke mit zu vielen "anderer Block"-Leuten
-  // ziehen pref2-Freiwillige aus anderen Blöcken, auch wenn diese dadurch von
-  // 1. Wahl auf 2. Wahl wechseln. Nur wenn der Spender-Block danach noch ≥ target hat.
-  let pulled = true;
-  while (pulled) {
-    pulled = false;
-    for (const underBlock of BLOCKS) {
-      const willingCount = blockPeople[underBlock].filter(p => prefScore_(p, underBlock) > 0).length;
-      if (willingCount >= targets[underBlock]) continue; // genug Willige
-      // Suche pref2-Freiwillige aus anderen Blöcken (Spender muss ≥ target bleiben)
-      for (const donorBlock of BLOCKS) {
-        if (donorBlock === underBlock) continue;
-        if (blockPeople[donorBlock].length < targets[donorBlock]) continue; // Spender muss mindestens am Target sein
-        const idx = blockPeople[donorBlock].findIndex(p =>
-          normBlock_(p.pref2) === underBlock && normBlock_(p.pref1) === donorBlock
-        );
-        if (idx === -1) continue;
-        const person = blockPeople[donorBlock].splice(idx, 1)[0];
-        blockPeople[underBlock].push(person);
-        blockChosenById[person.application_id] = underBlock;
-        pulled = true;
-        break;
-      }
-      if (pulled) break;
-    }
-  }
 
   return { blockPeople, blockChosenById };
 }
