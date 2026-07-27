@@ -5499,6 +5499,114 @@ function backfillAuthUsers() {
 }
 
 /* =========================
+ * AUTOMATISCHE PRÜFUNG: fehlende Supabase-Login-Zugänge
+ * (Absicherung gegen den sendOffers_-Auth-Bug: bisher schlug eine fehlgeschlagene
+ * Auth-User-Anlage nur lautlos ins Log — niemand hätte es bemerkt, egal aus welchem
+ * Grund sie fehlschlägt: falscher Payload, abgelaufener Service-Key, Netzwerkfehler,
+ * Rate-Limit bei Massenversand, oder eine nachträglich korrigierte E-Mail-Adresse.)
+ * ========================= */
+
+// Prüft ALLE Personen mit aktiver Festival-Zusage (zugesagt/akkreditiert/teilgenommen)
+// auf fehlenden Supabase-Login-Zugang und legt ihn automatisch nach. Schickt NUR eine
+// E-Mail, wenn tatsächlich etwas repariert wurde oder ein echter Fehler auftrat — bei
+// 0 Treffern bleibt es still (kein Rauschen). Läuft täglich per Trigger
+// (installMissingAuthUserCheckTrigger einmalig einrichten) und kann jederzeit auch
+// manuell im Editor ausgeführt werden (kein Unterstrich im Namen → im Dropdown sichtbar).
+function checkAndFixMissingAuthUsers() {
+  const ss = SpreadsheetApp.getActive();
+  const appSheet = ss.getSheetByName(SHEETS.APPLICATIONS);
+  if (!appSheet) { Logger.log("checkAndFixMissingAuthUsers: Sheet " + SHEETS.APPLICATIONS + " fehlt"); return; }
+
+  const data = readSheetAsObjects_(appSheet);
+  const validStatuses = ['zugesagt', 'akkreditiert', 'teilgenommen'];
+
+  // Eindeutige E-Mails mit aktiver Zusage sammeln (eine Person kann mehrere Zeilen haben)
+  const emails = new Set();
+  data.rows.forEach(function (r) {
+    if (validStatuses.includes(normalizeStatus_(r.status))) {
+      const em = normEmail_(r.email);
+      if (em) emails.add(em);
+    }
+  });
+
+  const props = PropertiesService.getScriptProperties();
+  const sbUrl = props.getProperty("SUPABASE_URL");
+  const sbKey = props.getProperty("SUPABASE_SERVICE_KEY");
+  if (!sbUrl || !sbKey) {
+    Logger.log("checkAndFixMissingAuthUsers: Supabase-Config fehlt");
+    MailApp.sendEmail({
+      to: "bianka@goldeimer.de",
+      subject: "Festival Hub: Login-Check konnte nicht laufen",
+      body: "SUPABASE_URL oder SUPABASE_SERVICE_KEY fehlt in den Script-Properties. Bitte prüfen."
+    });
+    return;
+  }
+
+  const adminUrl = sbUrl + "/auth/v1/admin/users";
+  const created = [];
+  const failed = [];
+
+  emails.forEach(function (email) {
+    try {
+      const res = UrlFetchApp.fetch(adminUrl, {
+        method: "post",
+        contentType: "application/json",
+        headers: { apikey: sbKey, Authorization: "Bearer " + sbKey },
+        muteHttpExceptions: true,
+        payload: JSON.stringify({ email: email, email_confirm: true }),
+      });
+      const code = res.getResponseCode();
+      if (code === 200 || code === 201) created.push(email);
+      else if (code !== 422) failed.push(email + " (HTTP " + code + ")");
+    } catch (e) {
+      failed.push(email + " (Exception: " + e.message + ")");
+    }
+    Utilities.sleep(120); // Rate-Limit schonen
+  });
+
+  log_({
+    action: "CHECK_MISSING_AUTH_USERS",
+    meta: { checked: emails.size, created: created.length, failed: failed.length },
+    count: created.length,
+  });
+
+  if (created.length === 0 && failed.length === 0) return; // nichts zu melden
+
+  const lines = ["Geprüft: " + emails.size + " Personen mit aktiver Festival-Zusage."];
+  if (created.length) {
+    lines.push("", "✅ " + created.length + " fehlender Login-Zugang automatisch nachgetragen:");
+    created.forEach(function (e) { lines.push("- " + e); });
+  }
+  if (failed.length) {
+    lines.push("", "⚠️ " + failed.length + " Fehler beim Anlegen (bitte manuell prüfen):");
+    failed.forEach(function (e) { lines.push("- " + e); });
+  }
+
+  MailApp.sendEmail({
+    to: "bianka@goldeimer.de",
+    subject: "Festival Hub: " + created.length + " fehlende Login(s) automatisch repariert",
+    body: lines.join("\n"),
+  });
+}
+
+// Einmalig manuell im Editor ausführen: richtet den täglichen Trigger für
+// checkAndFixMissingAuthUsers ein (läuft ca. 6 Uhr morgens). Entfernt vorher
+// bestehende Trigger derselben Funktion, damit sie nicht doppelt/mehrfach läuft.
+function installMissingAuthUserCheckTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === "checkAndFixMissingAuthUsers") {
+      ScriptApp.deleteTrigger(t);
+    }
+  });
+  ScriptApp.newTrigger("checkAndFixMissingAuthUsers")
+    .timeBased()
+    .everyDays(1)
+    .atHour(6)
+    .create();
+  toast_("Täglicher Login-Check eingerichtet (läuft ca. 6 Uhr morgens).");
+}
+
+/* =========================
  * EINMALIGER BACKFILL: detail_pronouns/carpass/arrival aus APPLICATIONS -> Supabase
  * (für Zeilen, die schon vor der Supabase-Anbindung importiert wurden und daher
  *  beim normalen Sync als "bereits aktuell" überspringen würden)
