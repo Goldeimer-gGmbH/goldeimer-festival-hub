@@ -5534,11 +5534,11 @@ function checkAndFixMissingAuthUsers() {
   const sbKey = props.getProperty("SUPABASE_SERVICE_KEY");
   if (!sbUrl || !sbKey) {
     Logger.log("checkAndFixMissingAuthUsers: Supabase-Config fehlt");
-    MailApp.sendEmail({
-      to: "bianka@goldeimer.de",
-      subject: "Festival Hub: Login-Check konnte nicht laufen",
-      body: "SUPABASE_URL oder SUPABASE_SERVICE_KEY fehlt in den Script-Properties. Bitte prüfen."
-    });
+    GmailApp.sendEmail(
+      "bianka@goldeimer.de",
+      "Festival Hub: Login-Check konnte nicht laufen",
+      "SUPABASE_URL oder SUPABASE_SERVICE_KEY fehlt in den Script-Properties. Bitte prüfen."
+    );
     return;
   }
 
@@ -5582,11 +5582,11 @@ function checkAndFixMissingAuthUsers() {
     failed.forEach(function (e) { lines.push("- " + e); });
   }
 
-  MailApp.sendEmail({
-    to: "bianka@goldeimer.de",
-    subject: "Festival Hub: " + created.length + " fehlende Login(s) automatisch repariert",
-    body: lines.join("\n"),
-  });
+  GmailApp.sendEmail(
+    "bianka@goldeimer.de",
+    "Festival Hub: " + created.length + " fehlende Login(s) automatisch repariert",
+    lines.join("\n")
+  );
 }
 
 // Einmalig manuell im Editor ausführen: richtet den täglichen Trigger für
