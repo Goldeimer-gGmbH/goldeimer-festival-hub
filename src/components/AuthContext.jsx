@@ -231,19 +231,28 @@ export function AuthProvider({ children }) {
       // FestivalPage: Daten für alle Festivals des Users vorladen.
       // Verhindert Timeout-Fehler wenn die DB kalt ist und der User direkt eine
       // Festival-Karte öffnet — die Daten sind dann schon im Cache.
+      // Gestaffelt statt alle gleichzeitig feuern: bei vielen Zusagen (z.B. Hub-Admins,
+      // Leads mit mehreren Festivals) sonst zig parallele Requests auf einmal — auf einer
+      // schwächeren Verbindung kann das ausgerechnet die Anfrage ausbremsen, auf die der
+      // User aktiv wartet (Klick auf ein Festival), und deren 8s-Timeout reißen lassen.
       if (assignments?.length) {
-        for (const a of assignments) {
+        let dispatchIdx = 0
+        assignments.forEach(a => {
           const festivalId = a.festival?.id
-          if (!festivalId || cacheGet(`festival_v4_${festivalId}`)) continue
-          // fire & forget — kein await, blockiert nicht den Rest des Logins
-          supabase.rpc('get_my_festival_info', { p_festival_id: festivalId })
-            .then(({ data: rpcData }) => {
-              if (rpcData && !rpcData.error) {
-                cacheSet(`festival_v4_${festivalId}`, rpcData, DATA_TTL)
-              }
-            })
-            .catch(() => {}) // best-effort, Fehler ignorieren
-        }
+          if (!festivalId || cacheGet(`festival_v4_${festivalId}`)) return
+          const delay = dispatchIdx * 700
+          dispatchIdx++
+          setTimeout(() => {
+            // fire & forget — kein await, blockiert nicht den Rest des Logins
+            supabase.rpc('get_my_festival_info', { p_festival_id: festivalId })
+              .then(({ data: rpcData }) => {
+                if (rpcData && !rpcData.error) {
+                  cacheSet(`festival_v4_${festivalId}`, rpcData, DATA_TTL)
+                }
+              })
+              .catch(() => {}) // best-effort, Fehler ignorieren
+          }, delay)
+        })
       }
     } catch { /* Prefetch ist best-effort, Fehler ignorieren */ }
   }
