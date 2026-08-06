@@ -445,7 +445,11 @@ export default function FestivalPage() {
     }
   }
 
-  async function loadAdminFallback(festivalId, cacheKey, validCached) {
+  // Hub-Admins ohne eigenes Assignment brauchen diesen zweiten Roundtrip zusätzlich
+  // zum ersten RPC-Call (loadFestivalInfo) — doppelte Angriffsfläche für einen
+  // Netzwerk-Hänger. Bislang hatte NUR der erste Call eine Retry-Logik; ein einzelner
+  // Timeout/Lock-Fehler hier führte sofort zum harten Fehler, ohne Wiederholung.
+  async function loadAdminFallback(festivalId, cacheKey, validCached, retryCount = 0) {
     try {
       const { data: adminData, error } = await fetchWithTimeout(
         supabase.rpc('get_festival_info_for_admin', { p_festival_id: festivalId })
@@ -453,7 +457,19 @@ export default function FestivalPage() {
       if (!error && adminData && !adminData.error) {
         setData(adminData)
         cacheSet(cacheKey, adminData, 48 * 60 * 60 * 1000)
-      } else if (!validCached) {
+        return
+      }
+      if (error) {
+        const isLockError = String(error.message).toLowerCase().includes('lock')
+        const isTimeout = error.message === 'timeout'
+        const maxRetries = isLockError ? 4 : 2
+        if ((isLockError || isTimeout) && retryCount < maxRetries) {
+          const delay = isTimeout ? 3000 : 800 + retryCount * 700
+          setTimeout(() => loadAdminFallback(festivalId, cacheKey, validCached, retryCount + 1), delay)
+          return
+        }
+      }
+      if (!validCached) {
         setDebugMsg(`admin: ${error?.message || adminData?.error || 'Kein Zugriff'}`)
         setFetchError(true)
       }
