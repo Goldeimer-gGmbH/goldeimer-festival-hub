@@ -5749,22 +5749,22 @@ function uiSyncAttendanceToStatus() {
 function syncAttendanceToStatus_(festivalId) {
   const ss = SpreadsheetApp.getActive();
 
-  const festSheet = ss.getSheetByName(SHEETS.FESTIVALS);
-  const festData  = readSheetAsObjects_(festSheet);
-  const festCfg   = festData.rows.find(r => String(r.festival_id || "").trim() === festivalId) || {};
-  const festivalName = String(festCfg.festival_name || festivalId).trim();
-
   const reportSheetId = PropertiesService.getScriptProperties().getProperty('REPORTS_SS_ID')
     || '19RLr7RQ0yZQ84NGd6ShgJp_tKWwVLfH6-ibsRXhaq_E';
   const reportSs = SpreadsheetApp.openById(reportSheetId);
-  const attSheet = reportSs.getSheetByName('Anwesenheit');
+  // FIX: Seit dem Umbau auf "ein Reiter pro Festival" schreibt die App die Anwesenheit
+  // in <festival_id>_Anwesenheit (z.B. WACK_2026_Anwesenheit), nicht mehr in den alten
+  // gemeinsamen Tab "Anwesenheit". Der ist seitdem eingefroren und wurde hier fälschlich
+  // weiter gelesen — deshalb kamen neue Eintragungen nie in APPLICATIONS/Dashboard an.
+  const tabName = reportTabName_({ festival_code: festivalId }, 'Anwesenheit');
+  const attSheet = reportSs.getSheetByName(tabName);
   if (!attSheet) {
-    Logger.log("syncAttendanceToStatus_: Kein 'Anwesenheit'-Sheet gefunden");
+    Logger.log(`syncAttendanceToStatus_: Kein '${tabName}'-Sheet gefunden`);
     return { markedPresent: 0, reverted: 0, skipped: 0, errors: 0 };
   }
 
   const attData = readSheetAsObjects_(attSheet);
-  const rows = attData.rows.filter(r => String(r['Festival'] || '').trim() === festivalName);
+  const rows = attData.rows; // Tab ist bereits auf dieses Festival beschränkt, kein Filter nötig
 
   const appSheet = ss.getSheetByName(SHEETS.APPLICATIONS);
   if (!appSheet) throw new Error(`Sheet fehlt: ${SHEETS.APPLICATIONS}`);
@@ -5819,40 +5819,31 @@ function syncAttendanceToStatus_(festivalId) {
 }
 
 // Headless-Version für den Zeit-Trigger: iteriert selbst über alle Festivals
-// im Anwesenheits-Sheet und syncht jeden einzeln. Läuft ohne aktiven Sheet-Tab.
+// und syncht jeden einzeln. Läuft ohne aktiven Sheet-Tab.
 function autoSyncAllAttendanceToStatus_() {
   const reportSheetId = PropertiesService.getScriptProperties().getProperty('REPORTS_SS_ID')
     || '19RLr7RQ0yZQ84NGd6ShgJp_tKWwVLfH6-ibsRXhaq_E'
   const reportSs = SpreadsheetApp.openById(reportSheetId)
-  const attSheet  = reportSs.getSheetByName('Anwesenheit')
-  if (!attSheet) return // noch kein Anwesenheits-Sheet → nichts zu tun
 
-  const attData = readSheetAsObjects_(attSheet)
-
-  // Alle einzigartigen Festival-Namen aus dem Sheet holen
-  const festivalNames = [...new Set(
-    attData.rows.map(r => String(r['Festival'] || '').trim()).filter(Boolean)
-  )]
-  if (!festivalNames.length) return
-
-  // Festival-Name → festival_id via CONFIG_FESTIVALS
-  const ss = SpreadsheetApp.getActive()
-  const festSheet = ss.getSheetByName(SHEETS.FESTIVALS)
-  const festData  = readSheetAsObjects_(festSheet)
+  // FIX: Festivals werden jetzt anhand der vorhandenen "<festival_id>_Anwesenheit"-Tabs
+  // erkannt (ein Tab pro Festival seit dem Umbau), nicht mehr aus dem alten gemeinsamen
+  // "Anwesenheit"-Tab (der ist eingefroren und wird nicht mehr befüllt).
+  const suffix = '_Anwesenheit'
+  const festivalIds = reportSs.getSheets()
+    .map(s => s.getName())
+    .filter(n => n.endsWith(suffix))
+    .map(n => n.slice(0, -suffix.length))
+  if (!festivalIds.length) return
 
   let totalPresent = 0, totalReverted = 0, totalErrors = 0
-  festivalNames.forEach(name => {
-    const festRow = festData.rows.find(r => String(r.festival_name || '').trim() === name)
-    if (!festRow) return
-    const festivalId = String(festRow.festival_id || '').trim()
-    if (!festivalId) return
+  festivalIds.forEach(festivalId => {
     try {
       const res = syncAttendanceToStatus_(festivalId)
       totalPresent  += res.markedPresent
       totalReverted += res.reverted
       totalErrors   += res.errors
     } catch (e) {
-      Logger.log(`autoSync Fehler für ${name}: ${e.message}`)
+      Logger.log(`autoSync Fehler für ${festivalId}: ${e.message}`)
       totalErrors++
     }
   })
