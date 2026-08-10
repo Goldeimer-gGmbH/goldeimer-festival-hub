@@ -3863,34 +3863,68 @@ function getShiftCandidatesForFestival_({ festivalId }) {
 
   Logger.log(`Gefundene valide Applications für ${festivalId}: ${validApps.length}`);
 
-  // 3. Erst alle Vornamen sammeln um Duplikate zu erkennen
-  const firstNameCounts = {};
+  // 3. Erst alle Vornamen sammeln um Duplikate zu erkennen, gruppiert nach Nachname
+  const byFirstName = {};
   validApps.forEach(r => {
     const fn = String(r.detail_first_name || r.first_name || "").trim().toLowerCase();
-    if (fn) firstNameCounts[fn] = (firstNameCounts[fn] || 0) + 1;
+    if (!fn) return;
+    if (!byFirstName[fn]) byFirstName[fn] = [];
+    byFirstName[fn].push(r);
   });
 
-  // 4. Mapping: Kandidaten aufbauen, DisplayName nur mit Nachnamenskürzel wenn Vorname doppelt
+  // 4. Für jede Vorname-Kollisionsgruppe (>1 Person) ein EINDEUTIGES Nachnamens-Kürzel
+  // berechnen. Ein einzelner Buchstabe reicht nicht immer — z.B. "Max Latze" und
+  // "Max Leurle" wurden beide zu "Max L.", wodurch die Schichtplan-Auswertung sie als
+  // eine Person behandelt hat (Schichten/Block wurden zusammengezählt). Das Kürzel wird
+  // jetzt pro Kollisionsgruppe automatisch verlängert, bis es eindeutig ist.
+  const suffixByAppId = {};
+  Object.keys(byFirstName).forEach(fn => {
+    const group = byFirstName[fn];
+    if (group.length <= 1) return;
+    const lastNames = group.map(r => String(r.detail_last_name || r.last_name || "").trim());
+    const maxLen = Math.max(1, ...lastNames.map(l => l.length));
+    let suffixes = null;
+    for (let len = 1; len <= maxLen; len++) {
+      const candidate = lastNames.map(l => l.slice(0, len));
+      if (new Set(candidate).size === candidate.length) { suffixes = candidate; break; }
+    }
+    if (!suffixes) {
+      // Selbst der volle Nachname ist nicht eindeutig (identischer Name) → laufende Nummer anhängen
+      const seen = {};
+      suffixes = lastNames.map(l => { seen[l] = (seen[l] || 0) + 1; return seen[l] > 1 ? `${l} (${seen[l]})` : l; });
+    }
+    group.forEach((r, i) => {
+      const appId = String(r.application_id || "").trim();
+      suffixByAppId[appId] = suffixes[i];
+    });
+  });
+
+  // 5. Mapping: Kandidaten aufbauen, DisplayName nur mit Nachnamenskürzel wenn Vorname doppelt
   return validApps.map((r) => {
     const bucket = parseExperienceBucket_(r.experience_count) || "0";
 
     const firstName = String(r.detail_first_name || r.first_name || "").trim();
     const lastName = String(r.detail_last_name || r.last_name || "").trim();
+    const appId = String(r.application_id || "").trim();
+    const suffix = suffixByAppId[appId];
 
     let displayName;
     if (!firstName) {
       // Kein Vorname → Fallback auf E-Mail
       displayName = r.email || "?";
-    } else if ((firstNameCounts[firstName.toLowerCase()] || 0) > 1 && lastName) {
-      // Vorname kommt mehrfach vor → "Vorname N."
-      displayName = `${firstName} ${lastName.charAt(0).toUpperCase()}.`;
+    } else if (suffix) {
+      // Vorname kommt mehrfach vor → "Vorname <eindeutiges Kürzel>."
+      // Nur "." anhängen wenn wirklich gekürzt wurde (nicht bei vollem Nachnamen/Nummer-Fallback)
+      displayName = suffix.length < lastName.length
+        ? `${firstName} ${suffix}.`
+        : `${firstName} ${suffix}`;
     } else {
       // Vorname eindeutig → nur Vorname
       displayName = firstName;
     }
 
     return {
-      application_id: String(r.application_id || "").trim(),
+      application_id: appId,
       email: String(r.email || "").trim(),
       displayName: displayName,
       name: displayName,
@@ -3940,21 +3974,40 @@ function buildUniversalSchichtplan_({ festivalId, targetSpreadsheetId }) {
   const dayOrderMap = buildDayOrderMapFromSlots_(slots);
   setDayOrderMap_(dayOrderMap); // optionaler Compat-Layer
 
-  // Zielwert: wie viele Schichten soll jeder bekommen?
-  const totalSlotPositions = (slots || []).reduce((sum, slot) => {
+  // Zielwert: wie viele Schichten soll jeder bekommen? Wird PRO BLOCK berechnet (nicht
+  // global), weil assignPeopleToBlocks_ die Blockgrößen nach 1.-Wahl-Nachfrage verteilt
+  // und Blöcke dadurch unterschiedlich groß sein können (z.B. Block A viel größer als
+  // B/C). Ein einziger globaler Zielwert für alle hätte dazu geführt, dass Leute in
+  // einem kleineren Block ihr Limit erreichen, bevor ihr Block überhaupt voll abgedeckt
+  // ist — sichtbar als leere Schichten am Ende des Plans.
+  const totalSlotPositionsByBlock = {};
+  (slots || []).forEach((slot) => {
+    const b = String(slot.block || "").toUpperCase();
     const numCamps = Math.max(1, Number(slot.num_camps || 0) || 1);
     const pps = Math.max(1, Number(slot.people_per_shift || 3) || 3);
     const slotHasPromo = hasPromo && (
       isTrue_(slot.promo) || isTrue_(slot.promo_needed) ||
       isTrue_(slot.has_promo) || isTrue_(slot.promo_active) || isTrue_(slot.promo_enabled)
     );
-    return sum + numCamps * pps + (slotHasPromo ? pps : 0);
-  }, 0);
+    totalSlotPositionsByBlock[b] = (totalSlotPositionsByBlock[b] || 0) + numCamps * pps + (slotHasPromo ? pps : 0);
+  });
+  const totalSlotPositions = Object.values(totalSlotPositionsByBlock).reduce((a, b) => a + b, 0);
+  // Globaler Zielwert bleibt als Fallback (z.B. für Promo, das blockübergreifend aus dem
+  // ganzen Pool zieht) und fürs Logging erhalten.
   const shiftTarget = Math.max(1, Math.floor(totalSlotPositions / Math.max(1, peopleAll.length)));
-  Logger.log(`Schicht-Zielwert: ${shiftTarget} (${totalSlotPositions} Positionen / ${peopleAll.length} Personen)`);
+  Logger.log(`Schicht-Zielwert (global): ${shiftTarget} (${totalSlotPositions} Positionen / ${peopleAll.length} Personen)`);
 
   // Block-Zuordnung
   const { blockPeople, blockChosenById } = assignPeopleToBlocks_({ people: peopleAll, slots });
+
+  // Pro-Block-Zielwert: aufgerundet, damit target × Kopfzahl NIE unter dem tatsächlichen
+  // Bedarf des Blocks liegt — sonst bleiben Schichten strukturell unbesetzt.
+  const shiftTargetByBlock = {};
+  Object.keys(totalSlotPositionsByBlock).forEach((b) => {
+    const headcount = (blockPeople[b] || []).length;
+    shiftTargetByBlock[b] = Math.max(1, Math.ceil(totalSlotPositionsByBlock[b] / Math.max(1, headcount)));
+  });
+  Logger.log(`Schicht-Zielwerte pro Block: ${JSON.stringify(shiftTargetByBlock)}`);
 
   // ✅ State sauber initialisieren
   const state = {};
@@ -3985,14 +4038,15 @@ function buildUniversalSchichtplan_({ festivalId, targetSpreadsheetId }) {
   (slots || []).forEach((slot, slotIdx) => {
     const numCamps = Math.max(1, Number(slot.num_camps || 0) || 1);
     const pps = Math.max(1, Number(slot.people_per_shift || 3) || 3);
+    const blockLetter = String(slot.block || "").toUpperCase();
     const roster = pickRosterUniversal_({
-      blockLetter: String(slot.block || "").toUpperCase(),
+      blockLetter,
       blockPeople,
       state,
       slot,
       needed: numCamps * pps,
       dayOrderMap,
-      shiftTarget,
+      shiftTarget: shiftTargetByBlock[blockLetter] || shiftTarget,
       peopleAll,
     });
     allCampRosters[slotIdx] = roster;
