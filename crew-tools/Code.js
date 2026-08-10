@@ -4157,18 +4157,25 @@ function buildUniversalSchichtplan_({ festivalId, targetSpreadsheetId }) {
 
 /**
  * Verteilt People auf Blocks (A/B/C/…).
- * Ziel: möglichst viele 1. Wünsche erfüllen, begrenzt durch die Blockkapazität.
  *
- * Vorgehen (3 Runden, kein "Ausgleichen" auf gleich große Blöcke):
- *  1. 1. Wahl: jeder bekommt seinen Wunschblock, solange dort Kapazität ist.
- *     Bei Übernachfrage entscheidet die Anmeldereihenfolge (application_id).
+ * Prioritäten (wichtigstes zuerst):
+ *  1. Coverage: jeder Block muss seine Schichten voll besetzen können (harte Grenze).
+ *  2. Schichten-Fairness: die Zielzahl an Schichten pro Person darf zwischen den
+ *     Blöcken um höchstens 1 abweichen (z.B. alle 4 oder 5, NIE eine Gruppe 6 und
+ *     eine andere 3) — wichtiger als 1. Wahl.
+ *  3. 1. Wahl: erst NACHDEM die Blockgrößen fair (proportional zu den Schichten je
+ *     Block) feststehen, entscheidet die 1./2. Wahl, WER in welchen Block kommt.
+ *
+ * Vorgehen (3 Runden):
+ *  1. 1. Wahl: jeder bekommt seinen Wunschblock, solange dort (proportionale) Kapazität
+ *     ist. Bei Übernachfrage entscheidet die Anmeldereihenfolge (application_id).
  *  2. 2. Wahl: Überzählige kommen in ihren Zweitwunsch, falls dort noch Platz.
  *  3. Rest: in den Block mit der größten Restkapazität (Coverage auffüllen).
  *
- * Kapazität (targets) ist proportional zu den Slots je Block ("ausreichend besetzt"),
- * NICHT ein Zwang zu exakt gleich großen Blöcken. Stabilität (eine Person = ein Block)
- * ist dadurch garantiert; niemand wird gegen den Wunsch verschoben, nur um zu balancieren.
- * Erfahrungs-Verteilung ist bewusst nachrangig zur 1. Wahl (greift erst beim Schicht-Füllen).
+ * Block-GRÖSSEN sind proportional zu den Gesamt-Positionen je Block, NICHT von der
+ * 1.-Wahl-Nachfrage abhängig — sonst könnte ein sehr gefragter Block beliebig groß
+ * werden und der Zielwert pro Person zwischen den Blöcken stark auseinanderlaufen.
+ * 1. Wahl steuert nur noch, WER die (fair verteilten) Plätze bekommt.
  */
 function assignPeopleToBlocks_({ people, slots }) {
   // Ermittle dynamisch alle Blöcke, die in der Config vorkommen (z.B. A, B, C, D, E)
@@ -4197,40 +4204,26 @@ function assignPeopleToBlocks_({ people, slots }) {
     slotCount[b] += need;
   });
 
-  // 1.-Wahl-Nachfrage je Block
-  const demand = {};
-  BLOCKS.forEach(b => demand[b] = 0);
-  (people || []).forEach((p) => {
-    const b = normBlock_(p.pref1);
-    if (demand[b] !== undefined) demand[b]++;
-  });
-
-  // Ziel-Größen: zuerst das Minimum (Coverage) je Block sichern, dann den ÜBERSCHUSS
-  // dorthin geben, wo die meiste unerfüllte 1.-Wahl-Nachfrage ist. So bekommen möglichst
-  // viele ihre 1. Wahl, statt Blöcke künstlich gleich groß zu machen (1. Wahl > Ausgewogenheit).
+  // Ziel-Größen: PROPORTIONAL zu den Gesamt-Positionen je Block (slotCount). Das hält
+  // den Zielwert (Schichten pro Person) über alle Blöcke fast gleich (max. 1 Schicht
+  // Unterschied — wichtiger als 1. Wahl). minNeeded bleibt als harte Untergrenze
+  // erhalten, falls die Proportional-Rechnung einen Block sonst unter seinen
+  // Coverage-Bedarf drücken würde.
+  //
+  // Bekannter Grenzfall: Hat ein Block einen einzelnen "Mega-Slot" (sehr hohes
+  // people_per_shift bei sonst wenig Gesamtarbeit in dem Block), zieht minNeeded
+  // dessen Kopfzahl weit über den proportionalen Anteil — die dort Platzierten
+  // arbeiten danach spürbar WENIGER Schichten als der Rest (Coverage sticht laut
+  // Prio-Liste die Fairness). Simuliert bestätigt (sim_edge.js, 2026-08-10):
+  // Differenz kann dann >1 werden. Bei Highfield aktuell kein Problem (alle 3
+  // Blöcke strukturell identisch, keine Mega-Slots) — bei künftigen Festivals mit
+  // stark ungleichmäßigem Bedarf pro Block im Blick behalten.
   const targets = {};
-  const minSum = BLOCKS.reduce((s, b) => s + minNeeded[b], 0);
-  if (totalPeople < minSum) {
-    // Zu wenige Leute, um jede Schicht voll zu besetzen → proportional zum Gesamtbedarf
-    // verteilen (graceful degrade; einzelne Slots bleiben ggf. unterbesetzt wie bisher).
-    const totalNeed = BLOCKS.reduce((s, b) => s + (slotCount[b] || 1), 0) || 1;
-    BLOCKS.forEach(b => targets[b] = Math.round(totalPeople * ((slotCount[b] || 1) / totalNeed)));
-  } else {
-    BLOCKS.forEach(b => targets[b] = minNeeded[b]);
-    let remaining = totalPeople - minSum;
-    while (remaining > 0) {
-      // Block mit der größten noch offenen 1.-Wahl-Nachfrage (demand über aktuellem target)
-      let best = null, bestGap = 0;
-      BLOCKS.forEach(b => {
-        const gap = demand[b] - targets[b];
-        if (gap > bestGap) { bestGap = gap; best = b; }
-      });
-      // Keine offene Nachfrage mehr → Rest gleichmäßig auf den bisher kleinsten Block
-      if (!best) best = BLOCKS.slice().sort((x, y) => targets[x] - targets[y])[0];
-      targets[best]++;
-      remaining--;
-    }
-  }
+  const totalWeight = BLOCKS.reduce((s, b) => s + (slotCount[b] || 1), 0) || 1;
+  BLOCKS.forEach((b) => {
+    const proportional = Math.round(totalPeople * ((slotCount[b] || 1) / totalWeight));
+    targets[b] = Math.max(minNeeded[b], proportional);
+  });
 
   const sorted = (people || []).slice().sort((a, b) =>
     String(a.application_id).localeCompare(String(b.application_id))
@@ -4240,14 +4233,14 @@ function assignPeopleToBlocks_({ people, slots }) {
   BLOCKS.forEach(b => blockPeople[b] = []);
   const blockChosenById = {};
 
-  // Restkapazität eines Blocks. targets ist der Kapazitäts-Korridor ("ausreichend
-  // besetzt", proportional zu den Slots) — NICHT ein Zwang zu exakt gleich großen Blöcken.
+  // Restkapazität eines Blocks. targets ist jetzt proportional zu den Slots je Block
+  // fixiert (Schichten-Fairness) — 1. Wahl entscheidet nur noch, wer bis zu dieser
+  // Kapazität reinkommt, nicht mehr die Kapazität selbst.
   const cap = (b) => targets[b] - blockPeople[b].length;
   const place = (p, b) => { blockPeople[b].push(p); blockChosenById[p.application_id] = b; };
 
-  // ── Ziel: möglichst viele 1. Wünsche erfüllen, begrenzt nur durch die Blockkapazität. ──
+  // ── Innerhalb der (fairen) Blockkapazität: möglichst viele 1. Wünsche erfüllen. ──
   // Stabilität bleibt erhalten (jede Person genau EIN Block das ganze Festival).
-  // Niemand wird gegen seinen Wunsch verschoben, nur um Blöcke gleich groß zu machen.
 
   // Runde 1: 1. Wahl. Pro Block bis zur Kapazität; bei Übernachfrage entscheidet die
   // Anmeldereihenfolge (application_id). Überzählige + Leute ohne gültige 1. Wahl → Overflow.
