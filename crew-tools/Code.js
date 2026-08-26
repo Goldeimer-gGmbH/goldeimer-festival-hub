@@ -167,6 +167,7 @@ function onOpen() {
     .addItem("📜 Newbies-Liste aktualisieren", "uiBuildNewbieSheet")
     .addSeparator()
     .addItem("🌐 Festivals zu Supabase synchronisieren", "syncAllFestivalsToSupabase")
+    .addItem("🔄 Assignments-Voll-Resync zu Supabase (dauert, nur bei Bedarf)", "uiSyncAllAssignmentsToSupabase")
     .addToUi();
 }
 
@@ -5372,7 +5373,16 @@ function syncAllFestivalsToSupabase() {
 
   const phoneCount = syncPhoneNumbersToSupabase_();
   toast_(`${count} Festivals und ${phoneCount} Telefonnummern synchronisiert! 🚀`);
+}
+
+// Voll-Resync ALLER Assignments (alle Festivals der Saison) macht pro Zeile 2 einzelne,
+// synchrone HTTP-Requests — bei 500+ Zeilen (Saisonende) reißt das locker Apps Scripts
+// Ausführungslimit (6 Min. normal / 30 Min. Workspace). Deshalb bewusst NICHT mehr Teil
+// von syncAllFestivalsToSupabase() (das soll für den Alltag schnell bleiben), sondern
+// eigener Menüpunkt — nur bei Bedarf laufen lassen (z.B. nach großem Datenimport).
+function uiSyncAllAssignmentsToSupabase() {
   syncAllAssignmentsToSupabase_();
+  toast_("Assignments-Resync fertig — Details siehe Ausführungsprotokoll (Logger.log).");
 }
 
 function syncPhoneNumbersToSupabase_() {
