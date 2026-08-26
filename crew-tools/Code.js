@@ -181,6 +181,103 @@ function uiSyncApplicationsFromForm() {
   toast_(`Import fertig: ${result.created} neu, ${result.updated} aktualisiert, ${result.skipped} übersprungen.`);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// EINMAL-SETUP: JAME_2026 Crew (Anmeldung lief nicht über das offizielle
+// Formular, 14 der 18 Personen haben aber schon 2026er-Bewerbungen für andere
+// Festivals — von denen werden hier die SICHEREN, personenbezogenen Felder
+// kopiert. Festival-spezifische Felder (Anreise, Schicht-Block-Wunsch,
+// Promo-Wunsch) werden bewusst NICHT kopiert — die kommen ganz normal über
+// die Detailabfrage für JAME_2026. Nach dem Lauf: löschen, einmaliges Skript.
+// ═══════════════════════════════════════════════════════════════════════════
+function setupJame2026Crew() {
+  const FESTIVAL_ID   = "JAME_2026";
+  const FESTIVAL_NAME = "Jamel rockt den Förster";
+
+  // Felder, die 1:1 von der letzten bekannten 2026er-Bewerbung übernommen
+  // werden dürfen (personenbezogen, nicht festivalspezifisch).
+  const SAFE_COPY_FIELDS = [
+    "first_name", "last_name", "experience_count", "hepa_vax_flag", "driving_license",
+    "detail_first_name", "detail_first_name_doc", "detail_last_name", "detail_last_name_birth",
+    "detail_pronouns", "detail_birthdate", "detail_birthplace", "detail_birthcountry",
+    "detail_phone", "detail_food", "detail_allergies", "detail_carpass",
+  ];
+
+  // role/status wie von Bianka am 2026-08-26 festgelegt.
+  const PEOPLE = [
+    { email: "wolke257@web.de",                                  first: "Anienne",  last: "Cosmann",   role: "operator", status: STATUS.ZUSAGEN },
+    { email: "scoudy@posteo.de",                                 first: "Philipp",  last: "Struthmann", role: "lead",     status: STATUS.ZUSAGEN },
+    { email: "mc.conner@gmx.net",                                first: "Steffen",  last: "Behrens",   role: "operator", status: STATUS.ZUSAGEN },
+    { email: "victorialoesche@googlemail.com",                   first: "Victoria", last: "Loesche",   role: "operator", status: STATUS.ZUSAGEN },
+    { email: "sylvia.merkel@gmx.net",                            first: "Sylvia",   last: "Merkel",    role: "supporti", status: STATUS.ZUSAGEN },
+    { email: "catherine_ohlsen@web.de",                          first: "Catherine",last: "Ohlsen",    role: "supporti", status: STATUS.ZUSAGEN },
+    { email: "vitekvd92@gmail.com",                              first: "Vincent",  last: "van Diedenhoven", role: "supporti", status: STATUS.ZUSAGEN },
+    { email: "eddy.quiel@tuta.io",                                first: "Eddy",     last: "Quiel",     role: "supporti", status: STATUS.ZUSAGEN },
+    { email: "erikode2@gmail.com",                                first: "Erik",     last: "Rubinck",   role: "supporti", status: STATUS.ZUSAGEN },
+    { email: "puebb116@gmail.com",                                first: "Sonja",    last: "von Mach",  role: "supporti", status: STATUS.ZUSAGEN },
+    { email: "carina.wnt@gmail.com",                              first: "Carina",   last: "Wente",     role: "supporti", status: STATUS.FUER_WARTELISTE },
+    { email: "cleo.kstr@icloud.com",                              first: "Cleo",     last: "Kaster",    role: "supporti", status: STATUS.FUER_WARTELISTE },
+    { email: "sarah.jasmin.w@gmail.com",                          first: "Sarah",    last: "Weber",     role: "supporti", status: STATUS.FUER_WARTELISTE },
+    // Keine Vorjahresdaten vorhanden (weder Supabase noch APPLICATIONS) — nur Name/Rolle/Status,
+    // Rest trägt Bianka händisch nach.
+    { email: "markus_grote@web.de",                               first: "Markus",   last: "Grote",     role: "operator", status: STATUS.ZUSAGEN,           noSource: true },
+    { email: "dattellilly@gmail.com",                             first: "Liane",    last: "Ott",       role: "supporti", status: STATUS.ZUSAGEN,           noSource: true },
+    { email: "philipp.meissner.mail+goldeimer@gmail.com",         first: "Philipp",  last: "Meißner",   role: "supporti", status: STATUS.FUER_WARTELISTE,   noSource: true },
+    // Noch keine E-Mail bekannt — reine Namens-Platzhalter.
+    { email: "",                                                  first: "Janna",    last: "",          role: "supporti", status: STATUS.ZUSAGEN,           noSource: true },
+    { email: "",                                                  first: "Nihal",    last: "",          role: "supporti", status: STATUS.ZUSAGEN,           noSource: true },
+  ];
+
+  const ss      = SpreadsheetApp.getActive();
+  const appSheet = ss.getSheetByName(SHEETS.APPLICATIONS);
+  const data    = readSheetAsObjects_(appSheet);
+  const hMap    = data.headerMap;
+  const lastCol = appSheet.getLastColumn();
+  const now     = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd.MM.yyyy HH:mm");
+
+  let copiedCount = 0, blankCount = 0;
+
+  const newRows = PEOPLE.map((p) => {
+    const rowData = new Array(lastCol).fill("");
+    const setVal = (k, v) => { if (hMap[k] !== undefined && v !== undefined && v !== null && v !== "") rowData[hMap[k]] = v; };
+
+    setVal("application_id", Utilities.getUuid());
+    setVal("festival_id", FESTIVAL_ID);
+    setVal("festival_name", FESTIVAL_NAME);
+    setVal("email", p.email);
+    setVal("first_name", p.first);
+    setVal("last_name", p.last);
+    setVal("role", p.role);
+    setVal("status", p.status);
+    setVal("mail_status", MAIL_STATUS.NONE);
+    setVal("detail_status", DETAIL_STATUS.NONE);
+    setVal("contract_status", "-");
+    setVal("applied_at", now);
+
+    if (p.email && !p.noSource) {
+      const source = data.rows
+        .filter(r => normEmail_(r.email) === normEmail_(p.email))
+        .sort((a, b) => b.__rowNumber - a.__rowNumber)[0]; // neueste Zeile dieser Person
+      if (source) {
+        SAFE_COPY_FIELDS.forEach(f => { if (source[f]) setVal(f, source[f]); });
+        copiedCount++;
+      } else {
+        Logger.log(`⚠ Keine Quellzeile gefunden für ${p.email} — sollte laut Recherche vorhanden sein, bitte prüfen.`);
+        blankCount++;
+      }
+    } else {
+      blankCount++;
+    }
+
+    return rowData;
+  });
+
+  appSheet.getRange(appSheet.getLastRow() + 1, 1, newRows.length, lastCol).setValues(newRows);
+
+  const msg = `JAME_2026: ${newRows.length} Zeilen angelegt (${copiedCount} mit kopierten Vorjahresdaten, ${blankCount} als Platzhalter/ohne Quelle).`;
+  toast_(msg);
+  Logger.log(msg);
+}
+
 function uiBuildFestivalDashboards() {
   const res = buildFestivalDashboards_();
   toast_(`Dashboards aktualisiert: ${res.created} neu, ${res.updated} aktualisiert.`);
