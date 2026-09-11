@@ -3044,6 +3044,7 @@ function setFestivalConfigColumnNotes() {
     logistic_info:         "Logistik-Informationen (Anlieferung, Abholung etc.). Als {{LOGISTIC_INFO}} in E-Mail-Templates nutzbar.",
     special_notes:         "Besondere Hinweise zum Festival (intern). Als {{SPECIAL_NOTES}} in E-Mail-Templates nutzbar.",
     kitchen_crew_list:     "URL zur Küchen-Crew-Listen-Tabelle (Google Drive). Genutzt in: Festival-Dashboard (Direktlink), wird nach Erstellung der Küchen-Crew-Liste automatisch eingetragen.",
+    cancelled:             "Ja/x = Festival wurde abgesagt. CONFIG_FESTIVALS-Zeile und Dashboard bleiben erhalten (Referenz fürs nächste Jahr), aber die Zeile fliegt komplett aus dem WEBSITE_DATA-Export raus (updateInternalWebsiteData). Bewerbungs-Status der Crew bewusst NICHT automatisch verändert.",
     kitchen_cost:          "Kosten-Infos für die Küche / Catering. Als {{KITCHEN_COST}} in E-Mail-Templates nutzbar.",
     lead_rider_link:       "URL zum Lead-Rider-PDF (Google Drive). Genutzt in: Festival-Dashboard (Direktlink), wird nach Lead-Rider-Generierung automatisch eingetragen.",
     infomail_wohin:        "Wohin-Info für die Last-Info-Mail (Anfahrt / Treffpunkt). Als {{INFOMAIL_WOHIN}} in E-Mail-Templates nutzbar.",
@@ -5210,7 +5211,13 @@ function updateInternalWebsiteData() {
     const fid = String(fest.festival_id || "").trim();
     if (!fid) return;
 
-    const maxCap = Number(fest.need_total || 0); 
+    // Abgesagte Festivals: Zeile bleibt in CONFIG_FESTIVALS + Dashboard erhalten
+    // (Referenz fürs nächste Jahr), fliegt aber komplett aus dem Website-Export —
+    // nicht nur der Status-Text ändert sich, die Zeile fehlt ganz. Damit ist es
+    // egal, wie die Website einen Status-Text interpretiert; die Zeile ist weg.
+    if (isTrue_(fest.cancelled)) return;
+
+    const maxCap = Number(fest.need_total || 0);
     const town = String(fest.festival_town || "").trim() || "TBA";
     
     // --- DATUM-LOGIK FIX ---
@@ -5287,6 +5294,48 @@ function updateInternalWebsiteData() {
   }
   
   toast_("WEBSITE_DATA wurde mit Daten aus Spalte H (end_takedown) aktualisiert.");
+}
+
+/**
+ * Einmal-Setup: Festival JAME_2026 wurde abgesagt.
+ * - Legt Spalte "cancelled" in CONFIG_FESTIVALS an (falls noch nicht vorhanden) und setzt sie
+ *   für JAME_2026 auf "Ja" — dadurch lässt updateInternalWebsiteData() die Zeile künftig weg.
+ * - CONFIG_FESTIVALS-Zeile und Dashboard bleiben unangetastet erhalten (Referenz fürs nächste Jahr).
+ * - Bewerbungs-Status der Crew wird bewusst NICHT verändert (bleibt Aufzeichnung, wer zugesagt hatte).
+ * - Trägt einen erklärenden Hinweis ins Dashboard-Notizfeld (A4) ein.
+ * - Aktualisiert WEBSITE_DATA sofort, statt auf den nächsten regulären Lauf zu warten.
+ * Danach löschbar, einmaliges Skript.
+ */
+function markJame2026Cancelled() {
+  const FESTIVAL_ID = "JAME_2026";
+  const ss = SpreadsheetApp.getActive();
+  const festSheet = ss.getSheetByName(SHEETS.FESTIVALS);
+  if (!festSheet) { toast_("CONFIG_FESTIVALS nicht gefunden."); return; }
+
+  const data = readSheetAsObjects_(festSheet);
+  let colIdx = data.headerMap["cancelled"];
+  if (colIdx === undefined) {
+    const newCol = festSheet.getLastColumn() + 1;
+    festSheet.getRange(1, newCol).setValue("cancelled");
+    colIdx = newCol - 1; // 0-basiert, wie headerMap
+  }
+
+  const row = data.rows.find(r => String(r.festival_id || "").trim() === FESTIVAL_ID);
+  if (!row) { toast_(`Festival ${FESTIVAL_ID} nicht in CONFIG_FESTIVALS gefunden.`); return; }
+
+  festSheet.getRange(row.__rowNumber, colIdx + 1).setValue("Ja");
+
+  const dashSheet = ss.getSheetByName(`DASH_${FESTIVAL_ID}`);
+  if (dashSheet) {
+    dashSheet.getRange("A4")
+      .setValue("Festival 2026 abgesagt. Status-Spalte zeigt weiterhin, wer für 2026 zugesagt/auf Warteliste stand — als Referenz für nächstes Jahr.")
+      .setFontColor("#1a1a1a")
+      .setFontStyle("normal");
+  }
+
+  updateInternalWebsiteData();
+
+  toast_(`${FESTIVAL_ID} als abgesagt markiert und aus WEBSITE_DATA entfernt.`);
 }
 
 
