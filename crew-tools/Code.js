@@ -7378,3 +7378,281 @@ function _markNewbieRow_(rowNum, colName, value) {
     Logger.log("_markNewbieRow_ FEHLER: " + e.message);
   }
 }
+
+/* =========================
+ * AFTERSHIT-EINLADUNG (jahresuebergreifend, alle Festivals der Saison)
+ * Absichtlich NICHT im onOpen()-Menue verankert - wird direkt hier im
+ * Apps-Script-Editor ueber das Funktions-Dropdown + "Ausfuehren" gestartet.
+ * ========================= */
+
+function ensureColumn_(sheet, headerMap, colName) {
+  if (headerMap[colName] !== undefined) return;
+  const lastCol = sheet.getLastColumn();
+  sheet.getRange(1, lastCol + 1).setValue(colName);
+}
+
+function getTemplateRow_(templateKey) {
+  const ss = SpreadsheetApp.getActive();
+  const sh = ss.getSheetByName(SHEETS.TEMPLATES);
+  if (!sh) throw new Error(`Sheet fehlt: ${SHEETS.TEMPLATES}`);
+  const data = readSheetAsObjects_(sh);
+  const row = data.rows.find(r => String(r.template_key || "").trim() === String(templateKey).trim());
+  return row || null;
+}
+
+function setupAftershitTemplate_() {
+  const ss = SpreadsheetApp.getActive();
+  const sh = ss.getSheetByName(SHEETS.TEMPLATES);
+  if (!sh) throw new Error(`Sheet fehlt: ${SHEETS.TEMPLATES}`);
+
+  const key = "AFTERSHIT_INVITE";
+  const existing = getTemplateRow_(key);
+
+  const subject = "💛🔥 Einladung: Aftershit Dankesparty am 14. November {{YEAR}}";
+
+  const bodyHtml = [
+    "<p>Allerliebste Goldis,</p>",
+    "<p>was war das bitte für eine zornige Festival-Saison?! 💛🔥</p>",
+    "<p>Für euer starkes Engagement möchten wir uns in altbekannter, feuchtfröhlicher Goldeimer-Manier bedanken und laden euch hiermit zum krönenden Jahresabschluss ein: Der legendären <strong>Aftershit Dankesparty am 14. November</strong>!</p>",
+    "<div style=\"background-color:#fff6de; border-left:4px solid #f2b705; padding:14px 18px; margin:20px 0;\">",
+    "<p style=\"margin:0 0 8px 0;\"><strong>VIVA TOGETHER & Aftershit Party | 13.-15. November {{YEAR}}</strong></p>",
+    "<p style=\"margin:0 0 8px 0;\">Wir feiern dieses Jahr wieder gemeinsam mit Viva con Agua unter dem Motto »VIVA TOGETHER«.</p>",
+    "<p style=\"margin:0 0 8px 0;\">" + "Los geht" + String.fromCharCode(39) + "s am Freitagabend mit trashig-mausigen Festival-Rückblicken und einer kleinen Warm-Up Party in der Villa Viva. Am Samstag gibt es tagsüber verschiedene Sessions und Workshops. Getanzt wird dieses Jahr für die große Party im Molotow.</p>",
+    "<p style=\"margin:0;\">Details zum Programm gibt es Anfang November, ihr könnt euch aber jetzt schon anmelden! 🥳</p>",
+    "</div>",
+    "<p>Damit wir einschätzen können, wie viele wir werden, meldet euch bitte zeitnah an. Es wird auch dieses Jahr wieder ein limitiertes Kontingent an Spezial-Zimmer-Deals in der Villa Viva geben, Infos dazu folgen.</p>",
+    "<p style=\"text-align:center; margin:24px 0;\">{{CTA_BLOCK}}</p>",
+    "<p>Wir freuen uns riesig, wenn viele von euch die Reise nach Hamburg antreten und wir nochmal alle zusammen auf die erfolgreiche Saison anstoßen können, bevor es in den Festival-Winterschlaf geht. Das wird goldig - wer ist dabei? 💛</p>",
+    "<p>Schönes Wochenende!<br>- Rolf und Tanja</p>",
+    "<hr style=\"border:none; border-top:1px solid #eee; margin:24px 0;\">",
+    "<p style=\"font-size:13px; color:#555;\"><strong>Feedback</strong><br>Du hast noch Feedback zur Festivalsaison? Schreib uns hier (auch anonym): <a href=\"{{FEEDBACK_URL}}\">{{FEEDBACK_URL}}</a></p>",
+    "<p style=\"font-size:13px; color:#555;\"><strong>Goldeimer Crew Gruppe</strong><br>Falls du noch nicht in der Telegram Crew-Gruppe bist, tritt gern bei und verpass keine Updates mehr. <a href=\"{{TELEGRAM_URL}}\">Über den Link beitreten.</a></p>",
+  ].join("\n");
+
+  let data = readSheetAsObjects_(sh);
+  ensureColumn_(sh, data.headerMap, "feedback_url");
+  ensureColumn_(sh, data.headerMap, "telegram_url");
+  ensureColumn_(sh, data.headerMap, "anmeldung_link");
+  data = readSheetAsObjects_(sh);
+
+  const targetRow = existing ? existing.__rowNumber : sh.getLastRow() + 1;
+  const setCell = (col, val) => updateCell_(sh, data.headerMap, targetRow, col, val);
+
+  setCell("template_key", key);
+  setCell("active", true);
+  setCell("subject", subject);
+  setCell("body_html", bodyHtml);
+  if (!existing || !String(existing.feedback_url || "").trim()) {
+    setCell("feedback_url", "https://docs.google.com/forms/d/e/1FAIpQLSebhHW0_N8ZM8A_eKgL-qoS57Rj5BhqZF9oGiNRiJzgWDoCAA/viewform");
+  }
+  if (!existing || !String(existing.telegram_url || "").trim()) {
+    setCell("telegram_url", "https://t.me/+CPC_qXnt2h45M2U6");
+  }
+  // anmeldung_link bewusst leer lassen - Formular existiert noch nicht (Platzhalter, s. Plan)
+
+  toast_(`Template "${key}" ${existing ? "aktualisiert" : "angelegt"} (Zeile ${targetRow}). Anmeldelink noch leer - bitte in ${SHEETS.TEMPLATES} nachtragen, sobald das Formular steht.`);
+}
+
+function getAftershitCandidates_(year) {
+  const ss = SpreadsheetApp.getActive();
+  const appSheet = ss.getSheetByName(SHEETS.APPLICATIONS);
+  if (!appSheet) throw new Error(`Sheet fehlt: ${SHEETS.APPLICATIONS}`);
+  const appData = readSheetAsObjects_(appSheet);
+
+  const festSheet = ss.getSheetByName(SHEETS.FESTIVALS);
+  const festCfgById = new Map();
+  if (festSheet) {
+    readSheetAsObjects_(festSheet).rows.forEach(r => {
+      const fid = String(r.festival_id || "").trim();
+      if (fid) festCfgById.set(fid, r);
+    });
+  }
+
+  const yearSuffix = "_" + String(year);
+  const sperrMap = loadSperrlisteMap_();
+
+  const byEmail = new Map();
+  const sperrlisteExcluded = [];
+  const seenExcluded = new Set();
+
+  appData.rows.forEach(r => {
+    const fid = String(r.festival_id || "").trim();
+    if (!fid.endsWith(yearSuffix)) return;
+    if (normalizeStatus_(r.status) !== "teilgenommen") return;
+
+    const email = normEmail_(r.email);
+    if (!email) return;
+
+    if (sperrMap.has(email)) {
+      if (!seenExcluded.has(email)) {
+        seenExcluded.add(email);
+        const entry = sperrMap.get(email);
+        sperrlisteExcluded.push({ email, name: entry.name, reason: entry.reason });
+      }
+      return;
+    }
+
+    const cfg = festCfgById.get(fid);
+    const festName = (cfg && cfg.festival_name) || fid;
+
+    if (!byEmail.has(email)) {
+      byEmail.set(email, {
+        email: r.email,
+        first_name: r.first_name || "",
+        last_name: r.last_name || "",
+        festivals: [],
+      });
+    }
+    const person = byEmail.get(email);
+    if (!person.festivals.includes(festName)) person.festivals.push(festName);
+  });
+
+  return { candidates: Array.from(byEmail.values()), sperrlisteExcluded };
+}
+
+function syncFestivalHistoryToCrewMaster_(year) {
+  const { candidates } = getAftershitCandidates_(year);
+
+  const ss = SpreadsheetApp.getActive();
+  const crewSheet = ss.getSheetByName(SHEETS.CREW_MASTER);
+  if (!crewSheet) throw new Error(`Sheet fehlt: ${SHEETS.CREW_MASTER}`);
+
+  const colName = `festivals_${year}`;
+  let crewData = readSheetAsObjects_(crewSheet);
+  ensureColumn_(crewSheet, crewData.headerMap, colName);
+  crewData = readSheetAsObjects_(crewSheet);
+
+  const rowByEmail = new Map();
+  crewData.rows.forEach(r => {
+    const em = normEmail_(r.email);
+    if (em) rowByEmail.set(em, r);
+  });
+
+  let updated = 0;
+  candidates.forEach(c => {
+    const row = rowByEmail.get(normEmail_(c.email));
+    if (!row) return;
+    updateCell_(crewSheet, crewData.headerMap, row.__rowNumber, colName, c.festivals.join(", "));
+    updated++;
+  });
+
+  toast_(`Festival-Historie ${year}: ${updated} Personen in CREW_MASTER aktualisiert (Spalte "${colName}").`);
+  return { updated, column: colName };
+}
+
+function sendAftershitInvite_({ forceTest, year }) {
+  const template = getTemplate_("AFTERSHIT_INVITE", { allowInactive: true });
+  if (!forceTest && !template.active) {
+    Logger.log("Abbruch: Template AFTERSHIT_INVITE inaktiv");
+    return { candidates: 0, sentOk: 0, sentFailed: 0, sperrlisteExcluded: 0 };
+  }
+
+  const templateRow = getTemplateRow_("AFTERSHIT_INVITE") || {};
+  const { candidates, sperrlisteExcluded } = getAftershitCandidates_(year);
+
+  if (sperrlisteExcluded.length > 0) {
+    log_({
+      action: "AFTERSHIT_SPERRLISTE_AUSSCHLUSS",
+      meta: { year, excluded: sperrlisteExcluded },
+      count: sperrlisteExcluded.length,
+    });
+  }
+
+  const anmeldungLink = String(templateRow.anmeldung_link || "").trim();
+  const ctaBlock = anmeldungLink
+    ? `<a href="${anmeldungLink}" style="background-color:#f2b705; color:#1a1a1a; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">Jetzt anmelden</a>`
+    : "<em>Das Anmeldeformular folgt in Kuerze - schaut bald nochmal rein!</em>";
+
+  const baseVars = {
+    YEAR: String(year),
+    CTA_BLOCK: ctaBlock,
+    FEEDBACK_URL: String(templateRow.feedback_url || ""),
+    TELEGRAM_URL: String(templateRow.telegram_url || ""),
+  };
+
+  const subject = render_(template.subject || "Einladung Aftershit-Party {{YEAR}}", baseVars);
+  const htmlBody = render_(template.body_html, baseVars);
+
+  if (forceTest) {
+    const sample = candidates[0];
+    const recipient = Session.getActiveUser().getEmail();
+    const testBanner = `<p style="background:#eee;padding:8px;font-size:12px;">TEST-VERSAND${sample ? " (es gaebe " + candidates.length + " echte Kandidat:innen, Beispiel: " + sample.email + ")" : " (aktuell 0 echte Kandidat:innen gefunden)"}</p>`;
+    let sentOk = 0, sentFailed = 0, errorSample = "";
+    try {
+      GmailApp.sendEmail(recipient, subject, "", { htmlBody: testBanner + htmlBody, name: MAIL_CFG.SENDER_NAME, replyTo: MAIL_CFG.REPLY_TO });
+      sentOk = 1;
+    } catch (e) {
+      sentFailed = 1;
+      errorSample = e.message;
+    }
+    return { candidates: candidates.length, sentOk, sentFailed, errorSample, sperrlisteExcluded: sperrlisteExcluded.length };
+  }
+
+  const ss = SpreadsheetApp.getActive();
+  const crewSheet = ss.getSheetByName(SHEETS.CREW_MASTER);
+  const sentFlagCol = `aftershit_${year}_sent`;
+  let crewData = crewSheet ? readSheetAsObjects_(crewSheet) : null;
+  if (crewSheet) ensureColumn_(crewSheet, crewData.headerMap, sentFlagCol);
+  crewData = crewSheet ? readSheetAsObjects_(crewSheet) : null;
+  const crewRowByEmail = new Map();
+  if (crewData) {
+    crewData.rows.forEach(r => {
+      const em = normEmail_(r.email);
+      if (em) crewRowByEmail.set(em, r);
+    });
+  }
+
+  const sentEmails = [];
+  const failedEmails = [];
+  let sentOk = 0, sentFailed = 0, errorSample = "";
+  candidates.forEach(c => {
+    const crewRow = crewRowByEmail.get(normEmail_(c.email));
+    if (crewRow && String(crewRow[sentFlagCol] || "").trim() !== "") return;
+
+    try {
+      GmailApp.sendEmail(c.email, subject, "", { htmlBody, name: MAIL_CFG.SENDER_NAME, replyTo: MAIL_CFG.REPLY_TO });
+      sentOk++;
+      sentEmails.push(c.email);
+      if (crewSheet && crewRow) {
+        const nowFmt = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd.MM.yyyy HH:mm");
+        updateCell_(crewSheet, crewData.headerMap, crewRow.__rowNumber, sentFlagCol, nowFmt);
+      }
+    } catch (e) {
+      sentFailed++;
+      if (!errorSample) errorSample = e.message;
+      failedEmails.push({ email: c.email, error: e.message });
+      Logger.log(`Fehler bei ${c.email}: ${e.message}`);
+    }
+  });
+
+  log_({
+    action: "AFTERSHIT_MAIL_SUMMARY",
+    meta: { year, candidates: candidates.length, sentOk, sentFailed, sperrlisteExcluded: sperrlisteExcluded.length, sent: sentEmails, failed: failedEmails },
+    count: sentOk,
+  });
+
+  return { candidates: candidates.length, sentOk, sentFailed, errorSample, sperrlisteExcluded: sperrlisteExcluded.length };
+}
+
+function uiSendAftershitTest() {
+  const year = new Date().getFullYear();
+  const res = sendAftershitInvite_({ forceTest: true, year });
+  Logger.log("AFTERSHIT_TEST_RESULT: " + JSON.stringify(res));
+  toast_(`TEST Aftershit-Mail: ${res.sentOk} OK, ${res.sentFailed} Fehler (${res.candidates} echte Kandidat:innen, ${res.sperrlisteExcluded} durch Sperrliste ausgeschlossen).`);
+}
+
+function uiSendAftershitReal() {
+  const year = new Date().getFullYear();
+  syncFestivalHistoryToCrewMaster_(year);
+  const res = sendAftershitInvite_({ forceTest: false, year });
+  toast_(`ECHT Aftershit-Mail: ${res.sentOk} OK, ${res.sentFailed} Fehler, ${res.candidates} Kandidat:innen, ${res.sperrlisteExcluded} durch Sperrliste ausgeschlossen.`);
+}
+
+function uiSetupAftershitTemplate() {
+  setupAftershitTemplate_();
+}
+
+function uiSyncFestivalHistory() {
+  const year = new Date().getFullYear();
+  syncFestivalHistoryToCrewMaster_(year);
+}
